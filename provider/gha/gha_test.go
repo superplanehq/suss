@@ -208,6 +208,52 @@ jobs:
 	}
 }
 
+func TestDetectEmitsGolangciLintActionAsACommand(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/lint.yml": `
+jobs:
+  lint:
+    steps:
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          args: --verbose
+`,
+	})
+
+	commands := commandByName(result)
+	got := commands["golangci-lint run"]
+	if deref(got.Run) != "golangci-lint run --verbose" {
+		t.Fatalf("run = %q, want golangci-lint run --verbose", deref(got.Run))
+	}
+	if !commandHasCapability(got, plan.CapabilityCodeLint) {
+		t.Fatalf("interpretations = %+v, want code.lint", got.Interpretations)
+	}
+}
+
+func TestDetectSkipsRemoteGoInstallAndGoPlumbing(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: |
+          go version
+          go env
+          go install github.com/kyoh86/richgo@latest
+          go test ./...
+`,
+	})
+
+	if got := keys(commandByName(result)); !slices.Equal(got, []string{"go test"}) {
+		t.Fatalf("commands = %v, want only go test", got)
+	}
+}
+
 func TestDetectSkipsPlumbingAndGlobalInstalls(t *testing.T) {
 	t.Parallel()
 
@@ -673,6 +719,15 @@ func requirementVersions(result provider.Result, kind plan.RequirementKind, name
 		versions = append(versions, item.Requirement.Version)
 	}
 	return versions
+}
+
+func commandHasCapability(command plan.Command, capability plan.Capability) bool {
+	for _, interpretation := range command.Interpretations {
+		if interpretation.Capability == capability {
+			return true
+		}
+	}
+	return false
 }
 
 func hasRequirement(result provider.Result, kind plan.RequirementKind, name, version string) bool {

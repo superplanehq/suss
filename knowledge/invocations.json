@@ -175,6 +175,46 @@
       "capabilities": ["application.run"],
       "confidence": "high",
       "description": "The script invokes the Vite development server."
+    },
+    {
+      "id": "go-mod-download",
+      "executable": "go",
+      "argsPrefix": ["mod", "download"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command downloads Go module dependencies."
+    },
+    {
+      "id": "go-test",
+      "executable": "go",
+      "argsPrefix": ["test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Go tests."
+    },
+    {
+      "id": "go-build",
+      "executable": "go",
+      "argsPrefix": ["build"],
+      "capabilities": ["artifact.build"],
+      "confidence": "high",
+      "description": "The command builds Go packages."
+    },
+    {
+      "id": "go-vet",
+      "executable": "go",
+      "argsPrefix": ["vet"],
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command runs go vet."
+    },
+    {
+      "id": "golangci-lint-run",
+      "executable": "golangci-lint",
+      "argsPrefix": ["run"],
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command runs golangci-lint."
     }
   ]
 }

@@ -28,7 +28,8 @@ var toolCapabilities = map[string][]plan.Capability{
 	"tsc":      {plan.CapabilityCodeTypecheck},
 	"vitest":   {plan.CapabilityTestRun},
 	"jest":     {plan.CapabilityTestRun},
-	"vite":     {plan.CapabilityArtifactBuild, plan.CapabilityApplicationRun},
+	"vite":          {plan.CapabilityArtifactBuild, plan.CapabilityApplicationRun},
+	"golangci-lint": {plan.CapabilityCodeLint},
 }
 
 // Write prints a human-readable rendering of document.
@@ -62,7 +63,7 @@ func writeProject(w io.Writer, project plan.ProjectPlan, providers []string) {
 
 	if !claimed(project) {
 		fmt.Fprintln(w)
-		fmt.Fprintf(w, "No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json.\n", joinProviders(providers))
+		fmt.Fprintf(w, "No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json; a Go project requires go.mod.\n", joinProviders(providers))
 		writeFacts(w, project.Facts)
 		writeEvidence(w, project)
 		return

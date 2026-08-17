@@ -20,8 +20,9 @@
 //     of frozen-lockfile flags (`npm ci` vs `npm install`, `yarn` vs
 //     `yarn install --frozen-lockfile`);
 //     - neither is a package-manager invocation, the executables are equal,
-//     and the existing command's tokens are a prefix of the observation
-//     (`go test ./...` vs `go test ./... -race`).
+//     and the existing command's non-flag tokens are a prefix of the
+//     observation (`go test ./...` vs `go test -race ./...`). Flags may
+//     appear anywhere; they are ignored for identity.
 //     Equal run text is still recorded as a variant: the CI source is distinct
 //     evidence, not a duplicate declaration. Observed commands are never
 //     matched to other observed commands.
@@ -183,16 +184,28 @@ func attachVariant(project *plan.ProjectPlan, id plan.CommandID, observed plan.C
 	}
 	for i := range project.Preparation {
 		if project.Preparation[i].ID == id {
+			confirmInferred(&project.Preparation[i], observed)
 			project.Preparation[i].Variants = upsertVariant(project.Preparation[i].Variants, variant)
 			return
 		}
 	}
 	for i := range project.Commands {
 		if project.Commands[i].ID == id {
+			confirmInferred(&project.Commands[i], observed)
 			project.Commands[i].Variants = upsertVariant(project.Commands[i].Variants, variant)
 			return
 		}
 	}
+}
+
+func confirmInferred(command *plan.Command, observed plan.Command) {
+	if command.Origin != plan.CommandInferred {
+		return
+	}
+	if confidenceRank(command.Confidence) < confidenceRank(plan.ConfidenceHigh) {
+		command.Confidence = plan.ConfidenceHigh
+	}
+	command.Evidence = mergeEvidence(command.Evidence, observed.Evidence)
 }
 
 func upsertVariant(variants []plan.CommandVariant, variant plan.CommandVariant) []plan.CommandVariant {

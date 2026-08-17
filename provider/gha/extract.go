@@ -134,9 +134,31 @@ func usesFindings(ctx provider.Context, source, dir, stepPointer string, step st
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "node", step.With, matrix, []string{"node-version", "node-version-file"})
 	case "actions/setup-go":
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "go", step.With, matrix, []string{"go-version", "go-version-file"})
+	case "golangci/golangci-lint-action":
+		return golangciActionFindings(source, dir, stepPointer, step)
 	default:
 		return nil
 	}
+}
+
+func golangciActionFindings(source, dir, stepPointer string, step step) []plan.Finding {
+	run := "golangci-lint run"
+	if args := strings.TrimSpace(step.With["args"]); args != "" {
+		run += " " + args
+	}
+	stmt := knowledge.ParseStatementsKeepPipelines(run)
+	if len(stmt) == 0 {
+		return nil
+	}
+	command, err := observedCommand(source, dir, stepPointer+"/uses", stmt[0])
+	if err != nil {
+		return nil
+	}
+	return []plan.Finding{plan.CommandFinding{
+		ProjectPath: dir,
+		Detector:    providerName,
+		Command:     command,
+	}}
 }
 
 func setupRuntimeFindings(ctx provider.Context, source, dir, stepPointer, runtime string, with stringMap, matrix map[string][]string, keys []string) []plan.Finding {
@@ -394,6 +416,9 @@ func skipStatement(stmt knowledge.Statement) bool {
 		return true
 	}
 	if knowledge.IsGlobalInstall(stmt.Invocation) {
+		return true
+	}
+	if knowledge.IsRemoteGoInstall(stmt.Invocation) || knowledge.IsGoPlumbing(stmt.Invocation) {
 		return true
 	}
 	_, skip := skippedExecutables[name]

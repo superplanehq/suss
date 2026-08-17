@@ -11,12 +11,14 @@ import (
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
 	"github.com/superplanehq/suss/provider/gha"
+	"github.com/superplanehq/suss/provider/golang"
 	"github.com/superplanehq/suss/provider/node"
 	"github.com/superplanehq/suss/reconcile"
 )
 
 var projectProviders = []provider.Provider{
 	node.Provider{},
+	golang.Provider{},
 }
 
 var repositoryProviders = []provider.Provider{

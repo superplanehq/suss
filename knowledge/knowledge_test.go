@@ -228,6 +228,56 @@ func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	}
 }
 
+func TestInterpretMatchesGoToolchainInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		inv  Invocation
+		want []plan.Capability
+	}{
+		{inv: Invocation{Executable: "go", Args: []string{"test", "./..."}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "go", Args: []string{"test", "-race", "./..."}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "go", Args: []string{"build", "./..."}}, want: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{inv: Invocation{Executable: "go", Args: []string{"vet", "./..."}}, want: []plan.Capability{plan.CapabilityCodeLint}},
+		{inv: Invocation{Executable: "go", Args: []string{"mod", "download"}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
+		{inv: Invocation{Executable: "golangci-lint", Args: []string{"run", "--verbose"}}, want: []plan.Capability{plan.CapabilityCodeLint}},
+	}
+	for _, tt := range tests {
+		got := capabilities(Interpret(tt.inv))
+		if !slices.Equal(got, tt.want) {
+			t.Fatalf("Interpret(%s %v) = %v, want %v", tt.inv.Executable, tt.inv.Args, got, tt.want)
+		}
+	}
+}
+
+func TestIsRemoteGoInstall(t *testing.T) {
+	t.Parallel()
+
+	if !IsRemoteGoInstall(Invocation{Executable: "go", Args: []string{"install", "github.com/kyoh86/richgo@latest"}}) {
+		t.Fatal("IsRemoteGoInstall(go install github.com/...) = false, want true")
+	}
+	if IsRemoteGoInstall(Invocation{Executable: "go", Args: []string{"install", "./cmd/suss"}}) {
+		t.Fatal("IsRemoteGoInstall(go install ./cmd/suss) = true, want false")
+	}
+	if IsRemoteGoInstall(Invocation{Executable: "go", Args: []string{"test", "./..."}}) {
+		t.Fatal("IsRemoteGoInstall(go test) = true, want false")
+	}
+}
+
+func TestIsGoPlumbing(t *testing.T) {
+	t.Parallel()
+
+	if !IsGoPlumbing(Invocation{Executable: "go", Args: []string{"env"}}) {
+		t.Fatal("IsGoPlumbing(go env) = false, want true")
+	}
+	if !IsGoPlumbing(Invocation{Executable: "go", Args: []string{"version"}}) {
+		t.Fatal("IsGoPlumbing(go version) = false, want true")
+	}
+	if IsGoPlumbing(Invocation{Executable: "go", Args: []string{"test", "./..."}}) {
+		t.Fatal("IsGoPlumbing(go test) = true, want false")
+	}
+}
+
 func TestInterpretMatchesShortYarnFrozenInstall(t *testing.T) {
 	t.Parallel()
 

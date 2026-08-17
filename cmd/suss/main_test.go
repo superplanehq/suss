@@ -60,11 +60,14 @@ func TestRunWithoutJSONRendersThePlan(t *testing.T) {
 		t.Fatalf("run() = %d, stderr = %s", code, stderr.String())
 	}
 	got := stdout.String()
-	if !strings.Contains(got, "Providers: node") {
+	if !strings.Contains(got, "Providers: node, go, github-actions") {
 		t.Fatalf("stdout = %q, want providers", got)
 	}
-	if !strings.Contains(got, "No implemented provider produced findings") {
-		t.Fatalf("stdout = %q, want an uncovered-project explanation", got)
+	if !strings.Contains(got, "Languages: go") {
+		t.Fatalf("stdout = %q, want a covered Go project", got)
+	}
+	if !strings.Contains(got, "go build ./...") {
+		t.Fatalf("stdout = %q, want inferred go build", got)
 	}
 }
 
