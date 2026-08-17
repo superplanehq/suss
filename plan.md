@@ -17,7 +17,7 @@ Establish the Go module, the output contract, and the test harness.
 
 This milestone is executed in two phases with a human review checkpoint between them. The JSON schema and core types are the contract everything else inherits; an agent designing them needs to be supervised to avoid making dozens of small, plausible-looking decisions (enum spellings, how ambiguity nests, optional vs. required fields, the ID format) that are cheap to review now but expensive to unwind after several providers conform to them. The rest of the milestone is mechanical and safe to implement in one pass.
 
-### Phase 1a — Contract design (stop for human review)
+### Phase 1a — Contract design (stop for human review) — DONE
 
 Scope:
 
@@ -27,6 +27,8 @@ Scope:
 
 The phase ends with the schema, types, and examples presented for review. No further implementation until the contract is approved.
 
+Status: completed and approved after one review iteration. Notable contract decisions made during review: `run` is nullable and `null` is legal only on declared commands whose invocation is ambiguous; ambiguities and conflicts carry an optional `commandId` link; command IDs hash the source identity (project path, provider, source, pointer) and deliberately exclude the run text.
+
 ### Phase 1b — Skeleton implementation
 
 Scope:
@@ -35,6 +37,14 @@ Scope:
 - Project-root discovery (manifest-based: `package.json`, `go.mod`, `mix.exs`).
 - `suss . --json` producing a valid (if nearly empty) plan.
 - Golden-corpus snapshot harness: corpus repositories pinned by commit, expected plans checked in, `go test` compares detection output against them.
+
+Carry-overs from the phase 1a review (do not skip):
+
+- Add a Go test that validates every document in `schema/examples/` against `schema/plan.v1.schema.json` (e.g. `santhosh-tekuri/jsonschema`). Go decoding alone is weaker than the schema and permits drift; during review this validation was only performed ad hoc outside the test suite.
+- Add an emit-time validity check for the invariant JSON Schema cannot express: a command with `run: null` must be referenced by an ambiguity via `commandId`. Currently this is only documented on the `Command` type.
+- Define and document canonical sort ordering for all arrays in the output (projects, commands, evidence, and so on). Golden snapshots require byte-stable output.
+- The tests in `plan/types_test.go` have never been executed: there is no `go.mod` yet and the development machine had no Go toolchain during review. The hard-coded command IDs were verified out-of-band against an independent hash implementation, but running the suite is the first order of business once the module exists.
+- `TestNewDocumentInitializesRequiredCollections` asserts the marshaled JSON contains no `"null"` substring. This only holds because it marshals an empty project; a legitimate `run: null` would trip it. Tighten the assertion when extending the test.
 
 Acceptance:
 
