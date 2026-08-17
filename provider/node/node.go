@@ -33,6 +33,7 @@ func (Provider) Detect(ctx provider.Context) (provider.Result, error) {
 
 	var result provider.Result
 	result.Findings = append(result.Findings, languageFindings(ctx, manifest)...)
+	result.Findings = append(result.Findings, workspaceFindings(ctx, manifest)...)
 
 	choice, err := choosePackageManager(ctx, manifest)
 	if err != nil {
@@ -42,18 +43,24 @@ func (Provider) Detect(ctx provider.Context) (provider.Result, error) {
 	result.Ambiguities = append(result.Ambiguities, choice.ambiguities...)
 	result.Conflicts = append(result.Conflicts, choice.conflicts...)
 
-	install, err := installCommand(ctx, choice)
+	member, err := isWorkspaceMember(ctx)
 	if err != nil {
 		return provider.Result{}, err
 	}
-	if install.command != nil {
-		result.Findings = append(result.Findings, plan.CommandFinding{
-			ProjectPath: ctx.ProjectPath,
-			Detector:    providerName,
-			Command:     *install.command,
-		})
+	if !member {
+		install, err := installCommand(ctx, choice)
+		if err != nil {
+			return provider.Result{}, err
+		}
+		if install.command != nil {
+			result.Findings = append(result.Findings, plan.CommandFinding{
+				ProjectPath: ctx.ProjectPath,
+				Detector:    providerName,
+				Command:     *install.command,
+			})
+		}
+		result.Ambiguities = append(result.Ambiguities, install.ambiguities...)
 	}
-	result.Ambiguities = append(result.Ambiguities, install.ambiguities...)
 
 	scriptResult, err := scriptCommands(ctx, manifest, choice)
 	if err != nil {
@@ -77,6 +84,7 @@ type packageManifest struct {
 	PackageManager       string                     `json:"packageManager"`
 	Engines              map[string]json.RawMessage `json:"engines"`
 	Scripts              map[string]json.RawMessage `json:"scripts"`
+	Workspaces           json.RawMessage            `json:"workspaces"`
 	Dependencies         map[string]json.RawMessage `json:"dependencies"`
 	DevDependencies      map[string]json.RawMessage `json:"devDependencies"`
 	OptionalDependencies map[string]json.RawMessage `json:"optionalDependencies"`

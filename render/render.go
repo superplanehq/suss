@@ -155,15 +155,22 @@ func writeCommands(w io.Writer, title string, commands []plan.Command) {
 		if command.Run != nil {
 			run = *command.Run
 		}
-		fmt.Fprintf(w, "  %-*s  %s%s\n", width, command.Name, run, capabilitySuffix(command))
+		fmt.Fprintf(w, "  %-*s  %s%s\n", width, oneLine(command.Name), oneLine(run), capabilitySuffix(command))
+		for _, variant := range command.Variants {
+			fmt.Fprintf(w, "    %s  %s\n", oneLine(variant.Context), oneLine(variant.Run))
+		}
 	}
+}
+
+func oneLine(value string) string {
+	return strings.Join(strings.Fields(value), " ")
 }
 
 func commandNameWidth(commands []plan.Command) int {
 	width := 0
 	for _, command := range commands {
-		if len(command.Name) > width {
-			width = len(command.Name)
+		if n := len(oneLine(command.Name)); n > width {
+			width = n
 		}
 	}
 	return width
@@ -290,6 +297,9 @@ func uniqueSources(project plan.ProjectPlan) []string {
 		visit(command.Evidence)
 		for _, interpretation := range command.Interpretations {
 			visit(interpretation.Evidence)
+		}
+		for _, variant := range command.Variants {
+			visit(variant.Evidence)
 		}
 	}
 	for _, ambiguity := range project.Ambiguities {

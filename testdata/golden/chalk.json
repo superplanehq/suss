@@ -52,6 +52,18 @@
               "kind": "declaration",
               "source": "package.json",
               "pointer": "/engines/node"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/main.yml",
+              "pointer": "/jobs/test/steps/1/with/node-version",
+              "description": "CI tests node 22 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/main.yml",
+              "pointer": "/jobs/test/steps/1/with/node-version",
+              "description": "CI tests node 26 as part of a job matrix."
             }
           ]
         }
@@ -90,7 +102,21 @@
               ]
             }
           ],
-          "variants": []
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm install",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/main.yml",
+                  "pointer": "/jobs/test/steps/2/run"
+                }
+              ]
+            }
+          ]
         }
       ],
       "commands": [
@@ -165,7 +191,21 @@
               ]
             }
           ],
-          "variants": []
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm test",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/main.yml",
+                  "pointer": "/jobs/test/steps/3/run"
+                }
+              ]
+            }
+          ]
         }
       ],
       "ambiguities": [],

@@ -100,7 +100,13 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 			Confidence: plan.ConfidenceHigh,
 			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json", Pointer: "/scripts/test"}},
 		}},
-		Variants: []plan.CommandVariant{},
+		Variants: []plan.CommandVariant{{
+			Context:    "ci",
+			Run:        "npm test --coverage",
+			Directory:  ".",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/test/steps/2/run"}},
+		}},
 	}}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
@@ -110,13 +116,46 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		"Package managers: npm",
 		"npm ci",
 		"npm test",
+		"ci  npm test --coverage",
 		"eslint is configured. No command interpreted as code.lint was found.",
 		"package.json",
 		"eslint.config.js",
+		".github/workflows/ci.yml",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("output %q, want %q", got, want)
 		}
+	}
+}
+
+func TestWriteKeepsMultilineCommandRunsOnOneLine(t *testing.T) {
+	t.Parallel()
+
+	run := "# into K buckets\n# suite leftover"
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{
+		Name:       "javascript",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:         plan.CommandID("cmd_cccccccccccccccccccccccccccccccc"),
+		Name:       "# into",
+		Run:        &run,
+		Directory:  ".",
+		Scope:      plan.ScopeProject,
+		Origin:     plan.CommandObserved,
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml"}},
+		Variants:   []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
+	if strings.Contains(got, "\n# suite leftover") {
+		t.Fatalf("output %q, want the run collapsed onto one line", got)
+	}
+	if !strings.Contains(got, "# into K buckets # suite leftover") {
+		t.Fatalf("output %q, want collapsed run text", got)
 	}
 }
 

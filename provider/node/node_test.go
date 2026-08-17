@@ -350,6 +350,74 @@ func TestDetectReportsNpmCiForShrinkwrapInACompetingInstallAmbiguity(t *testing.
 	}
 }
 
+func TestDetectReportsWorkspaceOrchestratorsAndRepositoryScope(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"package.json": `{
+			"packageManager": "pnpm@9.15.0",
+			"scripts": {"test": "vitest"}
+		}`,
+		"pnpm-workspace.yaml": "packages:\n  - packages/*\n",
+		"pnpm-lock.yaml":      "lockfileVersion: '9.0'\n",
+		"turbo.json":          "{}\n",
+	})
+	project := assembleProject(t, ".", result)
+
+	got := factValues(project.Facts, "workspace.orchestrator")
+	if !slices.Equal(sortedCopy(got), []string{"pnpm", "turbo"}) {
+		t.Fatalf("workspace.orchestrator = %v, want pnpm and turbo", got)
+	}
+	if len(project.Commands) == 0 || project.Commands[0].Scope != plan.ScopeRepository {
+		t.Fatalf("commands = %+v, want repository scope", project.Commands)
+	}
+	if len(project.Preparation) == 0 || project.Preparation[0].Scope != plan.ScopeRepository {
+		t.Fatalf("preparation = %+v, want repository scope", project.Preparation)
+	}
+}
+
+func TestDetectInheritsAncestorPackageManagerAndSkipsMemberInstall(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "package.json"), `{"packageManager": "yarn@1.22.22", "workspaces": ["packages/*"]}`)
+	writeFile(t, filepath.Join(root, "yarn.lock"), "# yarn lockfile v1\n")
+	writeFile(t, filepath.Join(root, "packages", "app", "package.json"), `{"scripts": {"test": "vitest"}}`)
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "packages/app"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	project := assembleProject(t, "packages/app", result)
+
+	if got := namesOfTools(project.PackageManagers); !slices.Equal(got, []string{"yarn"}) {
+		t.Fatalf("packageManagers = %v, want yarn inherited from the workspace root", got)
+	}
+	if len(project.Preparation) != 0 {
+		t.Fatalf("preparation = %+v, want none on a workspace member", project.Preparation)
+	}
+	test := commandByName(t, project, "test")
+	if deref(test.Run) != "yarn run test" {
+		t.Fatalf("test run = %q, want yarn run test", deref(test.Run))
+	}
+	if test.Scope != plan.ScopeProject {
+		t.Fatalf("member command scope = %q, want project", test.Scope)
+	}
+}
+
+func TestDetectReportsYarnWorkspacesFromPackageJSON(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"package.json": `{"packageManager": "yarn@1.22.22", "workspaces": ["packages/*"]}`,
+		"yarn.lock":    "# yarn lockfile v1\n",
+	})
+	project := assembleProject(t, ".", result)
+	if got := factValues(project.Facts, "workspace.orchestrator"); !slices.Equal(got, []string{"yarn"}) {
+		t.Fatalf("workspace.orchestrator = %v, want yarn", got)
+	}
+}
+
 func TestDetectUsesRepositoryRelativeSourcesForNestedProjects(t *testing.T) {
 	t.Parallel()
 
@@ -421,6 +489,14 @@ func assembleProject(t *testing.T, path string, result provider.Result) plan.Pro
 	}
 	project.Ambiguities = result.Ambiguities
 	project.Conflicts = result.Conflicts
+	if hasFact(project.Facts, "workspace.orchestrator") {
+		for i := range project.Commands {
+			project.Commands[i].Scope = plan.ScopeRepository
+		}
+		for i := range project.Preparation {
+			project.Preparation[i].Scope = plan.ScopeRepository
+		}
+	}
 	document := plan.NewDocument([]plan.ProjectPlan{project})
 	document.Sort()
 	if err := document.Validate(); err != nil {
@@ -535,6 +611,21 @@ func requirementByVersion(t *testing.T, requirements []plan.Requirement, version
 	}
 	t.Fatalf("node %s not found in %+v", version, requirements)
 	return plan.Requirement{}
+}
+
+func hasFact(facts []plan.ProjectFact, name string) bool {
+	for _, fact := range facts {
+		if fact.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func sortedCopy(values []string) []string {
+	out := append([]string{}, values...)
+	slices.Sort(out)
+	return out
 }
 
 func deref(value *string) string {

@@ -37,11 +37,19 @@ var corpus = []corpusEntry{
 	{name: "node-competing-lockfiles", fixture: "node-competing-lockfiles", golden: "node-competing-lockfiles.json"},
 	{name: "node-config-only", fixture: "node-config-only", golden: "node-config-only.json"},
 	{name: "fixture-paths", fixture: "fixture-paths", golden: "fixture-paths.json"},
+	{name: "gha-node", fixture: "gha-node", golden: "gha-node.json"},
+	{name: "gha-workspace", fixture: "gha-workspace", golden: "gha-workspace.json"},
 	{
 		name:   "chalk",
 		gitURL: "https://github.com/chalk/chalk.git",
 		commit: "661317e6f91fe7c90306c2c48ea9354562ee9146",
 		golden: "chalk.json",
+	},
+	{
+		name:   "excalidraw",
+		gitURL: "https://github.com/excalidraw/excalidraw.git",
+		commit: "e160ff7ba0641fba729c528482de5277ffb19c58",
+		golden: "excalidraw.json",
 	},
 }
 

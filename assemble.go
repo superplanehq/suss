@@ -23,7 +23,29 @@ func assemble(path string, result provider.Result) plan.ProjectPlan {
 	}
 	project.Ambiguities = append(project.Ambiguities, result.Ambiguities...)
 	project.Conflicts = append(project.Conflicts, result.Conflicts...)
+	applyWorkspaceScope(&project)
 	return project
+}
+
+func applyWorkspaceScope(project *plan.ProjectPlan) {
+	if !hasWorkspaceOrchestrator(*project) {
+		return
+	}
+	for i := range project.Commands {
+		project.Commands[i].Scope = plan.ScopeRepository
+	}
+	for i := range project.Preparation {
+		project.Preparation[i].Scope = plan.ScopeRepository
+	}
+}
+
+func hasWorkspaceOrchestrator(project plan.ProjectPlan) bool {
+	for _, fact := range project.Facts {
+		if fact.Name == "workspace.orchestrator" {
+			return true
+		}
+	}
+	return false
 }
 
 func applyProperty(project *plan.ProjectPlan, property plan.Property) {

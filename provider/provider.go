@@ -32,7 +32,8 @@ func (c Context) SourcePath(name string) string {
 
 // Result is the set of observations one provider emits for one project.
 // Ambiguities and conflicts that are closed inside a single provider are
-// included here; cross-provider reconciliation happens later.
+// included here; cross-provider reconciliation is applied after all providers
+// have run.
 type Result struct {
 	Findings    []plan.Finding
 	Ambiguities []plan.Ambiguity

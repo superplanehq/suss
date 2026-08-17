@@ -124,20 +124,70 @@ func InterpretScript(script string) []Match {
 	return uniqueCapabilities(matches)
 }
 
+// Statement is one shell list element, with env prefixes and `cd` captured
+// rather than discarded. Variable expansion and subshells are not evaluated.
+type Statement struct {
+	Raw        string
+	EnvNames   []string
+	Chdir      string
+	Invocation Invocation
+}
+
 // ParseScript splits a script on common list operators and extracts
 // invocations. It does not expand variables or evaluate subshells.
 func ParseScript(script string) []Invocation {
 	var invocations []Invocation
-	for _, part := range splitCommandList(script) {
-		inv, ok := parseInvocation(part)
-		if ok {
-			invocations = append(invocations, inv)
+	for _, stmt := range ParseStatements(script) {
+		if stmt.Invocation.Executable == "" {
+			continue
 		}
+		invocations = append(invocations, stmt.Invocation)
 	}
 	return invocations
 }
 
-func splitCommandList(script string) []string {
+// ParseStatements splits a script on common list operators and keeps each
+// element's raw text, leading environment-variable names, and `cd` targets.
+func ParseStatements(script string) []Statement {
+	return parseStatements(script, true)
+}
+
+// ParseStatementsKeepPipelines is ParseStatements but treats `|` as part of
+// one command rather than a list operator. GitHub Actions run blocks should
+// preserve pipelines such as `curl | bash` as a single observed invocation.
+func ParseStatementsKeepPipelines(script string) []Statement {
+	return parseStatements(script, false)
+}
+
+func parseStatements(script string, splitPipes bool) []Statement {
+	parts := splitCommandList(script, splitPipes)
+	statements := make([]Statement, 0, len(parts))
+	for _, part := range parts {
+		statements = append(statements, parseStatement(part))
+	}
+	return statements
+}
+
+func parseStatement(part string) Statement {
+	stmt := Statement{Raw: part}
+	tokens := splitShell(part)
+	names, rest := takeLeadingAssignments(tokens)
+	stmt.EnvNames = names
+	if len(rest) >= 2 && rest[0] == "cd" {
+		stmt.Chdir = rest[1]
+		return stmt
+	}
+	if len(rest) == 1 && rest[0] == "cd" {
+		return stmt
+	}
+	inv, ok := parseInvocation(part)
+	if ok {
+		stmt.Invocation = inv
+	}
+	return stmt
+}
+
+func splitCommandList(script string, splitPipes bool) []string {
 	var parts []string
 	var current strings.Builder
 	inSingle, inDouble := false, false
@@ -160,6 +210,8 @@ func splitCommandList(script string) []string {
 		case r == '"' && !inSingle:
 			inDouble = !inDouble
 			current.WriteRune(r)
+		case startsComment(inSingle, inDouble, current.String()) && r == '#':
+			i = skipToNewline(runes, i)
 		case !inSingle && !inDouble && (r == ';' || r == '\n'):
 			flush()
 		case !inSingle && !inDouble && r == '&' && i+1 < len(runes) && runes[i+1] == '&':
@@ -168,7 +220,7 @@ func splitCommandList(script string) []string {
 		case !inSingle && !inDouble && r == '|' && i+1 < len(runes) && runes[i+1] == '|':
 			flush()
 			i++
-		case !inSingle && !inDouble && r == '|':
+		case splitPipes && !inSingle && !inDouble && r == '|':
 			flush()
 		default:
 			current.WriteRune(r)
@@ -206,12 +258,17 @@ func splitShell(part string) []string {
 		current.Reset()
 	}
 
-	for _, r := range part {
+	runes := []rune(part)
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
 		switch {
 		case r == '\'' && !inDouble:
 			inSingle = !inSingle
 		case r == '"' && !inSingle:
 			inDouble = !inDouble
+		case startsComment(inSingle, inDouble, current.String()) && r == '#':
+			flush()
+			return tokens
 		case unicode.IsSpace(r) && !inSingle && !inDouble:
 			flush()
 		default:
@@ -222,16 +279,40 @@ func splitShell(part string) []string {
 	return tokens
 }
 
+func startsComment(inSingle, inDouble bool, current string) bool {
+	if inSingle || inDouble {
+		return false
+	}
+	if current == "" {
+		return true
+	}
+	return unicode.IsSpace(rune(current[len(current)-1]))
+}
+
+func skipToNewline(runes []rune, i int) int {
+	for i+1 < len(runes) && runes[i+1] != '\n' {
+		i++
+	}
+	return i
+}
+
 func dropLeadingAssignments(tokens []string) []string {
+	_, rest := takeLeadingAssignments(tokens)
+	return rest
+}
+
+func takeLeadingAssignments(tokens []string) ([]string, []string) {
 	i := 0
+	var names []string
 	for i < len(tokens) {
 		name, _, ok := strings.Cut(tokens[i], "=")
 		if !ok || name == "" || strings.ContainsAny(name, "/\\") {
 			break
 		}
+		names = append(names, name)
 		i++
 	}
-	return tokens[i:]
+	return names, tokens[i:]
 }
 
 func dropWrappers(tokens []string) []string {
