@@ -652,37 +652,6 @@ The `test` argument in `suss run test` would be a query for a command interprete
 
 Separating detection and execution keeps the library safe for inspecting unfamiliar repositories.
 
-## Closest existing analogy
-
-The closest existing model is buildpack detection.
-
-Cloud Native Buildpacks inspect source files to determine which buildpacks participate in building an application. Paketo, for example, detects Node installation from files such as `package.json`.
-
-[Paketo buildpack detection](https://paketo.io/docs/concepts/buildpacks/)
-
-Nixpacks went further: its providers detect a language and generate setup, install, build, and start phases in a reusable plan.
-
-[Nixpacks plan model](https://nixpacks.com/docs/how-it-works)
-
-Suss is approximately:
-
-> Nixpacks-style detection for common developer operations, without requiring containerization or imposing a universal lifecycle.
-
-The distinction is that Suss also detects:
-
-- tests;
-- linting;
-- formatting;
-- type checking;
-- local execution commands;
-- CI-specific variants;
-- runtime versions;
-- required local services;
-- environment variable names;
-- repository-specific wrappers and task runners.
-
-Suss treats existing repository configuration as evidence rather than replacing it with a newly generated build system.
-
 ## A sharp v0
 
 The initial version should support:
