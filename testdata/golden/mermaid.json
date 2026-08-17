@@ -1,0 +1,3265 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "vite.config.ts"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "provider.github-actions.limitation",
+          "value": "reusable-workflows",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/pr-labeled.yml",
+              "pointer": "/jobs/e2e_full_argos/uses",
+              "description": "Reusable workflows are detected but not expanded."
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "eslint.config.js"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "prettier",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": ".prettierrc.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "tsconfig.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "vite.config.ts"
+            }
+          ]
+        },
+        {
+          "name": "workspace.orchestrator",
+          "value": "pnpm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "pnpm-workspace.yaml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": "24.16.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "declaration",
+              "source": ".node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/autofix.yml",
+              "pointer": "/jobs/autofix/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build-docs.yml",
+              "pointer": "/jobs/build-docs/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e-applitools.yml",
+              "pointer": "/jobs/e2e-applitools/steps/3/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e-timings.yml",
+              "pointer": "/jobs/timings/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e.yml",
+              "pointer": "/jobs/argos-batch/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e.yml",
+              "pointer": "/jobs/cache/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e.yml",
+              "pointer": "/jobs/detect-scope/steps/1/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e.yml",
+              "pointer": "/jobs/e2e/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/lint/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish-docs.yml",
+              "pointer": "/jobs/build-docs/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview-publish.yml",
+              "pointer": "/jobs/publish-preview/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview.yml",
+              "pointer": "/jobs/preview/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/unit-test/steps/2/with/node-version-file",
+              "description": "The setup action reads .node-version."
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "APPLITOOLS_API_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e-applitools.yml",
+              "pointer": "/jobs/e2e-applitools/steps/4/env/APPLITOOLS_API_KEY"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e-applitools.yml",
+              "pointer": "/jobs/e2e-applitools/steps/5/env/APPLITOOLS_API_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CYPRESS_RECORD_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e.yml",
+              "pointer": "/jobs/e2e/steps/7/env/CYPRESS_RECORD_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "USE_APPLI",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e-applitools.yml",
+              "pointer": "/env/USE_APPLI"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_ae21e52c391ccef56f7107de041061bb",
+          "name": "install dependencies",
+          "run": "pnpm install --frozen-lockfile",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "pnpm-frozen-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "pnpm-frozen-install"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm install --frozen-lockfile",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/autofix.yml",
+                  "pointer": "/jobs/autofix/steps/3/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_01820381f9edf10baac6d90fa56f8d39",
+          "name": "prepare",
+          "run": "pnpm run prepare",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/prepare"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_04e7aca1501e5dda009882a68c330257",
+          "name": "e2e:scope:detect",
+          "run": "pnpm run e2e:scope:detect",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/e2e:scope:detect"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0671213ce2833a8b29a4fa56f9b6ab7e",
+          "name": "argos upload",
+          "run": "npx argos upload cypress/argos-baseline      --files \"${globs[@]}\"      --parallel --parallel-total \"$K\" --parallel-index \"$i\"",
+          "directory": "cypress/argos-baseline",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e.yml",
+              "pointer": "/jobs/argos-batch/steps/7/run#command=31"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_08e0d67f1ec8ad77d160136c28f4a14d",
+          "name": "ci",
+          "run": "pnpm run ci",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/ci"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/ci",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_09257de1d82335d14053d91fbd71ae3f",
+          "name": "changeset:publish",
+          "run": "pnpm run changeset:publish",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/changeset:publish"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_11378cd9a3f7292c80eadaedf6ef3236",
+          "name": "dev:vite",
+          "run": "pnpm run dev:vite",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/dev:vite"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_156abf0f34d396242da4cba9fec7b6ef",
+          "name": "update-browserslist-db@latest",
+          "run": "npx update-browserslist-db@latest",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/update-browserlist.yml",
+              "pointer": "/jobs/update-browser-list/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_226e6788c9038d0617c8bef930aeb9b2",
+          "name": "docs:build:vitepress",
+          "run": "pnpm --filter mermaid run docs:build:vitepress",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build-docs.yml",
+              "pointer": "/jobs/build-docs/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2aa896d18531d4bcbc764523ab83889e",
+          "name": "swimlanes:size:baseline",
+          "run": "pnpm run swimlanes:size:baseline",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/swimlanes:size:baseline"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2b704756702da1698e6fab5d17513686",
+          "name": "copy:dompurify",
+          "run": "pnpm run copy:dompurify",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/copy:dompurify"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_30f5b16ecaf9f2c02dcea5d9ace39e13",
+          "name": "changeset:version",
+          "run": "pnpm run changeset:version",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/changeset:version"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_32c1778a71208c6a4430b68e634c78f1",
+          "name": "lint:jison",
+          "run": "pnpm run lint:jison",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/lint:jison"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_34042f0c5253df482d8b8eec4eca4014",
+          "name": "coverage",
+          "run": "pnpm run coverage",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/coverage"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3480a7c6312a666b62f3b9629103d986",
+          "name": "clean",
+          "run": "pnpm run clean",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_392188c7c453fe1ac699515fd71038d4",
+          "name": "test:check:tsc",
+          "run": "pnpm run test:check:tsc",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:check:tsc"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm test:check:tsc",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test.yml",
+                  "pointer": "/jobs/unit-test/steps/6/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_43b455a5b0f5a3e285fd7379c81fd4ab",
+          "name": "copy-readme",
+          "run": "pnpm run copy-readme",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/copy-readme"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_445f3ea3b0609fbab90bec45dab1bc53",
+          "name": "build:mermaid",
+          "run": "pnpm run build:mermaid",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:mermaid"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4eac52a91deb5bfd311e4c10fa0ac9ff",
+          "name": "dev",
+          "run": "pnpm run dev",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_570864b0a8a7a4bd136e3d73825b182b",
+          "name": "test:watch:em",
+          "run": "pnpm run test:watch:em",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:watch:em"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/test:watch:em",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_61087be06f340822da9fdb1f04441257",
+          "name": "e2e:coverage",
+          "run": "pnpm run e2e:coverage",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/e2e:coverage"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_61e382db9b563693be2db7d54c54877e",
+          "name": "e2e:scope:harness",
+          "run": "pnpm run e2e:scope:harness",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/e2e:scope:harness"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_631d2aed4af911e947159b6177b06bc9",
+          "name": "e2e:harness:coverage",
+          "run": "pnpm run e2e:harness:coverage",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/e2e:harness:coverage"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_66c71913a93033ee38d43c9f2e088704",
+          "name": "test",
+          "run": "pnpm run test",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/test",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_6c0ae7d6703992e50f491989c0366f5d",
+          "name": "build:coverage",
+          "run": "pnpm run build:coverage",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:coverage"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm build:coverage",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/e2e.yml",
+                  "pointer": "/jobs/e2e/steps/6/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_6fa71f98b63598aae50d94dd214acff1",
+          "name": "swimlanes:size:compare",
+          "run": "pnpm run swimlanes:size:compare",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/swimlanes:size:compare"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_74603592e2139bed0d1c132e0f45f4bf",
+          "name": "e2e:scope",
+          "run": "pnpm run e2e:scope",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/e2e:scope"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_778bd5326df8b0aec5ce2d92d6dcd631",
+          "name": "swimlanes:size",
+          "run": "pnpm run swimlanes:size",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/swimlanes:size"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_79d235f955cb33c239c5dcf4ce3ec833",
+          "name": "argos:batch",
+          "run": "pnpm run argos:batch",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/argos:batch"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm run argos:batch",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/e2e.yml",
+                  "pointer": "/jobs/argos-batch/steps/6/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_7a8a6675c11bfdd50c17b3ceec0fad45",
+          "name": "argos:canonicalize",
+          "run": "pnpm run argos:canonicalize",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/argos:canonicalize"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm run argos:canonicalize",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/e2e.yml",
+                  "pointer": "/jobs/argos-batch/steps/5/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_82da82a8023d8cc2e79e11dfe0f6028b",
+          "name": "docs:verify-version",
+          "run": "pnpm --filter mermaid run docs:verify-version",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build-docs.yml",
+              "pointer": "/jobs/build-docs/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8bb97172e6e2d010f1ca79b1c5104a0f",
+          "name": "build:mermaid:full",
+          "run": "pnpm run build:mermaid:full",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:mermaid:full"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_93896d801bbaebd62140b723652eca1a",
+          "name": "docs:build:vitepress",
+          "run": "pnpm --filter mermaid run docs:build:vitepress",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish-docs.yml",
+              "pointer": "/jobs/build-docs/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_965bc7e0da3fb77bf289a64f13e9955c",
+          "name": "lint:fix",
+          "run": "pnpm run lint:fix",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/lint:fix"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/lint:fix",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            },
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/lint:fix",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm -w run lint:fix",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/autofix.yml",
+                  "pointer": "/jobs/autofix/steps/4/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_97133dfd155081f8870e8a0ba6c94d26",
+          "name": "coverage:cypress:clean",
+          "run": "pnpm run coverage:cypress:clean",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/coverage:cypress:clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_996cd2120f6a6fe01f2af9b956bb778b",
+          "name": "tsx scripts/size.ts",
+          "run": "npx tsx scripts/size.ts >> \"$GITHUB_STEP_SUMMARY\"",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e.yml",
+              "pointer": "/jobs/e2e/steps/5/run#command=4"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_99e51cac96639a1d014e99b06d3a2cfc",
+          "name": "dev:coverage",
+          "run": "pnpm run dev:coverage",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/dev:coverage"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a0f24ac82b8102567c5b774467819360",
+          "name": "test:watch",
+          "run": "pnpm run test:watch",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:watch"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/test:watch",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_a64d63c8f30d78b5d35358aeb7b7ae64",
+          "name": "build:types",
+          "run": "pnpm run build:types",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:types"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ac1d00ae28290dacfd227b74a3abb62d",
+          "name": "build",
+          "run": "pnpm run build",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b08d8fac516abbad3a7b13a6272918f9",
+          "name": "pre-commit",
+          "run": "pnpm run pre-commit",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/pre-commit"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b1eaeeb16db6fb81fbedfe173d97c865",
+          "name": "build:esbuild",
+          "run": "pnpm run build:esbuild",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:esbuild"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b85246817178379e8d43adf7b641d73a",
+          "name": "e2e:harness",
+          "run": "pnpm run e2e:harness",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/e2e:harness"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c281083c9f49d7b437ccbd332daafb3b",
+          "name": "e2e:scope:run",
+          "run": "pnpm run e2e:scope:run",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/e2e:scope:run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c2a3895b1bbdaf6021a57bff5b4496cd",
+          "name": "vitest run",
+          "run": "pnpm exec vitest run ./packages/mermaid/src/diagrams/gantt/ganttDb.spec.ts",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/unit-test/steps/5/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test.yml",
+                  "pointer": "/jobs/unit-test/steps/5/run",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_c82219de565763e76cbf1f67a24e8809",
+          "name": "lint",
+          "run": "pnpm run lint",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/lint",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            },
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/lint",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_c85b4eaee931c391de37f6a604b1be97",
+          "name": "contributors",
+          "run": "pnpm run contributors",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/contributors"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c85e3afe98ec1e9bed05f13e4fc68c45",
+          "name": "copy:editor",
+          "run": "pnpm run copy:editor",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/copy:editor"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ca87ef19c61c8ee3665077cd294ff971",
+          "name": "build:types:watch",
+          "run": "pnpm run build:types:watch",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:types:watch"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/build:types:watch",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_d3f47506676ee4e1fdfe776aca10a5f7",
+          "name": "load:env",
+          "run": "pnpm run load:env",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/load:env"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d4dffeb3592ec55531e7b450ab28efcd",
+          "name": "build:viz",
+          "run": "pnpm run build:viz",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:viz"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm run build:viz",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/e2e.yml",
+                  "pointer": "/jobs/cache/steps/6/run#command=0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_d654effa16229e60dfdde18cc2e8f6e9",
+          "name": "cypress:open",
+          "run": "pnpm run cypress:open",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/cypress:open"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d68389baa5757b9901022c684c7dbe57",
+          "name": "test:coverage",
+          "run": "pnpm run test:coverage",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:coverage"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/test:coverage",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm test:coverage",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test.yml",
+                  "pointer": "/jobs/unit-test/steps/4/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_d80935a35917cf5879a2e61c9d37ae4d",
+          "name": "e2e",
+          "run": "pnpm run e2e",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/e2e"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d93c59f6a892a7e075f62b3bb5240e1e",
+          "name": "cypress",
+          "run": "pnpm run cypress",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/cypress"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e1bb900a144cf34ad5dc7c21c0a1dade",
+          "name": "types:build-config",
+          "run": "pnpm run --filter mermaid types:build-config",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/autofix.yml",
+              "pointer": "/jobs/autofix/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e6b469034c96c343827cc2447a226d30",
+          "name": "copy:mermaid",
+          "run": "pnpm run copy:mermaid",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/copy:mermaid"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e6d933b40d24a5b650153eecdb682502",
+          "name": "serve:dist",
+          "run": "pnpm run serve:dist",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/serve:dist"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f0691675256f19f2dab3dd9550c8253b",
+          "name": "renovate renovate-config-validator",
+          "run": "npx --yes --package renovate -- renovate-config-validator",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/renovatebot-config-lint.yml",
+              "pointer": "/jobs/lint/steps/1/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f5097a014a6b44a9bdcee05b420f1545",
+          "name": "coverage:merge",
+          "run": "pnpm run coverage:merge",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/coverage:merge"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f75a429992b85426849feba2fcdbc1b7",
+          "name": "pkg-pr-new publish",
+          "run": "pnpx pkg-pr-new publish --pnpm './packages/*'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview.yml",
+              "pointer": "/jobs/preview/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fabed040140e5b427cf51a533147f2ae",
+          "name": "swimlanes:size:check",
+          "run": "pnpm run swimlanes:size:check",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/swimlanes:size:check"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/examples",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/examples/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/examples/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "packages/examples",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/examples/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_81e31c3987d2e29f3bc33cfe01d22a55",
+          "name": "clean",
+          "run": "pnpm run clean",
+          "directory": "packages/examples",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/examples/package.json",
+              "pointer": "/scripts/clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/mermaid",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_0695a70b48c6d60e725f1bc689c652f7",
+          "name": "npm set",
+          "run": "npm set registry https://npm.pkg.github.com/mermaid-js",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview-publish.yml",
+              "pointer": "/jobs/publish-preview/steps/5/run#command=5"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_13efa64b88f2bcf871ccdcd7263ea922",
+          "name": "docs:dev:docker",
+          "run": "pnpm run docs:dev:docker",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:dev:docker"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_259d3182f582ba8f3d65cf44a4cc2c7d",
+          "name": "docs:build:vitepress",
+          "run": "pnpm run docs:build:vitepress",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:build:vitepress"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_307dc07674f80a4425c1aa28e3bd7710",
+          "name": "docs:spellcheck",
+          "run": "pnpm run docs:spellcheck",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:spellcheck"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3b1bbb04a0028b52ffb58c0dbb96f04a",
+          "name": "npm version",
+          "run": "npm version --no-git-tag-version --allow-same-version $VERSION",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview-publish.yml",
+              "pointer": "/jobs/publish-preview/steps/5/run#command=3"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4b77abd26c3e61481be20728cb5c860a",
+          "name": "docs:pre:vitepress",
+          "run": "pnpm run docs:pre:vitepress",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:pre:vitepress"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_5248878e1c3ea8c802ed47f51154c250",
+          "name": "json package.json",
+          "run": "json -I -f package.json -e 'this.bundleDependencies??=[]' -e 'this.bundleDependencies.push(\"@mermaid-js/parser\")'",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview-publish.yml",
+              "pointer": "/jobs/publish-preview/steps/5/run#command=8"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_588e6d990d70681590f0bbbc44f5b4f7",
+          "name": "types:verify-config",
+          "run": "pnpm run types:verify-config",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/types:verify-config"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_64bca2a9a750c9650f5925c2a2654a68",
+          "name": "docs:serve",
+          "run": "pnpm run docs:serve",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:serve"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_64c9d136fd83bf9aac25011c57bd8989",
+          "name": "npm publish",
+          "run": "npm publish --tag preview *.tgz",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview-publish.yml",
+              "pointer": "/jobs/publish-preview/steps/5/run#command=10"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_65175ddf5e3e30596d5d09bb451dc244",
+          "name": "docs:verify-version",
+          "run": "pnpm run docs:verify-version",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:verify-version"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6591976d59a20caebe34f52aa4c52cf8",
+          "name": "clean",
+          "run": "pnpm run clean",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6995da08fa8992279a5c85e8a3c31380",
+          "name": "types:build-config",
+          "run": "pnpm run types:build-config",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/types:build-config"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_69b54d7c20d7a5339e230b5f1debf34e",
+          "name": "json package.json",
+          "run": "json -I -f package.json -e 'this.name=\"@mermaid-js/mermaid\"'",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview-publish.yml",
+              "pointer": "/jobs/publish-preview/steps/5/run#command=6"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_756d07d347267949e734ccede1227b36",
+          "name": "docs:dev",
+          "run": "pnpm run docs:dev",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:dev"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8e6041c500ee2f2dbef59fc816906ee3",
+          "name": "checkCircle",
+          "run": "pnpm run checkCircle",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/checkCircle"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9bcb505e5d13b63fd58cf9270b963dee",
+          "name": "dev",
+          "run": "pnpm run dev",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_bcab58ea66bb3fae2fc05390ea0cdb7e",
+          "name": "docs:build",
+          "run": "pnpm run docs:build",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:build"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm run docs:build",
+              "directory": "packages/mermaid",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/autofix.yml",
+                  "pointer": "/jobs/autofix/steps/6/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_bfed9dc4668344c2e8f68bc4f97968cf",
+          "name": "npm set",
+          "run": "npm set //npm.pkg.github.com/:_authToken \"${GITHUB_TOKEN}\"",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview-publish.yml",
+              "pointer": "/jobs/publish-preview/steps/5/run#command=4"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d1a136b1aaf07166f3bf97d1b974a963",
+          "name": "prepublishOnly",
+          "run": "pnpm run prepublishOnly",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/prepublishOnly"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d8b0505bd9f6572f70ab8b69a5c0373c",
+          "name": "docs:verify",
+          "run": "pnpm run docs:verify",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:verify"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm run docs:verify",
+              "directory": "packages/mermaid",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint.yml",
+                  "pointer": "/jobs/lint/steps/7/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_ddb41946f6d32c7e4e8fde67e7b216df",
+          "name": "docs:code",
+          "run": "pnpm run docs:code",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:code"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "packages/mermaid/package.json",
+                  "pointer": "/scripts/docs:code",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_e06f27ae88cf4b4c7bb513eea89a5090",
+          "name": "docs:release-version",
+          "run": "pnpm run docs:release-version",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/package.json",
+              "pointer": "/scripts/docs:release-version"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f8e55b62d82e748fb62522806ffc3e59",
+          "name": "pnpm pack",
+          "run": "pnpm pack",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview-publish.yml",
+              "pointer": "/jobs/publish-preview/steps/5/run#command=9"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fc332c2cb5e25fd0d731b899649009a3",
+          "name": "json package.json",
+          "run": "json -I -f package.json -e 'this.repository=\"git://github.com/mermaid-js/mermaid\"'",
+          "directory": "packages/mermaid",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview-publish.yml",
+              "pointer": "/jobs/publish-preview/steps/5/run#command=7"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/mermaid-example-diagram",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid-example-diagram/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid-example-diagram/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid-example-diagram/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/mermaid-layout-elk",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid-layout-elk/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid-layout-elk/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid-layout-elk/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_a69c4c47cdcfd2872f7b160211d011d0",
+          "name": "clean",
+          "run": "pnpm run clean",
+          "directory": "packages/mermaid-layout-elk",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid-layout-elk/package.json",
+              "pointer": "/scripts/clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/mermaid-layout-tidy-tree",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid-layout-tidy-tree/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid-layout-tidy-tree/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid-layout-tidy-tree/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_e1b0761f693ec6fa1b167b37bae23e18",
+          "name": "clean",
+          "run": "pnpm run clean",
+          "directory": "packages/mermaid-layout-tidy-tree",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid-layout-tidy-tree/package.json",
+              "pointer": "/scripts/clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/mermaid-local-editor",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid-local-editor/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [],
+      "preparation": [],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/mermaid-zenuml",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid-zenuml/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid-zenuml/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid-zenuml/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_0838209cfc4bd39279ffe68ac71ecd57",
+          "name": "clean",
+          "run": "pnpm run clean",
+          "directory": "packages/mermaid-zenuml",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid-zenuml/package.json",
+              "pointer": "/scripts/clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/mermaid/src/docs",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid/src/docs/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid/src/docs/vite.config.ts"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid/src/docs/tsconfig.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/mermaid/src/docs/vite.config.ts"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_10788cf16b1c276adcc3df827577fc16",
+          "name": "build-no-prefetch",
+          "run": "pnpm run build-no-prefetch",
+          "directory": "packages/mermaid/src/docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json",
+              "pointer": "/scripts/build-no-prefetch"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3ce6cd6f8357ed692abdbad128fc0e18",
+          "name": "preview-https",
+          "run": "pnpm run preview-https",
+          "directory": "packages/mermaid/src/docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json",
+              "pointer": "/scripts/preview-https"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4122ab4ec460c69f4b61e208ee0051f7",
+          "name": "dev",
+          "run": "pnpm run dev",
+          "directory": "packages/mermaid/src/docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_49a23affd2d7df5134ea966b3b728a52",
+          "name": "fetch-contributors",
+          "run": "pnpm run fetch-contributors",
+          "directory": "packages/mermaid/src/docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json",
+              "pointer": "/scripts/fetch-contributors"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_797523390ecabc570b9148496e094d36",
+          "name": "dev:docker",
+          "run": "pnpm run dev:docker",
+          "directory": "packages/mermaid/src/docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json",
+              "pointer": "/scripts/dev:docker"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8ffe8ccef788e0010ce1813fce5cf3c8",
+          "name": "prefetch",
+          "run": "pnpm run prefetch",
+          "directory": "packages/mermaid/src/docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json",
+              "pointer": "/scripts/prefetch"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_abe03c4a0e0fb3e72d60ceb2bcda415e",
+          "name": "serve",
+          "run": "pnpm run serve",
+          "directory": "packages/mermaid/src/docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json",
+              "pointer": "/scripts/serve"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b389cf88706a37432a05fd2152c1aec9",
+          "name": "fetch-avatars",
+          "run": "pnpm run fetch-avatars",
+          "directory": "packages/mermaid/src/docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json",
+              "pointer": "/scripts/fetch-avatars"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b5930b08f5e184c3ccb30c3ccf14d6aa",
+          "name": "preview-https-no-prefetch",
+          "run": "pnpm run preview-https-no-prefetch",
+          "directory": "packages/mermaid/src/docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json",
+              "pointer": "/scripts/preview-https-no-prefetch"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_de72045ea5a6ed6e1b07036afb5ea6d1",
+          "name": "build",
+          "run": "pnpm run build",
+          "directory": "packages/mermaid/src/docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/mermaid/src/docs/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/parser",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/parser/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/parser/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/parser/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_090f221d5e86cf14319dd6ddc5d35265",
+          "name": "langium:watch",
+          "run": "pnpm run langium:watch",
+          "directory": "packages/parser",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/parser/package.json",
+              "pointer": "/scripts/langium:watch"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_11b4147fc46bb9f8cc8ea1ef450fcd2d",
+          "name": "langium:generate",
+          "run": "pnpm run langium:generate",
+          "directory": "packages/parser",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/parser/package.json",
+              "pointer": "/scripts/langium:generate"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_af6cd5bf4b59ea4a5b87ec8be14750f3",
+          "name": "prepack",
+          "run": "pnpm run prepack",
+          "directory": "packages/parser",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/parser/package.json",
+              "pointer": "/scripts/prepack"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b9e2f8defe13c6580011ddfd0ae4e62c",
+          "name": "clean",
+          "run": "pnpm run clean",
+          "directory": "packages/parser",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/parser/package.json",
+              "pointer": "/scripts/clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/tiny",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/tiny/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_f735a3ef949ee42b901a1e0a2791dac6",
+          "name": "clean",
+          "run": "pnpm run clean",
+          "directory": "packages/tiny",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/tiny/package.json",
+              "pointer": "/scripts/clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "tests/webpack",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tests/webpack/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "10.30.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_32f0b4b2d959bd04cfc1f464b2f85158",
+          "name": "serve",
+          "run": "pnpm run serve",
+          "directory": "tests/webpack",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tests/webpack/package.json",
+              "pointer": "/scripts/serve"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3fa9ef868374bf98d753961fbcb1700f",
+          "name": "build",
+          "run": "pnpm run build",
+          "directory": "tests/webpack",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tests/webpack/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

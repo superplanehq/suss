@@ -51,6 +51,12 @@ var corpus = []corpusEntry{
 		commit: "e160ff7ba0641fba729c528482de5277ffb19c58",
 		golden: "excalidraw.json",
 	},
+	{
+		name:   "mermaid",
+		gitURL: "https://github.com/mermaid-js/mermaid.git",
+		commit: "9ac963518542234a23a6bd2880d74391aaa06236",
+		golden: "mermaid.json",
+	},
 }
 
 func TestCorpusSnapshots(t *testing.T) {

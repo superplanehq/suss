@@ -4,6 +4,7 @@
 package render
 
 import (
+	"cmp"
 	"fmt"
 	"io"
 	"slices"
@@ -149,6 +150,7 @@ func writeCommands(w io.Writer, title string, commands []plan.Command) {
 		return
 	}
 	fmt.Fprintf(w, "\n%s:\n", title)
+	commands = commandsForDisplay(commands)
 	width := commandNameWidth(commands)
 	for _, command := range commands {
 		run := "(unresolved invocation)"
@@ -160,6 +162,24 @@ func writeCommands(w io.Writer, title string, commands []plan.Command) {
 			fmt.Fprintf(w, "    %s  %s\n", oneLine(variant.Context), oneLine(variant.Run))
 		}
 	}
+}
+
+func commandsForDisplay(commands []plan.Command) []plan.Command {
+	out := slices.Clone(commands)
+	slices.SortStableFunc(out, func(a, b plan.Command) int {
+		aKnown, bKnown := len(a.Interpretations) > 0, len(b.Interpretations) > 0
+		if aKnown != bKnown {
+			if aKnown {
+				return -1
+			}
+			return 1
+		}
+		if n := cmp.Compare(capabilitySuffix(a), capabilitySuffix(b)); n != 0 {
+			return n
+		}
+		return cmp.Compare(a.Name, b.Name)
+	})
+	return out
 }
 
 func oneLine(value string) string {

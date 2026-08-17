@@ -96,6 +96,7 @@ Acceptance:
 
 - Golden plan for `excalidraw/excalidraw` is correct: workspace facts, root scripts, CI variants linked to declared tasks, unlinked CI commands reported honestly.
 - If the reconciliation model does not survive contact with excalidraw's workflows, stop and revise idea.md before proceeding.
+- Extra corpus pin: `mermaid-js/mermaid`. A messy GHA-heavy pnpm workspace. The basics match the contributing guide (pnpm, `pnpm install`, `pnpm test`, `pnpm run build`, `pnpm run dev`); remaining declared scripts and uninterpreted CI tools are listed without guessing. CI unix/VCS plumbing is not a plan command. Environment names are CI secrets plus workflow-level literals, not job wiring.
 
 ## Milestone 4 — Go provider and convention inference
 

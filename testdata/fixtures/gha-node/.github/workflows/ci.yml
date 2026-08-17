@@ -1,0 +1,20 @@
+name: CI
+on: [push]
+env:
+  APP_URL: http://localhost
+  API_TOKEN: ${{ secrets.API_TOKEN }}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm test -- --run
+      - run: npm run lint
+      - run: node scripts/check-generated.mjs

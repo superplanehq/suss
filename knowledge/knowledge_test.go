@@ -227,6 +227,28 @@ func TestClassifyManagerTreatsYarnScriptAndInstall(t *testing.T) {
 	}
 }
 
+func TestClassifyManagerReadsPnpmFilterAndSkipsGlobalInstall(t *testing.T) {
+	t.Parallel()
+
+	filtered, ok := ClassifyManager(Invocation{Executable: "pnpm", Args: []string{"--filter", "mermaid", "run", "docs:build:vitepress"}})
+	if !ok || filtered.Script != "docs:build:vitepress" || filtered.Install {
+		t.Fatalf("ClassifyManager(pnpm --filter … run) = %+v, ok=%v", filtered, ok)
+	}
+
+	runFilter, ok := ClassifyManager(Invocation{Executable: "pnpm", Args: []string{"run", "--filter", "mermaid", "types:build-config"}})
+	if !ok || runFilter.Script != "types:build-config" {
+		t.Fatalf("ClassifyManager(pnpm run --filter) = %+v, ok=%v", runFilter, ok)
+	}
+
+	global, ok := ClassifyManager(Invocation{Executable: "npm", Args: []string{"i", "json@11.0.0", "--global"}})
+	if !ok || global.Install || global.Script != "" {
+		t.Fatalf("ClassifyManager(npm i --global) = %+v, ok=%v", global, ok)
+	}
+	if !IsGlobalInstall(Invocation{Executable: "npm", Args: []string{"install", "-g", "npm@11"}}) {
+		t.Fatal("IsGlobalInstall(npm install -g) = false, want true")
+	}
+}
+
 func statementRaws(statements []Statement) []string {
 	if len(statements) == 0 {
 		return nil

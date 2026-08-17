@@ -128,6 +128,76 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 	}
 }
 
+func TestWriteListsInterpretedCommandsFirst(t *testing.T) {
+	t.Parallel()
+
+	unknown := "pnpm run e2e:harness:coverage"
+	testRun := "pnpm run test"
+	lintRun := "pnpm run lint"
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{
+		Name:       "javascript",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json"}},
+	}}
+	project.Commands = []plan.Command{
+		{
+			ID:         plan.CommandID("cmd_11111111111111111111111111111111"),
+			Name:       "e2e:harness:coverage",
+			Run:        &unknown,
+			Directory:  ".",
+			Scope:      plan.ScopeProject,
+			Origin:     plan.CommandDeclared,
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json"}},
+			Variants:   []plan.CommandVariant{},
+		},
+		{
+			ID:         plan.CommandID("cmd_22222222222222222222222222222222"),
+			Name:       "test",
+			Run:        &testRun,
+			Directory:  ".",
+			Scope:      plan.ScopeProject,
+			Origin:     plan.CommandDeclared,
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json"}},
+			Interpretations: []plan.Interpretation{{
+				Capability: plan.CapabilityTestRun,
+				Confidence: plan.ConfidenceHigh,
+				Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json"}},
+			}},
+			Variants: []plan.CommandVariant{},
+		},
+		{
+			ID:         plan.CommandID("cmd_33333333333333333333333333333333"),
+			Name:       "lint",
+			Run:        &lintRun,
+			Directory:  ".",
+			Scope:      plan.ScopeProject,
+			Origin:     plan.CommandDeclared,
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json"}},
+			Interpretations: []plan.Interpretation{{
+				Capability: plan.CapabilityCodeLint,
+				Confidence: plan.ConfidenceHigh,
+				Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json"}},
+			}},
+			Variants: []plan.CommandVariant{},
+		},
+	}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
+	lintAt := strings.Index(got, "lint")
+	testAt := strings.Index(got, "test")
+	unknownAt := strings.Index(got, "e2e:harness:coverage")
+	if lintAt < 0 || testAt < 0 || unknownAt < 0 {
+		t.Fatalf("output %q, want lint, test, and e2e:harness:coverage", got)
+	}
+	if !(lintAt < testAt && testAt < unknownAt) {
+		t.Fatalf("output %q, want interpreted commands before uninterpreted", got)
+	}
+}
+
 func TestWriteKeepsMultilineCommandRunsOnOneLine(t *testing.T) {
 	t.Parallel()
 

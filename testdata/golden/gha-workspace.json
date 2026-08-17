@@ -1,0 +1,307 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "workspace.orchestrator",
+          "value": "yarn",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/workspaces"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": "20",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/1/with/node-version"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_ae21e52c391ccef56f7107de041061bb",
+          "name": "install dependencies",
+          "run": "yarn install --frozen-lockfile",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "yarn-frozen"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "yarn-frozen"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn install --frozen-lockfile",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/2/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_508a9378b52b9e4ea0c23b26a6c1fbb1",
+          "name": "docker build",
+          "run": "docker build -t app .",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_66c71913a93033ee38d43c9f2e088704",
+          "name": "test",
+          "run": "yarn run test",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/test",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn test --watch=false",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/3/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_c82219de565763e76cbf1f67a24e8809",
+          "name": "lint",
+          "run": "yarn run lint",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/lint",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/app",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/app/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_d8b25b8fbc922add338d19644970b108",
+          "name": "test",
+          "run": "yarn run test",
+          "directory": "packages/app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/app/package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "packages/app/package.json",
+                  "pointer": "/scripts/test",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn --cwd ./packages/app test",
+              "directory": "packages/app",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/4/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}
