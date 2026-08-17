@@ -1,0 +1,26 @@
+# Pinned to golangci-lint v2.12.2 (same version as CI).
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - revive
+    - misspell
+    - unconvert
+    - unparam
+  settings:
+    errcheck:
+      # Renderer and CLI write to caller-supplied writers; checking every write would dominate the call sites.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+    revive:
+      enable-default-rules: true
+      rules:
+        # Exported identifiers are already documented at the type; per-const comments would only restate the name.
+        - name: exported
+          disabled: true
+        # Requiring a package comment in every file (or on package main) adds boilerplate without information.
+        - name: package-comments
+          disabled: true

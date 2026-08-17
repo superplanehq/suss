@@ -139,7 +139,11 @@ func TestExamplesDecodeIntoContractTypes(t *testing.T) {
 			if err != nil {
 				t.Fatalf("os.Open() error = %v", err)
 			}
-			defer file.Close()
+			defer func() {
+				if err := file.Close(); err != nil {
+					t.Errorf("file.Close() error = %v", err)
+				}
+			}()
 
 			decoder := json.NewDecoder(file)
 			decoder.DisallowUnknownFields()

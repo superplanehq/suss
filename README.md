@@ -28,15 +28,12 @@ Without `--json`, Suss prints a human-readable plan. With `--json`, it emits the
 
 ## Test
 
-```text
-go test ./...
-```
-
-CI also runs `gofmt` and `go vet`. Corpus snapshots live under `testdata/golden/`. Remote corpus repositories are shallow-fetched into `testdata/cache/` on first run.
+`make check` runs the full local gate (format, lint, race tests, module tidiness, vulnerability scan) and is what CI enforces.
 
 ```text
-gofmt -l .
-go vet ./...
+make check
 ```
+
+Corpus snapshots live under `testdata/golden/`. Remote corpus repositories are shallow-fetched into `testdata/cache/` on first run.
 
 Licensed under the Apache License, Version 2.0.

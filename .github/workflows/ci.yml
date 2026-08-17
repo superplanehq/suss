@@ -23,10 +23,21 @@ jobs:
           cache: true
 
       - name: Format
-        run: test -z "$(gofmt -l .)"
+        run: make fmt-check
 
-      - name: Vet
-        run: go vet ./...
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
 
       - name: Test
-        run: go test ./...
+        run: make test
+
+      - name: Tidy
+        run: make tidy-check
+
+      - name: Vuln
+        run: make vuln
+
+      - name: Coverage
+        run: make cover

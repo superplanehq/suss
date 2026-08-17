@@ -262,8 +262,7 @@ func writeEvidence(w io.Writer, project plan.ProjectPlan) {
 
 func uniqueSources(project plan.ProjectPlan) []string {
 	seen := make(map[string]struct{})
-	var visit func(evidence []plan.Evidence)
-	visit = func(evidence []plan.Evidence) {
+	visit := func(evidence []plan.Evidence) {
 		for _, item := range evidence {
 			if item.Kind == plan.EvidenceConvention {
 				continue
