@@ -1,0 +1,213 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "vite.config.ts"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "package-lock.json",
+              "description": "The lockfile may be stale because package.json selects pnpm."
+            }
+          ]
+        },
+        {
+          "name": "pnpm",
+          "version": "9.15.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "environment",
+          "name": "SENTRY_AUTH_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/build/env/SENTRY_AUTH_TOKEN",
+              "description": "The variable is supplied from a CI secret; its value is not retained."
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": "22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".nvmrc"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_ae21e52c391ccef56f7107de041061bb",
+          "name": "install dependencies",
+          "run": "pnpm install --frozen-lockfile",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "pnpm-frozen-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "pnpm-frozen-install"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_ac1d00ae28290dacfd227b74a3abb62d",
+          "name": "build",
+          "run": "pnpm build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/build",
+                  "description": "The script invokes vite build."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": [
+        {
+          "subject": "tool.package-manager",
+          "message": "The packageManager declaration selects pnpm, but an npm lockfile is also present.",
+          "assertions": [
+            {
+              "value": "npm",
+              "evidence": [
+                {
+                  "kind": "file",
+                  "source": "package-lock.json"
+                }
+              ]
+            },
+            {
+              "value": "pnpm",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/packageManager"
+                },
+                {
+                  "kind": "file",
+                  "source": "pnpm-lock.yaml"
+                }
+              ]
+            }
+          ],
+          "resolution": {
+            "selectedValue": "pnpm",
+            "reason": "The explicit packageManager field and matching pnpm lockfile outweigh the lone npm lockfile.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "kind": "declaration",
+                "source": "package.json",
+                "pointer": "/packageManager"
+              },
+              {
+                "kind": "file",
+                "source": "pnpm-lock.yaml"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

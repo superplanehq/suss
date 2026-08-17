@@ -1,0 +1,562 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/superplanehq/suss/main/schema/plan.v1.schema.json",
+  "title": "Suss plan document",
+  "description": "Version 1 of the machine-readable repository detection contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "projects"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1"
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/projectPlan"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "relativePath": {
+      "type": "string",
+      "description": "Slash-separated path relative to the repository root; a root path is represented by a single period.",
+      "pattern": "^(?:\\.|[^/\\\\](?:.*[^/\\\\])?)$"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Stable, namespaced machine-readable subject.",
+      "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+    },
+    "commandId": {
+      "type": "string",
+      "pattern": "^cmd_[0-9a-f]{32}$"
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "source"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "file",
+            "declaration",
+            "invocation",
+            "configuration",
+            "convention"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Repository-relative file path or stable convention identifier."
+        },
+        "pointer": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Stable logical location inside the source. Line numbers are not used."
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "evidenceList": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "detectedValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "confidence",
+        "evidence"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidenceList"
+        }
+      }
+    },
+    "detectedTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "confidence",
+        "evidence"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidenceList"
+        }
+      }
+    },
+    "projectFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "value",
+        "confidence",
+        "evidence"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/subject"
+        },
+        "value": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidenceList"
+        }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name",
+        "confidence",
+        "evidence"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "runtime",
+            "tool",
+            "service",
+            "environment"
+          ]
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "isRequired": {
+          "type": "boolean",
+          "description": "Whether an environment variable must be supplied. Only valid for environment requirements."
+        },
+        "hasDefault": {
+          "type": "boolean",
+          "description": "Whether a non-secret default exists. The value is never exposed. Only valid for environment requirements."
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidenceList"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "environment"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "isRequired",
+              "hasDefault"
+            ],
+            "properties": {
+              "isRequired": {
+                "type": "boolean"
+              },
+              "hasDefault": {
+                "type": "boolean"
+              },
+              "version": false
+            }
+          },
+          "else": {
+            "properties": {
+              "isRequired": false,
+              "hasDefault": false
+            }
+          }
+        }
+      ]
+    },
+    "capability": {
+      "type": "string",
+      "enum": [
+        "dependencies.install",
+        "artifact.build",
+        "test.run",
+        "code.lint",
+        "code.format",
+        "code.typecheck",
+        "application.run"
+      ]
+    },
+    "interpretation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "confidence",
+        "evidence"
+      ],
+      "properties": {
+        "capability": {
+          "$ref": "#/$defs/capability"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidenceList"
+        }
+      }
+    },
+    "commandVariant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "run",
+        "directory",
+        "confidence",
+        "evidence"
+      ],
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/subject",
+          "description": "Namespaced invocation context. Version 0 initially emits ci."
+        },
+        "run": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "directory": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidenceList"
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "run",
+        "directory",
+        "scope",
+        "origin",
+        "confidence",
+        "evidence",
+        "interpretations",
+        "variants"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/commandId"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "run": {
+          "description": "Exact invocation, or null only when a declared task has an unresolved command ambiguity linked by commandId.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "directory": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "project",
+            "repository"
+          ]
+        },
+        "origin": {
+          "type": "string",
+          "enum": [
+            "declared",
+            "observed",
+            "inferred"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidenceList"
+        },
+        "interpretations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/interpretation"
+          }
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/commandVariant"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "run": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "run"
+            ]
+          },
+          "then": {
+            "properties": {
+              "origin": {
+                "const": "declared"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "properties": {
+        "value": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidenceList"
+        }
+      }
+    },
+    "ambiguity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject",
+        "message",
+        "candidates"
+      ],
+      "properties": {
+        "subject": {
+          "$ref": "#/$defs/subject"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId",
+          "description": "Command qualified by this ambiguity, when applicable."
+        },
+        "message": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "candidates": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/candidate"
+          }
+        }
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selectedValue",
+        "reason",
+        "confidence",
+        "evidence"
+      ],
+      "properties": {
+        "selectedValue": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "reason": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidenceList"
+        }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject",
+        "message",
+        "assertions"
+      ],
+      "properties": {
+        "subject": {
+          "$ref": "#/$defs/subject"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId",
+          "description": "Command qualified by this conflict, when applicable."
+        },
+        "message": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "assertions": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/candidate"
+          }
+        },
+        "resolution": {
+          "$ref": "#/$defs/resolution"
+        }
+      }
+    },
+    "projectPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "languages",
+        "frameworks",
+        "packageManagers",
+        "facts",
+        "requirements",
+        "preparation",
+        "commands",
+        "ambiguities",
+        "conflicts"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/detectedValue"
+          }
+        },
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/detectedValue"
+          }
+        },
+        "packageManagers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/detectedTool"
+          }
+        },
+        "facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/projectFact"
+          }
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirement"
+          }
+        },
+        "preparation": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/command"
+          }
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/command"
+          }
+        },
+        "ambiguities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ambiguity"
+          }
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/conflict"
+          }
+        }
+      }
+    }
+  }
+}

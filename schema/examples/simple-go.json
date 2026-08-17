@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "go",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "go.mod",
+              "pointer": "/module"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "go",
+          "version": "1.24",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "go.mod",
+              "pointer": "/go"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_f190859c8dcf2a384eaab03898f38c4a",
+          "name": "download dependencies",
+          "run": "go mod download",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "dependencies"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_12f5a93881cd479af427896f9577cdd3",
+          "name": "vet",
+          "run": "go vet ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "vet"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "vet"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_b4aa2f8b37375dca6bdeabd82c3f1637",
+          "name": "test",
+          "run": "go test ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "file",
+              "source": "main_test.go"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_ce9aa0c843b00e2f52ee0a4e5c05a159",
+          "name": "build",
+          "run": "go build ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "build"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

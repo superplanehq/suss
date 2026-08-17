@@ -1,0 +1,306 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "9.15.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "workspace.orchestrator",
+          "value": "pnpm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "pnpm-workspace.yaml"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_4eb5db128c5b8a9cc7993c351fb49229",
+          "name": "check generated files",
+          "run": "node scripts/check-generated.mjs",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/repository/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "backend",
+      "languages": [
+        {
+          "name": "go",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "backend/go.mod",
+              "pointer": "/module"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "go",
+          "version": "1.24",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "backend/go.mod",
+              "pointer": "/go"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_5a2e00071e9289d2c2010509f171ef8e",
+          "name": "test",
+          "run": "go test ./...",
+          "directory": "backend",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "backend/go.mod"
+            },
+            {
+              "kind": "file",
+              "source": "backend/server_test.go"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "test",
+              "description": "Go modules with test files conventionally run all package tests with go test ./...."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "frontend",
+      "languages": [
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "frontend/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "react",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/dependencies/react"
+            }
+          ]
+        },
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "frontend/vite.config.ts"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "pnpm",
+          "version": "9.15.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "frontend/pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": "22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/.nvmrc"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_13d7ed10fffef5f7010cbbaabd7943ca",
+          "name": "install dependencies",
+          "run": "pnpm install --frozen-lockfile",
+          "directory": "frontend",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/frontend/steps/2/run#command=0"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/frontend/steps/2/run#command=0"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_dd1307f3ba9312f568756953bd9994fc",
+          "name": "test",
+          "run": "pnpm test",
+          "directory": "frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "frontend/package.json",
+                  "pointer": "/scripts/test",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm test --run --reporter=junit",
+              "directory": "frontend",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/frontend/steps/4/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}
