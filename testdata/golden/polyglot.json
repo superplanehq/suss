@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": "apps/web",
+      "languages": [],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [],
+      "requirements": [],
+      "preparation": [],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "backend",
+      "languages": [],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [],
+      "requirements": [],
+      "preparation": [],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "frontend",
+      "languages": [],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [],
+      "requirements": [],
+      "preparation": [],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

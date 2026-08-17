@@ -175,18 +175,28 @@ links a conflict to the command it qualifies when applicable.
 
 ## Deterministic ordering
 
-Producers sort:
+Producers sort every array before emit so golden snapshots are byte-stable.
+`plan.Document.Sort` is the implementation of these rules:
 
 1. projects by `path`;
-2. detected values, facts, and requirements by kind/name/version;
-3. preparation and commands by `id`;
-4. variants by context/run/directory;
-5. evidence by kind precedence (`declaration`, `invocation`, `configuration`,
-   `file`, `convention`), then source/pointer;
-6. ambiguities and conflicts by subject/commandId/message;
-7. candidates and assertions by value.
+2. languages and frameworks by `name`;
+3. package managers by `name`, then `version`;
+4. facts by `name`, then `value`;
+5. requirements by `kind` (`runtime`, `tool`, `service`, `environment`), then
+   `name`, then `version`;
+6. preparation and commands by `id`;
+7. interpretations by `capability`;
+8. variants by `context`, then `run`, then `directory`;
+9. evidence by kind precedence (`declaration`, `invocation`, `configuration`,
+   `file`, `convention`), then `source`, then `pointer`, then `description`;
+10. ambiguities and conflicts by `subject`, then `commandId` (absent before
+    present), then `message`;
+11. candidates and assertions by `value`.
 
-Ordering is a producer invariant rather than a JSON Schema constraint.
+Unknown enum values sort after the known order, then lexicographically.
+Ordering is a producer invariant rather than a JSON Schema constraint. The
+JSON encoder does not escape HTML characters, so command text is stored
+exactly, and documents are indented with two spaces and a trailing newline.
 
 ## Draft compatibility
 

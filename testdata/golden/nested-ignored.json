@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [],
+      "requirements": [],
+      "preparation": [],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

@@ -59,6 +59,18 @@
       "facts": [],
       "requirements": [
         {
+          "kind": "runtime",
+          "name": "node",
+          "version": "22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".nvmrc"
+            }
+          ]
+        },
+        {
           "kind": "environment",
           "name": "SENTRY_AUTH_TOKEN",
           "isRequired": true,
@@ -70,18 +82,6 @@
               "source": ".github/workflows/build.yml",
               "pointer": "/jobs/build/env/SENTRY_AUTH_TOKEN",
               "description": "The variable is supplied from a CI secret; its value is not retained."
-            }
-          ]
-        },
-        {
-          "kind": "runtime",
-          "name": "node",
-          "version": "22",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": ".nvmrc"
             }
           ]
         }

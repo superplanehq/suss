@@ -1,3 +1,4 @@
+// Package plan defines the versioned machine-readable output contract.
 package plan
 
 import (
@@ -101,27 +102,27 @@ type Evidence struct {
 
 // DetectedValue is an evidence-backed language or framework name.
 type DetectedValue struct {
-	Name       string       `json:"name"`
-	Confidence Confidence   `json:"confidence"`
-	Evidence   []Evidence   `json:"evidence"`
+	Name       string     `json:"name"`
+	Confidence Confidence `json:"confidence"`
+	Evidence   []Evidence `json:"evidence"`
 }
 
 // DetectedTool is an evidence-backed package manager. Version is omitted when
 // the repository does not constrain it.
 type DetectedTool struct {
-	Name       string       `json:"name"`
-	Version    string       `json:"version,omitempty"`
-	Confidence Confidence   `json:"confidence"`
-	Evidence   []Evidence   `json:"evidence"`
+	Name       string     `json:"name"`
+	Version    string     `json:"version,omitempty"`
+	Confidence Confidence `json:"confidence"`
+	Evidence   []Evidence `json:"evidence"`
 }
 
 // ProjectFact records extensible, namespaced project metadata such as a
 // workspace orchestrator.
 type ProjectFact struct {
-	Name       string       `json:"name"`
-	Value      string       `json:"value"`
-	Confidence Confidence   `json:"confidence"`
-	Evidence   []Evidence   `json:"evidence"`
+	Name       string     `json:"name"`
+	Value      string     `json:"value"`
+	Confidence Confidence `json:"confidence"`
+	Evidence   []Evidence `json:"evidence"`
 }
 
 // RequirementKind separates environmental facts that have different
@@ -138,13 +139,13 @@ const (
 // Requirement is an environmental fact. IsRequired and HasDefault apply only
 // to environment-variable requirements; values are intentionally never stored.
 type Requirement struct {
-	Kind         RequirementKind `json:"kind"`
-	Name         string          `json:"name"`
-	Version      string          `json:"version,omitempty"`
-	IsRequired   *bool           `json:"isRequired,omitempty"`
-	HasDefault   *bool           `json:"hasDefault,omitempty"`
-	Confidence   Confidence      `json:"confidence"`
-	Evidence     []Evidence      `json:"evidence"`
+	Kind       RequirementKind `json:"kind"`
+	Name       string          `json:"name"`
+	Version    string          `json:"version,omitempty"`
+	IsRequired *bool           `json:"isRequired,omitempty"`
+	HasDefault *bool           `json:"hasDefault,omitempty"`
+	Confidence Confidence      `json:"confidence"`
+	Evidence   []Evidence      `json:"evidence"`
 }
 
 // CommandID is stable while a command's source identity remains stable.
@@ -187,11 +188,11 @@ type Command struct {
 // CommandVariant preserves a contextual invocation linked to a primary
 // command. Context is namespaced and starts with "ci" in v0.
 type CommandVariant struct {
-	Context    string       `json:"context"`
-	Run        string       `json:"run"`
-	Directory  string       `json:"directory"`
-	Confidence Confidence   `json:"confidence"`
-	Evidence   []Evidence   `json:"evidence"`
+	Context    string     `json:"context"`
+	Run        string     `json:"run"`
+	Directory  string     `json:"directory"`
+	Confidence Confidence `json:"confidence"`
+	Evidence   []Evidence `json:"evidence"`
 }
 
 // Capability is a small normalized vocabulary layered on top of native task
@@ -211,17 +212,17 @@ const (
 // Interpretation is an optional evidence-backed meaning assigned to a
 // command.
 type Interpretation struct {
-	Capability Capability   `json:"capability"`
-	Confidence Confidence   `json:"confidence"`
-	Evidence   []Evidence   `json:"evidence"`
+	Capability Capability `json:"capability"`
+	Confidence Confidence `json:"confidence"`
+	Evidence   []Evidence `json:"evidence"`
 }
 
 // Candidate is one possible answer to an unresolved question or one assertion
 // participating in a conflict.
 type Candidate struct {
-	Value       string       `json:"value"`
-	Description string       `json:"description,omitempty"`
-	Evidence    []Evidence   `json:"evidence"`
+	Value       string     `json:"value"`
+	Description string     `json:"description,omitempty"`
+	Evidence    []Evidence `json:"evidence"`
 }
 
 // Ambiguity records multiple plausible answers when Suss cannot select one.
@@ -234,20 +235,20 @@ type Ambiguity struct {
 
 // Resolution records why one conflicting assertion was selected.
 type Resolution struct {
-	SelectedValue string       `json:"selectedValue"`
-	Reason        string       `json:"reason"`
-	Confidence    Confidence   `json:"confidence"`
-	Evidence      []Evidence   `json:"evidence"`
+	SelectedValue string     `json:"selectedValue"`
+	Reason        string     `json:"reason"`
+	Confidence    Confidence `json:"confidence"`
+	Evidence      []Evidence `json:"evidence"`
 }
 
 // Conflict records contradictory structured evidence. Resolution is omitted
 // when the evidence does not justify selecting an assertion.
 type Conflict struct {
-	Subject    string       `json:"subject"`
-	CommandID  *CommandID   `json:"commandId,omitempty"`
-	Message    string       `json:"message"`
-	Assertions []Candidate  `json:"assertions"`
-	Resolution *Resolution  `json:"resolution,omitempty"`
+	Subject    string      `json:"subject"`
+	CommandID  *CommandID  `json:"commandId,omitempty"`
+	Message    string      `json:"message"`
+	Assertions []Candidate `json:"assertions"`
+	Resolution *Resolution `json:"resolution,omitempty"`
 }
 
 // PropertyKind identifies the project property carried by a provider finding.

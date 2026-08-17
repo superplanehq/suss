@@ -29,7 +29,7 @@ The phase ends with the schema, types, and examples presented for review. No fur
 
 Status: completed and approved after one review iteration. Notable contract decisions made during review: `run` is nullable and `null` is legal only on declared commands whose invocation is ambiguous; ambiguities and conflicts carry an optional `commandId` link; command IDs hash the source identity (project path, provider, source, pointer) and deliberately exclude the run text.
 
-### Phase 1b — Skeleton implementation
+### Phase 1b — Skeleton implementation — DONE
 
 Scope:
 
@@ -51,6 +51,8 @@ Acceptance:
 - `suss . --json` on a fixture repository emits schema-valid output.
 - The harness runs in CI with at least one fixture repository.
 
+Status: completed. The Go module, project-root discovery, canonical JSON emit, schema-validation tests, emit-time `run: null` check, and snapshot harness are in place. Human-readable rendering of the full plan remains milestone 2.
+
 ### Decisions to pin before prompting an agent
 
 These are not recorded in idea.md and an agent would otherwise guess them silently. Recommended defaults, to be confirmed:
@@ -69,7 +71,8 @@ Scope:
 - Node provider: `package.json` scripts, `packageManager` field, lockfile detection (npm/pnpm/yarn/bun), competing-lockfile ambiguity reporting, runtime version files (`.nvmrc`, `.node-version`, `engines`).
 - Initial declarative knowledge base (data file): npm/pnpm/yarn/bun invocations, `vitest`, `jest`, `eslint`, `tsc`, `prettier`, `vite`.
 - Tool-configuration detection for the same tools (configured-but-no-command reporting).
-- Human-readable renderer for `suss .`, implemented strictly as a renderer of the JSON.
+- Human-readable renderer for `suss .`, implemented strictly as a renderer of the JSON. The renderer must distinguish "the repository has no detectable content" from "no provider covers this yet", and say which providers ran. A wall of empty fields with no explanation reads as a broken tool.
+- Decide a policy for fixture-like project roots. Milestone 1 discovery reports manifests under paths such as `testdata/`, `fixtures/`, and `examples/` as ordinary projects (running Suss on its own repository surfaces its test fixtures). Options: ignore such paths, report them with a distinguishing fact or lower confidence, or report them as-is. Whatever is chosen must be evidence-backed and consistent; large corpus repositories (grafana) are full of fixtures and will stress this.
 
 Acceptance:
 
