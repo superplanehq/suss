@@ -39,23 +39,27 @@ func extractJob(ctx provider.Context, source, workflowDir, jobID string, job job
 		return []plan.Finding{limitationFinding(source, jobPointer+"/uses", "reusable-workflows", "Reusable workflows are detected but not expanded.")}, nil
 	}
 
-	dir := workflowDir
-	if job.Defaults != nil && job.Defaults.Run != nil && job.Defaults.Run.WorkingDirectory != "" {
-		dir = resolveDirectory(ctx.RepositoryRoot, workflowDir, job.Defaults.Run.WorkingDirectory)
-	}
-
-	var findings []plan.Finding
-	findings = append(findings, envFindings(source, jobPointer+"/env", dir, job.Env, false)...)
-	findings = append(findings, serviceFindings(source, jobPointer, dir, job.Services)...)
-
 	var matrix map[string][]string
 	if job.Strategy != nil {
 		matrix = matrixValues(job.Strategy.Matrix)
 	}
 
+	jobWD := ""
+	if job.Defaults != nil && job.Defaults.Run != nil {
+		jobWD = job.Defaults.Run.WorkingDirectory
+	}
+	envDir := workflowDir
+	if jobWD != "" && !isExpression(jobWD) {
+		envDir = resolveDirectory(ctx.RepositoryRoot, workflowDir, jobWD)
+	}
+
+	var findings []plan.Finding
+	findings = append(findings, envFindings(source, jobPointer+"/env", envDir, job.Env, false)...)
+	findings = append(findings, serviceFindings(source, jobPointer, envDir, job.Services)...)
+
 	for i, step := range job.Steps {
 		stepPointer := jobPointer + jsonPointer("steps", strconv.Itoa(i))
-		stepFindings, err := extractStep(ctx, source, dir, stepPointer, step, matrix)
+		stepFindings, err := extractStep(ctx, source, workflowDir, jobWD, stepPointer, step, matrix)
 		if err != nil {
 			return nil, err
 		}
@@ -64,29 +68,60 @@ func extractJob(ctx provider.Context, source, workflowDir, jobID string, job job
 	return findings, nil
 }
 
-func extractStep(ctx provider.Context, source, jobDir, stepPointer string, step step, matrix map[string][]string) ([]plan.Finding, error) {
-	dir := jobDir
+func extractStep(ctx provider.Context, source, workflowDir, jobWD, stepPointer string, step step, matrix map[string][]string) ([]plan.Finding, error) {
+	effectiveWD := jobWD
 	if step.WorkingDirectory != "" {
-		dir = resolveDirectory(ctx.RepositoryRoot, jobDir, step.WorkingDirectory)
+		effectiveWD = step.WorkingDirectory
 	}
+	dirs := expandDirectories(ctx.RepositoryRoot, workflowDir, effectiveWD, matrix)
 
 	var findings []plan.Finding
-	findings = append(findings, envFindings(source, stepPointer+"/env", dir, step.Env, false)...)
-
-	if step.Uses != "" {
-		findings = append(findings, usesFindings(ctx, source, dir, stepPointer, step, matrix)...)
-		return findings, nil
+	for _, dir := range dirs {
+		findings = append(findings, envFindings(source, stepPointer+"/env", dir, step.Env, false)...)
+		if step.Uses != "" {
+			findings = append(findings, usesFindings(ctx, source, dir, stepPointer, step, matrix)...)
+			continue
+		}
+		if strings.TrimSpace(step.Run) == "" {
+			continue
+		}
+		commands, err := runFindings(ctx, source, dir, stepPointer+"/run", step.Run)
+		if err != nil {
+			return nil, err
+		}
+		findings = append(findings, commands...)
 	}
-	if strings.TrimSpace(step.Run) == "" {
-		return findings, nil
-	}
-
-	commands, err := runFindings(ctx, source, dir, stepPointer+"/run", step.Run)
-	if err != nil {
-		return nil, err
-	}
-	findings = append(findings, commands...)
 	return findings, nil
+}
+
+func expandDirectories(repo, base, rel string, matrix map[string][]string) []string {
+	rel = strings.TrimSpace(rel)
+	if rel == "" {
+		return []string{base}
+	}
+	if axis, ok := matrixAxis(rel); ok {
+		if values := matrix[axis]; len(values) > 0 {
+			dirs := make([]string, 0, len(values))
+			for _, value := range values {
+				if isExpression(value) {
+					continue
+				}
+				dirs = append(dirs, resolveDirectory(repo, base, value))
+			}
+			if len(dirs) > 0 {
+				return dirs
+			}
+		}
+		return []string{base}
+	}
+	if isExpression(rel) {
+		return []string{base}
+	}
+	return []string{resolveDirectory(repo, base, rel)}
+}
+
+func isExpression(value string) bool {
+	return strings.Contains(value, "${{")
 }
 
 func usesFindings(ctx provider.Context, source, dir, stepPointer string, step step, matrix map[string][]string) []plan.Finding {
@@ -228,7 +263,7 @@ func runFindings(ctx provider.Context, source, dir, pointer, script string) ([]p
 			return nil, err
 		}
 		findings = append(findings, plan.CommandFinding{
-			ProjectPath: current,
+			ProjectPath: commandDir,
 			Detector:    providerName,
 			Command:     command,
 		})
@@ -259,7 +294,7 @@ func observedCommand(source, dir, pointer string, stmt knowledge.Statement) (pla
 	}
 
 	_, canonical := knowledge.StripDirectoryFlags(stmt.Invocation)
-	run := stmt.Raw
+	run := knowledge.RedactAssignmentValues(stmt.Raw)
 	return plan.Command{
 		ID:              id,
 		Name:            observedName(canonical),
@@ -401,7 +436,7 @@ var skippedExecutables = map[string]struct{}{
 	"touch": {}, "install": {}, "pushd": {}, "popd": {},
 	"dirname": {}, "basename": {}, "realpath": {}, "pwd": {},
 	"which": {}, "command": {}, "type": {},
-	"git": {},
+	"git": {}, "curl": {}, "wget": {},
 }
 
 func envFindings(source, pointer, dir string, env stringMap, keepLiterals bool) []plan.Finding {
@@ -460,16 +495,22 @@ func skipEnvValue(value string) bool {
 }
 
 func isSecretValue(value string) bool {
-	start := strings.Index(value, "${{")
-	if start < 0 {
-		return false
+	rest := value
+	for {
+		start := strings.Index(rest, "${{")
+		if start < 0 {
+			return false
+		}
+		rest = rest[start:]
+		end := strings.Index(rest, "}}")
+		if end < 0 {
+			return false
+		}
+		if strings.Contains(rest[:end], "secrets.") {
+			return true
+		}
+		rest = rest[end+2:]
 	}
-	rest := value[start:]
-	end := strings.Index(rest, "}}")
-	if end < 0 {
-		return false
-	}
-	return strings.Contains(rest[:end], "secrets.")
 }
 
 func serviceFindings(source, jobPointer, dir string, services map[string]service) []plan.Finding {

@@ -427,6 +427,59 @@ func TestDetectDoesNotTreatOutOfGlobProjectsAsWorkspaceMembers(t *testing.T) {
 	}
 }
 
+func TestDetectHonorsGlobstarWorkspaceExclusions(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "package.json"), `{"packageManager": "pnpm@9.15.0"}`)
+	writeFile(t, filepath.Join(root, "pnpm-workspace.yaml"), "packages:\n  - packages/**\n  - '!**/test/**'\n")
+	writeFile(t, filepath.Join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n")
+	writeFile(t, filepath.Join(root, "packages", "app", "package.json"), `{"scripts": {"test": "vitest"}}`)
+	writeFile(t, filepath.Join(root, "packages", "app", "test", "fixture", "package.json"), `{"scripts": {"test": "vitest"}}`)
+	writeFile(t, filepath.Join(root, "packages", "app", "test", "fixture", "package-lock.json"), "{}\n")
+
+	member, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "packages/app"})
+	if err != nil {
+		t.Fatalf("Detect(packages/app) error = %v", err)
+	}
+	memberProject := assembleProject(t, "packages/app", member)
+	if len(memberProject.Preparation) != 0 {
+		t.Fatalf("packages/app preparation = %+v, want none on a workspace member", memberProject.Preparation)
+	}
+
+	excluded, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "packages/app/test/fixture"})
+	if err != nil {
+		t.Fatalf("Detect(packages/app/test/fixture) error = %v", err)
+	}
+	project := assembleProject(t, "packages/app/test/fixture", excluded)
+	if len(project.Preparation) == 0 {
+		t.Fatal("preparation = empty, want an install on an excluded nested package")
+	}
+}
+
+func TestDetectMergesDuplicateWorkspaceOrchestratorFacts(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"package.json":        `{"packageManager": "pnpm@9.15.0", "workspaces": ["packages/*"]}`,
+		"pnpm-workspace.yaml": "packages:\n  - packages/*\n",
+		"pnpm-lock.yaml":      "lockfileVersion: '9.0'\n",
+	})
+	project := assembleProject(t, ".", result)
+	var facts []plan.ProjectFact
+	for _, fact := range project.Facts {
+		if fact.Name == "workspace.orchestrator" && fact.Value == "pnpm" {
+			facts = append(facts, fact)
+		}
+	}
+	if len(facts) != 1 {
+		t.Fatalf("workspace.orchestrator facts = %+v, want one merged pnpm fact", facts)
+	}
+	if len(facts[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want pnpm-workspace.yaml and package.json#workspaces", facts[0].Evidence)
+	}
+}
+
 func TestDetectReportsYarnWorkspacesFromPackageJSON(t *testing.T) {
 	t.Parallel()
 

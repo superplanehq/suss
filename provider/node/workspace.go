@@ -37,13 +37,19 @@ type orchestrator struct {
 
 func workspaceOrchestrators(ctx provider.Context, manifest packageManifest) []orchestrator {
 	var found []orchestrator
+	add := func(value string, evidence plan.Evidence) {
+		for i := range found {
+			if found[i].value == value {
+				found[i].evidence = append(found[i].evidence, evidence)
+				return
+			}
+		}
+		found = append(found, orchestrator{value: value, evidence: []plan.Evidence{evidence}})
+	}
 	if fileExists(ctx.ProjectDir(), "pnpm-workspace.yaml") {
-		found = append(found, orchestrator{
-			value: "pnpm",
-			evidence: []plan.Evidence{{
-				Kind:   plan.EvidenceConfiguration,
-				Source: ctx.SourcePath("pnpm-workspace.yaml"),
-			}},
+		add("pnpm", plan.Evidence{
+			Kind:   plan.EvidenceConfiguration,
+			Source: ctx.SourcePath("pnpm-workspace.yaml"),
 		})
 	}
 	if hasWorkspaces(manifest) {
@@ -53,31 +59,22 @@ func workspaceOrchestrators(ctx provider.Context, manifest packageManifest) []or
 		} else if lock := localLockfileManager(ctx); lock != "" {
 			manager = lock
 		}
-		found = append(found, orchestrator{
-			value: manager,
-			evidence: []plan.Evidence{{
-				Kind:    plan.EvidenceDeclaration,
-				Source:  ctx.SourcePath("package.json"),
-				Pointer: "/workspaces",
-			}},
+		add(manager, plan.Evidence{
+			Kind:    plan.EvidenceDeclaration,
+			Source:  ctx.SourcePath("package.json"),
+			Pointer: "/workspaces",
 		})
 	}
 	if fileExists(ctx.ProjectDir(), "turbo.json") {
-		found = append(found, orchestrator{
-			value: "turbo",
-			evidence: []plan.Evidence{{
-				Kind:   plan.EvidenceConfiguration,
-				Source: ctx.SourcePath("turbo.json"),
-			}},
+		add("turbo", plan.Evidence{
+			Kind:   plan.EvidenceConfiguration,
+			Source: ctx.SourcePath("turbo.json"),
 		})
 	}
 	if fileExists(ctx.ProjectDir(), "nx.json") {
-		found = append(found, orchestrator{
-			value: "nx",
-			evidence: []plan.Evidence{{
-				Kind:   plan.EvidenceConfiguration,
-				Source: ctx.SourcePath("nx.json"),
-			}},
+		add("nx", plan.Evidence{
+			Kind:   plan.EvidenceConfiguration,
+			Source: ctx.SourcePath("nx.json"),
 		})
 	}
 	return found
@@ -211,15 +208,45 @@ func matchesWorkspaceGlobs(globs []string, rel string) bool {
 
 func matchWorkspaceGlob(glob, rel string) bool {
 	glob = strings.TrimSuffix(glob, "/")
-	if strings.Contains(glob, "**") {
-		prefix := strings.TrimSuffix(strings.TrimSuffix(glob, "**"), "/")
-		if prefix == "" {
-			return true
-		}
-		return rel == prefix || strings.HasPrefix(rel, prefix+"/")
+	rel = strings.TrimPrefix(rel, "./")
+	return matchGlobParts(splitGlobPath(glob), splitGlobPath(rel))
+}
+
+func splitGlobPath(value string) []string {
+	value = strings.Trim(value, "/")
+	if value == "" {
+		return nil
 	}
-	ok, err := path.Match(glob, rel)
-	return err == nil && ok
+	return strings.Split(value, "/")
+}
+
+func matchGlobParts(glob, rel []string) bool {
+	for {
+		if len(glob) == 0 {
+			return len(rel) == 0
+		}
+		if glob[0] == "**" {
+			glob = glob[1:]
+			if len(glob) == 0 {
+				return true
+			}
+			for i := 0; i <= len(rel); i++ {
+				if matchGlobParts(glob, rel[i:]) {
+					return true
+				}
+			}
+			return false
+		}
+		if len(rel) == 0 {
+			return false
+		}
+		ok, err := path.Match(glob[0], rel[0])
+		if err != nil || !ok {
+			return false
+		}
+		glob = glob[1:]
+		rel = rel[1:]
+	}
 }
 
 func parentContext(ctx provider.Context) *provider.Context {

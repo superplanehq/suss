@@ -301,6 +301,51 @@ func dropLeadingAssignments(tokens []string) []string {
 	return rest
 }
 
+// RedactAssignmentValues replaces values in leading NAME=value prefixes so
+// command text never carries secret or literal assignment values.
+func RedactAssignmentValues(raw string) string {
+	rest := strings.TrimLeft(raw, " \t")
+	var parts []string
+	for {
+		name, after, ok := cutLeadingAssignment(rest)
+		if !ok {
+			if rest != "" {
+				parts = append(parts, rest)
+			}
+			return strings.Join(parts, " ")
+		}
+		parts = append(parts, name+"=$"+name)
+		rest = strings.TrimLeft(after, " \t")
+	}
+}
+
+func cutLeadingAssignment(s string) (name, rest string, ok bool) {
+	i := 0
+	for i < len(s) && (s[i] == '_' || (s[i] >= 'A' && s[i] <= 'Z') || (s[i] >= 'a' && s[i] <= 'z') || (s[i] >= '0' && s[i] <= '9' && i > 0)) {
+		i++
+	}
+	if i == 0 || i >= len(s) || s[i] != '=' {
+		return "", s, false
+	}
+	name = s[:i]
+	i++
+	if i < len(s) && (s[i] == '\'' || s[i] == '"') {
+		q := s[i]
+		i++
+		for i < len(s) && s[i] != q {
+			i++
+		}
+		if i < len(s) {
+			i++
+		}
+		return name, s[i:], true
+	}
+	for i < len(s) && s[i] != ' ' && s[i] != '\t' {
+		i++
+	}
+	return name, s[i:], true
+}
+
 func takeLeadingAssignments(tokens []string) ([]string, []string) {
 	i := 0
 	var names []string

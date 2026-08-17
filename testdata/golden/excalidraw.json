@@ -1137,24 +1137,6 @@
           "variants": []
         },
         {
-          "id": "cmd_e004836504511ded6c5bfdd4731df29d",
-          "name": "curl https://sentry.io/get-cli/",
-          "run": "curl -sL https://sentry.io/get-cli/ | bash",
-          "directory": ".",
-          "scope": "repository",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/sentry-production.yml",
-              "pointer": "/jobs/sentry/steps/3/run"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
           "id": "cmd_e355d1f8b38c33e1c4c113a267f3e9b3",
           "name": "fix",
           "run": "yarn run fix",

@@ -455,6 +455,111 @@ jobs:
 	}
 }
 
+func TestDetectRedactsInlineAssignmentValues(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: API_TOKEN=hunter2 npm test
+`,
+	})
+	commands := commandByName(result)
+	got := deref(commands["test"].Run)
+	if got != "API_TOKEN=$API_TOKEN npm test" {
+		t.Fatalf("run = %q, want redacted assignment", got)
+	}
+	if strings.Contains(got, "hunter2") {
+		t.Fatalf("run = %q, leaked a literal assignment value", got)
+	}
+}
+
+func TestDetectExpandsMatrixWorkingDirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        package: [packages/app, packages/lib]
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    steps:
+      - run: npm test
+`,
+	})
+	dirs := commandDirectories(result, "test")
+	if !slices.Equal(sortedCopy(dirs), []string{"packages/app", "packages/lib"}) {
+		t.Fatalf("directories = %v, want packages/app and packages/lib", dirs)
+	}
+	for _, dir := range dirs {
+		if strings.Contains(dir, "${{") {
+			t.Fatalf("directories = %v, did not want an unresolved expression", dirs)
+		}
+	}
+}
+
+func TestDetectLeavesUnresolvedWorkingDirectoryOnTheParent(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    defaults:
+      run:
+        working-directory: ${{ inputs.dir }}
+    steps:
+      - run: npm test
+`,
+	})
+	dirs := commandDirectories(result, "test")
+	if !slices.Equal(dirs, []string{"."}) {
+		t.Fatalf("directories = %v, want the parent project", dirs)
+	}
+}
+
+func TestDetectKeepsSecretEnvWhenALaterExpressionIsASecret(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+env:
+  BUILD_TAG: prefix-${{ github.ref }}-${{ secrets.API_TOKEN }}
+jobs:
+  test:
+    steps:
+      - run: echo skip
+`,
+	})
+	if !hasEnv(result, "BUILD_TAG", true, false) {
+		t.Fatalf("missing secret BUILD_TAG in %+v", result.Findings)
+	}
+}
+
+func TestDetectSkipsCurlInstallers(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: |
+          curl -sL https://sentry.io/get-cli/ | bash
+          npm test
+`,
+	})
+	if got := keys(commandByName(result)); !slices.Equal(got, []string{"test"}) {
+		t.Fatalf("commands = %v, want only test", got)
+	}
+}
+
 func TestDetectDoesNotTreatSecretsPathAsASecretExpression(t *testing.T) {
 	t.Parallel()
 
@@ -532,6 +637,18 @@ func detectFiles(t *testing.T, files map[string]string) provider.Result {
 		t.Fatalf("Detect() error = %v", err)
 	}
 	return result
+}
+
+func commandDirectories(result provider.Result, name string) []string {
+	var dirs []string
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Name != name {
+			continue
+		}
+		dirs = append(dirs, item.Command.Directory)
+	}
+	return dirs
 }
 
 func commandByName(result provider.Result) map[string]plan.Command {

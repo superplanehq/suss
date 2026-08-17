@@ -146,9 +146,17 @@ func evidenceForVersion(requirements []plan.Requirement, version string) []plan.
 
 func mergeIncoming(incoming []plan.Requirement) plan.Requirement {
 	merged := incoming[0]
-	for _, requirement := range incoming[1:] {
-		merged.Evidence = mergeEvidence(merged.Evidence, requirement.Evidence)
+	for _, requirement := range incoming {
+		if requirement.Version != "" {
+			merged = requirement
+			break
+		}
 	}
+	var evidence []plan.Evidence
+	for _, requirement := range incoming {
+		evidence = mergeEvidence(evidence, requirement.Evidence)
+	}
+	merged.Evidence = evidence
 	return merged
 }
 
@@ -225,8 +233,8 @@ func normalizeVersion(version string) string {
 func versionSatisfies(declared, version string) (ok, known bool) {
 	declared = strings.TrimSpace(declared)
 	version = normalizeVersion(version)
-	if declared == "" || version == "" {
-		return false, true
+	if declared == "" || version == "" || !comparableVersion(version) {
+		return false, false
 	}
 	if sameVersion(declared, version) {
 		return true, true
@@ -396,6 +404,18 @@ func compareVersions(a, b string) int {
 		}
 	}
 	return 0
+}
+
+func comparableVersion(version string) bool {
+	if version == "" {
+		return false
+	}
+	for _, part := range strings.Split(version, ".") {
+		if _, err := strconv.Atoi(part); err != nil {
+			return false
+		}
+	}
+	return true
 }
 
 func versionPart(parts []string, i int) int {

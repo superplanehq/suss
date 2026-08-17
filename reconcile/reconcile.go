@@ -48,11 +48,14 @@
 //   - a version that satisfies a declared range is folded into that range;
 //   - a version that cannot be evaluated against a declared range is recorded
 //     as a ci.matrix.<runtime> fact, not as supporting evidence;
+//   - an omitted CI version or a non-numeric alias (lts/*, latest) is
+//     unevaluable, not a contradiction;
 //   - extra matrix pins beside a declared pin are recorded as ci.matrix.<runtime>
 //     facts;
 //   - a matrix with no declaration becomes one unversioned runtime plus those
 //     facts;
-//   - a single CI pin that contradicts a declared pin is a conflict.
+//   - a single CI pin that contradicts a declared pin is a conflict;
+//   - an unversioned setup beside a single pin keeps the pin and merges evidence.
 package reconcile
 
 import (

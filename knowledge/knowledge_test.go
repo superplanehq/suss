@@ -184,6 +184,24 @@ func capabilities(matches []Match) []plan.Capability {
 	return out
 }
 
+func TestRedactAssignmentValuesStripsLiteralValues(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		raw  string
+		want string
+	}{
+		{raw: "API_TOKEN=hunter2 npm test", want: "API_TOKEN=$API_TOKEN npm test"},
+		{raw: `FOO='bar baz' BAR="qux" npm test`, want: "FOO=$FOO BAR=$BAR npm test"},
+		{raw: "npm test", want: "npm test"},
+	}
+	for _, tt := range tests {
+		if got := RedactAssignmentValues(tt.raw); got != tt.want {
+			t.Fatalf("RedactAssignmentValues(%q) = %q, want %q", tt.raw, got, tt.want)
+		}
+	}
+}
+
 func TestStripDirectoryFlagsStopsAtDoubleDash(t *testing.T) {
 	t.Parallel()
 

@@ -209,7 +209,7 @@ func TestApplyDoesNotAddMatrixVersionsAsExtraRequirementsOnAPin(t *testing.T) {
 	if len(got[0].Requirements[0].Evidence) != 2 {
 		t.Fatalf("evidence = %+v, want .nvmrc and the matching CI pin", got[0].Requirements[0].Evidence)
 	}
-	if values := factValues(got[0].Facts, "ci.matrix.node"); len(values) != 1 || values[0] != "24" {
+	if values := matrixNodeValues(got[0].Facts); len(values) != 1 || values[0] != "24" {
 		t.Fatalf("facts = %+v, want ci.matrix.node=24 for the extra matrix version", got[0].Facts)
 	}
 }
@@ -228,7 +228,7 @@ func TestApplyCollapsesAMatrixWithNoDeclarationToOneRuntime(t *testing.T) {
 	if len(got[0].Requirements) != 1 || got[0].Requirements[0].Name != "node" || got[0].Requirements[0].Version != "" {
 		t.Fatalf("requirements = %+v, want one unversioned node runtime", got[0].Requirements)
 	}
-	if values := factValues(got[0].Facts, "ci.matrix.node"); len(values) != 2 {
+	if values := matrixNodeValues(got[0].Facts); len(values) != 2 {
 		t.Fatalf("facts = %v, want matrix versions 22 and 26", values)
 	}
 }
@@ -297,7 +297,7 @@ func TestApplyRecordsUnevaluableRangesAsMatrixFacts(t *testing.T) {
 		Findings: []plan.Finding{ciNode("22")},
 	})
 
-	if values := factValues(got[0].Facts, "ci.matrix.node"); len(values) != 1 || values[0] != "22" {
+	if values := matrixNodeValues(got[0].Facts); len(values) != 1 || values[0] != "22" {
 		t.Fatalf("facts = %+v, want ci.matrix.node=22 for an unevaluable range", got[0].Facts)
 	}
 	if len(got[0].Requirements[0].Evidence) != 1 {
@@ -364,6 +364,77 @@ func TestApplyDeduplicatesMergedRequirementEvidence(t *testing.T) {
 	}
 }
 
+func TestApplyKeepsALonePinWhenAnotherSetupIsUnversioned(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{
+			ciNode(""),
+			ciNode("22"),
+		},
+	})
+
+	if len(got[0].Requirements) != 1 || got[0].Requirements[0].Version != "22" {
+		t.Fatalf("requirements = %+v, want node 22", got[0].Requirements)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want both setup observations", got[0].Requirements[0].Evidence)
+	}
+}
+
+func TestApplyDoesNotConflictWhenCIOmitsAVersion(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "node",
+		Version:    "22",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: ".nvmrc"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciNode("")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none for an unpinned setup", got[0].Conflicts)
+	}
+	if len(got[0].Requirements) != 1 || got[0].Requirements[0].Version != "22" {
+		t.Fatalf("requirements = %+v, want declared node 22", got[0].Requirements)
+	}
+	if values := matrixNodeValues(got[0].Facts); len(values) != 0 {
+		t.Fatalf("facts = %v, want none for an empty CI version", values)
+	}
+}
+
+func TestApplyTreatsACIVersionAliasAsUnevaluable(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "node",
+		Version:    ">=20",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json", Pointer: "/engines/node"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciNode("lts/*")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none for a non-numeric alias", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want lts/* attached to >=20", got[0].Requirements[0].Evidence)
+	}
+	if values := matrixNodeValues(got[0].Facts); len(values) != 1 || values[0] != "lts/*" {
+		t.Fatalf("facts = %+v, want ci.matrix.node=lts/*", got[0].Facts)
+	}
+}
+
 func TestApplyConflictsASingleCIPinAgainstADifferentDeclaration(t *testing.T) {
 	t.Parallel()
 
@@ -405,10 +476,10 @@ func ciNode(version string) plan.RequirementFinding {
 	}
 }
 
-func factValues(facts []plan.ProjectFact, name string) []string {
+func matrixNodeValues(facts []plan.ProjectFact) []string {
 	var values []string
 	for _, fact := range facts {
-		if fact.Name == name {
+		if fact.Name == "ci.matrix.node" {
 			values = append(values, fact.Value)
 		}
 	}
