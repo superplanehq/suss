@@ -73,6 +73,7 @@ Scope:
 - Tool-configuration detection for the same tools (configured-but-no-command reporting).
 - Human-readable renderer for `suss .`, implemented strictly as a renderer of the JSON. The renderer must distinguish "the repository has no detectable content" from "no provider covers this yet", and say which providers ran. A wall of empty fields with no explanation reads as a broken tool.
 - Decide a policy for fixture-like project roots. Milestone 1 discovery reports manifests under paths such as `testdata/`, `fixtures/`, and `examples/` as ordinary projects (running Suss on its own repository surfaces its test fixtures). Options: ignore such paths, report them with a distinguishing fact or lower confidence, or report them as-is. Whatever is chosen must be evidence-backed and consistent; large corpus repositories (grafana) are full of fixtures and will stress this.
+- Remote corpus fetching. The milestone 1 harness only supports local fixtures; `corpusEntry` already has `gitURL` and `commit` fields but `repository()` fails on them. This milestone implements that path, since `chalk/chalk` is the first remote corpus entry: pin an exact commit SHA (not a branch), shallow-fetch it into `testdata/cache`, reuse the cache across runs, and gitignore the cache directory. A fresh checkout and CI must be able to run the corpus test with no manual cloning.
 
 Acceptance:
 
