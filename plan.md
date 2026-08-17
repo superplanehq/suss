@@ -15,11 +15,23 @@ This plan turns [idea.md](idea.md) into ordered milestones. Read that document f
 
 Establish the Go module, the output contract, and the test harness.
 
+This milestone is executed in two phases with a human review checkpoint between them. The JSON schema and core types are the contract everything else inherits; an agent designing them needs to be supervised to avoid making dozens of small, plausible-looking decisions (enum spellings, how ambiguity nests, optional vs. required fields, the ID format) that are cheap to review now but expensive to unwind after several providers conform to them. The rest of the milestone is mechanical and safe to implement in one pass.
+
+### Phase 1a — Contract design (stop for human review)
+
+Scope:
+
+- Core types: `Finding`, `Evidence`, `Command`, `Requirement`, `ProjectPlan`.
+- The concrete JSON schema: field-by-field contract, confidence enum, deterministic command ID scheme, ambiguity/conflict representation, schema version field. Published as JSON Schema.
+- Two or three realistic example plan documents (hand-written, e.g. modeled on the idea.md example repository) demonstrating variants, inferred commands, ambiguity, and conflicts.
+
+The phase ends with the schema, types, and examples presented for review. No further implementation until the contract is approved.
+
+### Phase 1b — Skeleton implementation
+
 Scope:
 
 - Go module, repository layout, CI for Suss itself.
-- Core types: `Finding`, `Evidence`, `Command`, `Requirement`, `ProjectPlan`.
-- The concrete JSON schema: field-by-field contract, confidence enum, deterministic command ID scheme, ambiguity/conflict representation, schema version field. Published as JSON Schema.
 - Project-root discovery (manifest-based: `package.json`, `go.mod`, `mix.exs`).
 - `suss . --json` producing a valid (if nearly empty) plan.
 - Golden-corpus snapshot harness: corpus repositories pinned by commit, expected plans checked in, `go test` compares detection output against them.
@@ -28,6 +40,15 @@ Acceptance:
 
 - `suss . --json` on a fixture repository emits schema-valid output.
 - The harness runs in CI with at least one fixture repository.
+
+### Decisions to pin before prompting an agent
+
+These are not recorded in idea.md and an agent would otherwise guess them silently. Recommended defaults, to be confirmed:
+
+- **Go module path**: `github.com/superplanehq/suss`.
+- **Minimum Go version**: latest stable at the time of scaffolding.
+- **CI for Suss itself**: GitHub Actions (decided). A useful side effect: Suss's own repository becomes a natural GHA corpus candidate later, so its workflow files should stay clean and conventional.
+- **License**: Apache 2.0 (decided). It is the norm for company-backed Go developer tooling (Buildpacks, Caddy, Cobra, CNCF projects), and its explicit patent grant makes corporate adoption and contribution easier than MIT for the agent/CI audience Suss targets.
 
 ## Milestone 2 — Node provider and human renderer
 
