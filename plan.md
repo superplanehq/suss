@@ -81,7 +81,7 @@ Acceptance:
 
 Status: completed and approved after one review iteration. Notable decisions: fixture-like roots (`testdata`, `fixtures`, `__fixtures__` high confidence; `examples` medium) are reported as ordinary projects with an evidence-backed `project.role=fixture` fact, not hidden. Script invocations use `pnpm run` / `yarn run` rather than bare `pnpm <name>` / `yarn <name>`, so builtin subcommands are not shadowed. `engines.node` is merged into a `.nvmrc` / `.node-version` pin only when the version strings are equal; otherwise it is a separate requirement.
 
-## Milestone 3 — GitHub Actions provider and reconciliation (make-or-break)
+## Milestone 3 — GitHub Actions provider and reconciliation (make-or-break) — DONE
 
 Prove the core design against real workflow files.
 
@@ -97,6 +97,16 @@ Acceptance:
 - Golden plan for `excalidraw/excalidraw` is correct: workspace facts, root scripts, CI variants linked to declared tasks, unlinked CI commands reported honestly.
 - If the reconciliation model does not survive contact with excalidraw's workflows, stop and revise idea.md before proceeding.
 - Extra corpus pin: `mermaid-js/mermaid`. A messy GHA-heavy pnpm workspace. The basics match the contributing guide (pnpm, `pnpm install`, `pnpm test`, `pnpm run build`, `pnpm run dev`); remaining declared scripts and uninterpreted CI tools are listed without guessing. CI unix/VCS plumbing is not a plan command. Environment names are CI secrets plus workflow-level literals, not job wiring.
+
+Status: completed and approved after two review iterations. The reconciliation model survived excalidraw and mermaid; idea.md gained refinements (which CI run steps are repository commands, which env names are requirements) rather than revisions. The matching rules live as the `reconcile` package doc comment. Notable decisions made during review:
+
+- Workflow YAML maps (jobs, services, env) are iterated in sorted order; duplicate evidence is merged by identity (kind, source, pointer, description), never dropped. A regression test detects the same repository twice and compares bytes.
+- Observed CI commands never match other observed commands; identical observations from distinct steps are tolerated as separate commands.
+- Workspace membership is decided by the declared package globs (yarn/npm `workspaces`, `pnpm-workspace.yaml`), not by ancestor presence. Non-member nested projects keep their own install commands and inherit manager signals only from a genuine workspace ancestor.
+- Declared version ranges are evaluated for real (`||` unions, comparators, caret, tilde, wildcard). Unevaluable versions — expressions, aliases like `lts/*`, and hyphen ranges (known limitation) — become `ci.matrix.<runtime>` facts, never supporting evidence or conflicts.
+- Heredoc statements, shell/unix/VCS plumbing, and `curl`/`wget` fetches are not plan commands. Unresolved `setup-*` version expressions yield unversioned runtime requirements. Expression-valued working directories fall back to the enclosing scope; matrix-valued ones fan out per axis value.
+- Leading `NAME=value` prefixes in observed run text are redacted to `NAME=$NAME` so command text never carries assignment values.
+- Reusable workflows and local composite actions are detected but not expanded, recorded as `provider.github-actions.limitation` facts.
 
 ## Milestone 4 — Go provider and convention inference
 
