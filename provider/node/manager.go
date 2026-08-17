@@ -112,22 +112,18 @@ func collectManagerSignals(ctx provider.Context, manifest packageManifest) ([]ma
 		return signals, err
 	}
 
-	parent := parentContext(ctx)
-	for parent != nil {
-		parentManifest, ok, err := readManifest(*parent)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			parentManifest = packageManifest{}
-		}
-		signals, err = collectManagerSignalsAt(*parent, parentManifest)
-		if err != nil || len(signals) > 0 {
-			return signals, err
-		}
-		parent = parentContext(*parent)
+	ancestor, ok, err := workspaceAncestor(ctx)
+	if err != nil || !ok {
+		return nil, err
 	}
-	return nil, nil
+	parentManifest, found, err := readManifest(*ancestor)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		parentManifest = packageManifest{}
+	}
+	return collectManagerSignalsAt(*ancestor, parentManifest)
 }
 
 func collectManagerSignalsAt(ctx provider.Context, manifest packageManifest) ([]managerSignal, error) {

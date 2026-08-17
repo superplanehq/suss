@@ -2,11 +2,14 @@ package node
 
 import (
 	"encoding/json"
+	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
+	"gopkg.in/yaml.v3"
 )
 
 func workspaceFindings(ctx provider.Context, manifest packageManifest) []plan.Finding {
@@ -107,29 +110,116 @@ func localLockfileManager(ctx provider.Context) string {
 }
 
 func isWorkspaceMember(ctx provider.Context) (bool, error) {
+	_, ok, err := workspaceAncestor(ctx)
+	return ok, err
+}
+
+func workspaceAncestor(ctx provider.Context) (*provider.Context, bool, error) {
 	parent := parentContext(ctx)
 	for parent != nil {
-		orchestrators, err := orchestratorsAt(*parent)
+		globs, err := workspacePackageGlobs(*parent)
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
-		if len(orchestrators) > 0 {
-			return true, nil
+		rel := relativeProjectPath(parent.ProjectPath, ctx.ProjectPath)
+		if matchesWorkspaceGlobs(globs, rel) {
+			return parent, true, nil
 		}
 		parent = parentContext(*parent)
 	}
-	return false, nil
+	return nil, false, nil
 }
 
-func orchestratorsAt(ctx provider.Context) ([]orchestrator, error) {
+func workspacePackageGlobs(ctx provider.Context) ([]string, error) {
+	var globs []string
 	manifest, ok, err := readManifest(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		manifest = packageManifest{}
+	if ok {
+		globs = append(globs, workspacesFromManifest(manifest)...)
 	}
-	return workspaceOrchestrators(ctx, manifest), nil
+	pnpm, err := pnpmWorkspacePackages(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return append(globs, pnpm...), nil
+}
+
+func workspacesFromManifest(manifest packageManifest) []string {
+	if !hasJSONValue(manifest.Workspaces) {
+		return nil
+	}
+	var packages []string
+	if err := json.Unmarshal(manifest.Workspaces, &packages); err == nil {
+		return packages
+	}
+	var object struct {
+		Packages []string `json:"packages"`
+	}
+	if err := json.Unmarshal(manifest.Workspaces, &object); err == nil {
+		return object.Packages
+	}
+	return nil
+}
+
+func pnpmWorkspacePackages(ctx provider.Context) ([]string, error) {
+	abs := filepath.Join(ctx.ProjectDir(), "pnpm-workspace.yaml")
+	contents, err := os.ReadFile(abs)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var parsed struct {
+		Packages []string `yaml:"packages"`
+	}
+	if err := yaml.Unmarshal(contents, &parsed); err != nil {
+		return nil, err
+	}
+	return parsed.Packages, nil
+}
+
+func relativeProjectPath(ancestor, project string) string {
+	if ancestor == "." || ancestor == "" {
+		return project
+	}
+	return strings.TrimPrefix(project, ancestor+"/")
+}
+
+func matchesWorkspaceGlobs(globs []string, rel string) bool {
+	rel = strings.TrimPrefix(rel, "./")
+	included := false
+	for _, glob := range globs {
+		glob = strings.TrimSpace(glob)
+		if glob == "" {
+			continue
+		}
+		if strings.HasPrefix(glob, "!") {
+			if matchWorkspaceGlob(strings.TrimPrefix(glob, "!"), rel) {
+				return false
+			}
+			continue
+		}
+		if matchWorkspaceGlob(glob, rel) {
+			included = true
+		}
+	}
+	return included
+}
+
+func matchWorkspaceGlob(glob, rel string) bool {
+	glob = strings.TrimSuffix(glob, "/")
+	if strings.Contains(glob, "**") {
+		prefix := strings.TrimSuffix(strings.TrimSuffix(glob, "**"), "/")
+		if prefix == "" {
+			return true
+		}
+		return rel == prefix || strings.HasPrefix(rel, prefix+"/")
+	}
+	ok, err := path.Match(glob, rel)
+	return err == nil && ok
 }
 
 func parentContext(ctx provider.Context) *provider.Context {

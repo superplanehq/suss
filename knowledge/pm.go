@@ -63,7 +63,7 @@ func isBareInstall(manager string) bool {
 
 func takeLeadingFlags(args []string) (flags, rest []string) {
 	i := 0
-	for i < len(args) && strings.HasPrefix(args[i], "-") {
+	for i < len(args) && strings.HasPrefix(args[i], "-") && args[i] != "--" {
 		i = skipManagerFlag(args, i)
 	}
 	return args[:i], args[i:]
@@ -71,7 +71,7 @@ func takeLeadingFlags(args []string) (flags, rest []string) {
 
 func takeScriptName(args []string) (script string, rest []string) {
 	i := 0
-	for i < len(args) && strings.HasPrefix(args[i], "-") {
+	for i < len(args) && strings.HasPrefix(args[i], "-") && args[i] != "--" {
 		i = skipManagerFlag(args, i)
 	}
 	if i >= len(args) {
@@ -108,6 +108,9 @@ func IsGlobalInstall(inv Invocation) bool {
 
 func isGlobalInstall(args []string) bool {
 	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
 		name, _, _ := strings.Cut(arg, "=")
 		if name == "-g" || name == "--global" {
 			return true

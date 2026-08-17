@@ -184,6 +184,19 @@ func capabilities(matches []Match) []plan.Capability {
 	return out
 }
 
+func TestStripDirectoryFlagsStopsAtDoubleDash(t *testing.T) {
+	t.Parallel()
+
+	dir, got := StripDirectoryFlags(Invocation{Executable: "npm", Args: []string{"test", "--", "--prefix", "fixtures"}})
+	if dir != "" {
+		t.Fatalf("dir = %q, want empty", dir)
+	}
+	want := Invocation{Executable: "npm", Args: []string{"test", "--", "--prefix", "fixtures"}}
+	if !invocationsEqual(got, want) {
+		t.Fatalf("canonical = %+v, want %+v", got, want)
+	}
+}
+
 func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	t.Parallel()
 

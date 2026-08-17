@@ -405,6 +405,28 @@ func TestDetectInheritsAncestorPackageManagerAndSkipsMemberInstall(t *testing.T)
 	}
 }
 
+func TestDetectDoesNotTreatOutOfGlobProjectsAsWorkspaceMembers(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "package.json"), `{"packageManager": "pnpm@9.15.0", "workspaces": ["packages/*"]}`)
+	writeFile(t, filepath.Join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n")
+	writeFile(t, filepath.Join(root, "examples", "demo", "package.json"), `{"scripts": {"test": "vitest"}}`)
+	writeFile(t, filepath.Join(root, "examples", "demo", "package-lock.json"), "{}\n")
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "examples/demo"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	project := assembleProject(t, "examples/demo", result)
+	if got := namesOfTools(project.PackageManagers); !slices.Equal(got, []string{"npm"}) {
+		t.Fatalf("packageManagers = %v, want npm from the local lockfile, not the ancestor", got)
+	}
+	if len(project.Preparation) == 0 {
+		t.Fatal("preparation = empty, want an install on a standalone nested project")
+	}
+}
+
 func TestDetectReportsYarnWorkspacesFromPackageJSON(t *testing.T) {
 	t.Parallel()
 

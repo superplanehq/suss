@@ -193,7 +193,7 @@ func TestWriteListsInterpretedCommandsFirst(t *testing.T) {
 	if lintAt < 0 || testAt < 0 || unknownAt < 0 {
 		t.Fatalf("output %q, want lint, test, and e2e:harness:coverage", got)
 	}
-	if !(lintAt < testAt && testAt < unknownAt) {
+	if lintAt >= testAt || testAt >= unknownAt {
 		t.Fatalf("output %q, want interpreted commands before uninterpreted", got)
 	}
 }

@@ -98,8 +98,11 @@ func matrixValues(node yaml.Node) map[string][]string {
 	for i := 0; i+1 < len(node.Content); i += 2 {
 		key := node.Content[i].Value
 		value := node.Content[i+1]
-		if key == "include" || key == "exclude" {
+		if key == "include" {
 			collectInclude(value, out)
+			continue
+		}
+		if key == "exclude" {
 			continue
 		}
 		out[key] = appendUnique(out[key], sequenceStrings(value)...)

@@ -1,6 +1,7 @@
 package suss
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"slices"
@@ -128,6 +129,48 @@ func TestDetectMarksFixtureLikeProjectRoots(t *testing.T) {
 	}
 	if facts["examples/demo"].Value != "fixture" || facts["examples/demo"].Confidence != plan.ConfidenceMedium {
 		t.Fatalf("examples fact = %+v, want medium-confidence fixture", facts["examples/demo"])
+	}
+}
+
+func TestDetectIsDeterministicForEquivalentRuntimePins(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "package.json"), `{"name":"app"}`+"\n")
+	writeFile(t, filepath.Join(root, ".github", "workflows", "ci.yml"), `
+jobs:
+  zebra:
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+      - run: npm test
+  alpha:
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: npm test
+`)
+
+	first, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	second, err := Detect(root)
+	if err != nil {
+		t.Fatalf("second Detect() error = %v", err)
+	}
+	got, err := first.MarshalCanonical()
+	if err != nil {
+		t.Fatalf("MarshalCanonical() error = %v", err)
+	}
+	again, err := second.MarshalCanonical()
+	if err != nil {
+		t.Fatalf("second MarshalCanonical() error = %v", err)
+	}
+	if !bytes.Equal(got, again) {
+		t.Fatalf("Detect() was not deterministic\n first:\n%s\nsecond:\n%s", got, again)
 	}
 }
 

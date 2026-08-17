@@ -290,6 +290,16 @@
                   "kind": "invocation",
                   "source": ".github/workflows/lint.yml",
                   "pointer": "/jobs/lint/steps/2/run#command=0"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test-coverage-pr.yml",
+                  "pointer": "/jobs/coverage/steps/2/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test.yml",
+                  "pointer": "/jobs/test/steps/2/run#command=0"
                 }
               ]
             }
@@ -572,24 +582,6 @@
               "kind": "declaration",
               "source": "package.json",
               "pointer": "/scripts/start"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_588a61ebf60b8c7bc412358b0c514e67",
-          "name": "node <<NODE",
-          "run": "node <<'NODE'",
-          "directory": ".",
-          "scope": "repository",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/semantic-pr-title.yml",
-              "pointer": "/jobs/label-scope/steps/0/run#command=3"
             }
           ],
           "interpretations": [],
@@ -1492,7 +1484,42 @@
           ]
         }
       ],
-      "preparation": [],
+      "preparation": [
+        {
+          "id": "cmd_0fe7e00cf2b3c8335eceac8408ee4813",
+          "name": "install dependencies",
+          "run": "yarn install --frozen-lockfile",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "dev-docs/yarn.lock"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "yarn-frozen"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "yarn-frozen"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
       "commands": [
         {
           "id": "cmd_0839c006e7ef047af9a7811bfc07d864",

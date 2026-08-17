@@ -46,6 +46,8 @@
 // CI tests, not a list of runtimes the developer must install:
 //   - a matching pin is merged as evidence on the declaration;
 //   - a version that satisfies a declared range is folded into that range;
+//   - a version that cannot be evaluated against a declared range is recorded
+//     as a ci.matrix.<runtime> fact, not as supporting evidence;
 //   - extra matrix pins beside a declared pin are recorded as ci.matrix.<runtime>
 //     facts;
 //   - a matrix with no declaration becomes one unversioned runtime plus those
@@ -88,7 +90,7 @@ func Apply(projects []plan.ProjectPlan, repo provider.Result) []plan.ProjectPlan
 
 	projects = applyNotes(projects, ".", repo.Ambiguities, repo.Conflicts)
 	for i := range projects {
-		applyWorkspaceScope(&projects[i])
+		projects[i].ApplyWorkspaceScope()
 	}
 	return projects
 }
@@ -120,7 +122,7 @@ func applyRequirement(projects []plan.ProjectPlan, dir string, requirement plan.
 		if !sameRequirement(existing, requirement) {
 			continue
 		}
-		project.Requirements[i].Evidence = append(append([]plan.Evidence{}, existing.Evidence...), requirement.Evidence...)
+		project.Requirements[i].Evidence = mergeEvidence(existing.Evidence, requirement.Evidence)
 		if requirement.Kind == plan.RequirementEnvironment {
 			project.Requirements[i].IsRequired = orBool(existing.IsRequired, requirement.IsRequired)
 			project.Requirements[i].HasDefault = orBool(existing.HasDefault, requirement.HasDefault)
@@ -142,7 +144,7 @@ func applyAssembledProperty(project *plan.ProjectPlan, property plan.Property) {
 	case plan.PropertyFact:
 		for i, fact := range project.Facts {
 			if fact.Name == property.Name && fact.Value == property.Value {
-				project.Facts[i].Evidence = append(append([]plan.Evidence{}, fact.Evidence...), property.Evidence...)
+				project.Facts[i].Evidence = mergeEvidence(fact.Evidence, property.Evidence)
 				return
 			}
 		}
@@ -178,29 +180,47 @@ func attachVariant(project *plan.ProjectPlan, id plan.CommandID, observed plan.C
 	}
 	for i := range project.Preparation {
 		if project.Preparation[i].ID == id {
-			if !hasVariant(project.Preparation[i].Variants, variant) {
-				project.Preparation[i].Variants = append(project.Preparation[i].Variants, variant)
-			}
+			project.Preparation[i].Variants = upsertVariant(project.Preparation[i].Variants, variant)
 			return
 		}
 	}
 	for i := range project.Commands {
 		if project.Commands[i].ID == id {
-			if !hasVariant(project.Commands[i].Variants, variant) {
-				project.Commands[i].Variants = append(project.Commands[i].Variants, variant)
-			}
+			project.Commands[i].Variants = upsertVariant(project.Commands[i].Variants, variant)
 			return
 		}
 	}
 }
 
-func hasVariant(variants []plan.CommandVariant, variant plan.CommandVariant) bool {
-	for _, existing := range variants {
+func upsertVariant(variants []plan.CommandVariant, variant plan.CommandVariant) []plan.CommandVariant {
+	for i, existing := range variants {
 		if existing.Context == variant.Context && existing.Run == variant.Run && existing.Directory == variant.Directory {
-			return true
+			variants[i].Evidence = mergeEvidence(existing.Evidence, variant.Evidence)
+			return variants
 		}
 	}
-	return false
+	return append(variants, variant)
+}
+
+func mergeEvidence(existing, incoming []plan.Evidence) []plan.Evidence {
+	out := append([]plan.Evidence{}, existing...)
+	seen := make(map[string]struct{}, len(out))
+	for _, item := range out {
+		seen[evidenceKey(item)] = struct{}{}
+	}
+	for _, item := range incoming {
+		key := evidenceKey(item)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, item)
+	}
+	return out
+}
+
+func evidenceKey(item plan.Evidence) string {
+	return string(item.Kind) + "\x00" + item.Source + "\x00" + item.Pointer + "\x00" + item.Description
 }
 
 func existingCommands(project plan.ProjectPlan) []plan.Command {
@@ -266,31 +286,10 @@ func normalizeDir(value string) string {
 }
 
 func projectScope(project plan.ProjectPlan) plan.CommandScope {
-	if hasWorkspaceOrchestrator(project) {
+	if project.HasWorkspaceOrchestrator() {
 		return plan.ScopeRepository
 	}
 	return plan.ScopeProject
-}
-
-func hasWorkspaceOrchestrator(project plan.ProjectPlan) bool {
-	for _, fact := range project.Facts {
-		if fact.Name == "workspace.orchestrator" {
-			return true
-		}
-	}
-	return false
-}
-
-func applyWorkspaceScope(project *plan.ProjectPlan) {
-	if !hasWorkspaceOrchestrator(*project) {
-		return
-	}
-	for i := range project.Commands {
-		project.Commands[i].Scope = plan.ScopeRepository
-	}
-	for i := range project.Preparation {
-		project.Preparation[i].Scope = plan.ScopeRepository
-	}
 }
 
 func sameRequirement(a, b plan.Requirement) bool {

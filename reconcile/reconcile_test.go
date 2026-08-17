@@ -233,6 +233,137 @@ func TestApplyCollapsesAMatrixWithNoDeclarationToOneRuntime(t *testing.T) {
 	}
 }
 
+func TestApplyDoesNotFoldIncompatibleRangeMembersAsEvidence(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "node",
+		Version:    "^18",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json", Pointer: "/engines/node"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciNode("22")},
+	})
+
+	if len(got[0].Requirements) != 1 || got[0].Requirements[0].Version != "^18" {
+		t.Fatalf("requirements = %+v, want declared ^18", got[0].Requirements)
+	}
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 22 attached to ^18", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 1 {
+		t.Fatalf("conflicts = %+v, want a version conflict for 22 vs ^18", got[0].Conflicts)
+	}
+}
+
+func TestApplyDoesNotFoldAVersionAboveAnUpperBound(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "node",
+		Version:    ">=22 <25",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json", Pointer: "/engines/node"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciNode("26")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 26 attached to >=22 <25", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 1 {
+		t.Fatalf("conflicts = %+v, want a version conflict for 26 vs >=22 <25", got[0].Conflicts)
+	}
+}
+
+func TestApplyRecordsUnevaluableRangesAsMatrixFacts(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "node",
+		Version:    "~",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json", Pointer: "/engines/node"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciNode("22")},
+	})
+
+	if values := factValues(got[0].Facts, "ci.matrix.node"); len(values) != 1 || values[0] != "22" {
+		t.Fatalf("facts = %+v, want ci.matrix.node=22 for an unevaluable range", got[0].Facts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI attached to an unevaluable declaration", got[0].Requirements[0].Evidence)
+	}
+}
+
+func TestApplyMergesDuplicateVariantEvidence(t *testing.T) {
+	t.Parallel()
+
+	declared := command(t, "node", ".", "/scripts/test", "test", "pnpm run test", plan.CommandDeclared, plan.CapabilityTestRun)
+	first := command(t, "github-actions", ".", "/jobs/alpha/steps/0/run", "test", "pnpm test", plan.CommandObserved, plan.CapabilityTestRun)
+	first.Evidence = []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/alpha/steps/0/run"}}
+	second := command(t, "github-actions", ".", "/jobs/zebra/steps/0/run", "test", "pnpm test", plan.CommandObserved, plan.CapabilityTestRun)
+	second.Evidence = []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/zebra/steps/0/run"}}
+
+	root := plan.NewProjectPlan(".")
+	root.Commands = []plan.Command{declared}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{
+			plan.CommandFinding{Command: first},
+			plan.CommandFinding{Command: second},
+		},
+	})
+
+	if len(got[0].Commands[0].Variants) != 1 {
+		t.Fatalf("variants = %+v, want one merged variant", got[0].Commands[0].Variants)
+	}
+	if len(got[0].Commands[0].Variants[0].Evidence) != 2 {
+		t.Fatalf("variant evidence = %+v, want both job pointers", got[0].Commands[0].Variants[0].Evidence)
+	}
+}
+
+func TestApplyDeduplicatesMergedRequirementEvidence(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "node",
+		Version:    "24.16.0",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: ".node-version"}},
+	}}
+	observation := plan.Requirement{
+		Kind:       plan.RequirementRuntime,
+		Name:       "node",
+		Version:    "24.16.0",
+		Confidence: plan.ConfidenceHigh,
+		Evidence: []plan.Evidence{
+			{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/a/steps/0/with/node-version-file"},
+			{Kind: plan.EvidenceDeclaration, Source: ".node-version"},
+		},
+	}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{
+			plan.RequirementFinding{ProjectPath: ".", Requirement: observation},
+			plan.RequirementFinding{ProjectPath: ".", Requirement: observation},
+		},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want declaration plus one invocation", got[0].Requirements[0].Evidence)
+	}
+}
+
 func TestApplyConflictsASingleCIPinAgainstADifferentDeclaration(t *testing.T) {
 	t.Parallel()
 
@@ -264,7 +395,12 @@ func ciNode(version string) plan.RequirementFinding {
 			Name:       "node",
 			Version:    version,
 			Confidence: plan.ConfidenceHigh,
-			Evidence:   []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/test/steps/1/with/node-version"}},
+			Evidence: []plan.Evidence{{
+				Kind:        plan.EvidenceInvocation,
+				Source:      ".github/workflows/ci.yml",
+				Pointer:     "/jobs/test/steps/1/with/node-version",
+				Description: "CI tests node " + version,
+			}},
 		},
 	}
 }

@@ -1,6 +1,7 @@
 package gha
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -284,9 +285,211 @@ jobs:
 	if !containsPrefix(runs, "gh api") {
 		t.Fatalf("runs = %v, want joined gh api", runs)
 	}
-	if !containsPrefix(runs, "node") {
-		t.Fatalf("runs = %v, want node heredoc invocation", runs)
+	for _, run := range runs {
+		if strings.Contains(run, "<<") {
+			t.Fatalf("runs = %v, did not want a heredoc invocation", runs)
+		}
 	}
+}
+
+func TestDetectIsDeterministicAcrossEquivalentJobs(t *testing.T) {
+	t.Parallel()
+
+	files := map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  zebra:
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+      - run: npm test
+  alpha:
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: npm test
+`,
+	}
+	first := detectFiles(t, files)
+	second := detectFiles(t, files)
+	if findingDump(first) != findingDump(second) {
+		t.Fatalf("Detect() findings were not deterministic\n first:\n%s\nsecond:\n%s", findingDump(first), findingDump(second))
+	}
+}
+
+func TestDetectLeavesUnresolvedSetupExpressionsUnversioned(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+`,
+	})
+	if !hasRequirement(result, plan.RequirementRuntime, "node", "") {
+		t.Fatalf("missing unversioned node runtime in %+v", result.Findings)
+	}
+	if hasRequirement(result, plan.RequirementRuntime, "node", "${{ vars.NODE_VERSION }}") {
+		t.Fatalf("expression was stored as a version in %+v", result.Findings)
+	}
+}
+
+func TestDetectDoesNotLeakDirectoryFlagsAcrossStatements(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: |
+          npm --prefix frontend test
+          npm --prefix backend test
+`,
+	})
+	var dirs []string
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok {
+			continue
+		}
+		dirs = append(dirs, item.Command.Directory)
+	}
+	if !slices.Equal(sortedCopy(dirs), []string{"backend", "frontend"}) {
+		t.Fatalf("directories = %v, want frontend and backend", dirs)
+	}
+}
+
+func TestDetectDoesNotTreatDoubleDashPrefixAsADirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: npm test -- --prefix fixtures
+`,
+	})
+	commands := commandByName(result)
+	got := commands["test"]
+	if got.Directory != "." {
+		t.Fatalf("directory = %q, want .", got.Directory)
+	}
+}
+
+func TestDetectOmitsMissingVersionFileEvidence(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+`,
+	})
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != "node" {
+			continue
+		}
+		for _, evidence := range item.Requirement.Evidence {
+			if evidence.Kind == plan.EvidenceFile {
+				t.Fatalf("evidence = %+v, did not want a file citation for a missing .nvmrc", item.Requirement.Evidence)
+			}
+		}
+		return
+	}
+	t.Fatal("missing node runtime requirement")
+}
+
+func TestDetectParsesRegistryPortImageTags(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    services:
+      db:
+        image: registry.example.com:5000/postgres:16
+    steps:
+      - run: echo skip
+`,
+	})
+	if !hasRequirement(result, plan.RequirementService, "postgres", "16") {
+		t.Fatalf("missing postgres 16 in %+v", result.Findings)
+	}
+}
+
+func TestDetectIgnoresMatrixExcludeEntries(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        node-version: [18]
+        exclude:
+          - node-version: 20
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+`,
+	})
+	versions := requirementVersions(result, plan.RequirementRuntime, "node")
+	if !slices.Equal(versions, []string{"18"}) {
+		t.Fatalf("node versions = %v, want only 18", versions)
+	}
+}
+
+func TestDetectDoesNotTreatSecretsPathAsASecretExpression(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+env:
+  CONFIG: config/secrets.yaml
+  API_TOKEN: ${{ secrets.API_TOKEN }}
+jobs:
+  test:
+    steps:
+      - run: echo skip
+`,
+	})
+	if !hasEnv(result, "API_TOKEN", true, false) {
+		t.Fatalf("missing secret API_TOKEN in %+v", result.Findings)
+	}
+	if hasEnv(result, "CONFIG", true, false) {
+		t.Fatalf("CONFIG should not be secret-supplied, got %+v", result.Findings)
+	}
+}
+
+func findingDump(result provider.Result) string {
+	var b strings.Builder
+	for _, finding := range result.Findings {
+		switch item := finding.(type) {
+		case plan.CommandFinding:
+			fmt.Fprintf(&b, "cmd %s %s %s %s\n", item.Command.Name, deref(item.Command.Run), item.Command.Directory, item.Command.Evidence[0].Pointer)
+		case plan.RequirementFinding:
+			fmt.Fprintf(&b, "req %s %s %s\n", item.Requirement.Name, item.Requirement.Version, item.Requirement.Evidence[0].Pointer)
+		case plan.PropertyFinding:
+			fmt.Fprintf(&b, "prop %s %s\n", item.Property.Name, item.Property.Value)
+		}
+	}
+	return b.String()
 }
 
 func commandRunTexts(result provider.Result) []string {

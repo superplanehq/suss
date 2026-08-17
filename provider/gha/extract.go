@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -22,8 +23,8 @@ func extract(ctx provider.Context, source string, workflow workflowFile) (provid
 
 	result.Findings = append(result.Findings, envFindings(source, "/env", ".", workflow.Env, true)...)
 
-	for jobID, job := range workflow.Jobs {
-		jobFindings, err := extractJob(ctx, source, workflowDir, jobID, job)
+	for _, jobID := range sortedKeys(workflow.Jobs) {
+		jobFindings, err := extractJob(ctx, source, workflowDir, jobID, workflow.Jobs[jobID])
 		if err != nil {
 			return provider.Result{}, err
 		}
@@ -121,6 +122,8 @@ func setupRuntimeFindings(ctx provider.Context, source, dir, stepPointer, runtim
 		} else {
 			return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/with/"+versionKey, runtime, "", "The setup action takes its version from a matrix axis that was not enumerated.")}
 		}
+	} else if strings.Contains(raw, "${{") {
+		return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/with/"+versionKey, runtime, "", "The setup action takes its version from an expression that was not resolved.")}
 	}
 
 	findings := make([]plan.Finding, 0, len(versions))
@@ -162,10 +165,6 @@ func versionFileFindings(ctx provider.Context, source, dir, stepPointer, runtime
 		}
 	}
 
-	evidence = append(evidence, plan.Evidence{
-		Kind:   plan.EvidenceFile,
-		Source: rel,
-	})
 	return []plan.Finding{requirementFinding(dir, plan.Requirement{
 		Kind:       plan.RequirementRuntime,
 		Name:       runtime,
@@ -208,8 +207,9 @@ func runFindings(ctx provider.Context, source, dir, pointer, script string) ([]p
 	current := dir
 	var findings []plan.Finding
 	for i, stmt := range statements {
-		current = applyStatementDirectory(ctx.RepositoryRoot, current, stmt)
+		commandDir := applyStatementDirectory(ctx.RepositoryRoot, current, stmt)
 		if stmt.Chdir != "" {
+			current = commandDir
 			continue
 		}
 		if skipStatement(stmt) {
@@ -223,7 +223,7 @@ func runFindings(ctx provider.Context, source, dir, pointer, script string) ([]p
 		if suffix {
 			commandPointer = pointer + "#command=" + strconv.Itoa(i)
 		}
-		command, err := observedCommand(source, current, commandPointer, stmt)
+		command, err := observedCommand(source, commandDir, commandPointer, stmt)
 		if err != nil {
 			return nil, err
 		}
@@ -340,6 +340,9 @@ func skipStatement(stmt knowledge.Statement) bool {
 	if strings.Contains(raw, "$(") || strings.Contains(raw, "=(") || strings.Contains(raw, "< <(") {
 		return true
 	}
+	if _, ok := heredocDelimiter(raw); ok {
+		return true
+	}
 
 	name := stmt.Invocation.Executable
 	if name == "" {
@@ -407,7 +410,8 @@ func envFindings(source, pointer, dir string, env stringMap, keepLiterals bool) 
 	}
 	names := make([]string, 0, len(env))
 	secret := make(map[string]bool, len(env))
-	for name, value := range env {
+	for _, name := range sortedKeys(env) {
+		value := env[name]
 		isSecret := isSecretValue(value)
 		if skipEnvName(name) || skipEnvValue(value) {
 			continue
@@ -456,12 +460,22 @@ func skipEnvValue(value string) bool {
 }
 
 func isSecretValue(value string) bool {
-	return strings.Contains(value, "secrets.")
+	start := strings.Index(value, "${{")
+	if start < 0 {
+		return false
+	}
+	rest := value[start:]
+	end := strings.Index(rest, "}}")
+	if end < 0 {
+		return false
+	}
+	return strings.Contains(rest[:end], "secrets.")
 }
 
 func serviceFindings(source, jobPointer, dir string, services map[string]service) []plan.Finding {
 	var findings []plan.Finding
-	for name, svc := range services {
+	for _, name := range sortedKeys(services) {
+		svc := services[name]
 		imagePointer := jobPointer + jsonPointer("services", name, "image")
 		serviceName, version := splitImage(svc.Image)
 		if serviceName == "" {
@@ -489,12 +503,29 @@ func splitImage(image string) (string, string) {
 		return "", ""
 	}
 	image = strings.TrimPrefix(image, "docker://")
-	name, version, _ := strings.Cut(image, "@")
-	name, tag, found := strings.Cut(name, ":")
-	if !found {
-		return path.Base(name), version
+	name, digest, _ := strings.Cut(image, "@")
+	slash := strings.LastIndex(name, "/")
+	repo := name
+	if slash >= 0 {
+		repo = name[slash+1:]
 	}
-	return path.Base(name), tag
+	repoName, tag, found := strings.Cut(repo, ":")
+	if !found {
+		return path.Base(repoName), digest
+	}
+	if digest != "" {
+		return repoName, digest
+	}
+	return repoName, tag
+}
+
+func sortedKeys[V any](m map[string]V) []string {
+	keys := make([]string, 0, len(m))
+	for key := range m {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+	return keys
 }
 
 func limitationFinding(source, pointer, value, description string) plan.Finding {

@@ -58,10 +58,10 @@ func foldRuntime(project *plan.ProjectPlan, name string, incoming []plan.Require
 	matrix := len(versions) > 1
 	for _, requirement := range incoming {
 		switch target, kind := matchExistingRuntime(*project, existing, requirement.Version); kind {
-		case runtimeEqual:
+		case runtimeEqual, runtimeSatisfies:
 			mergeRequirementEvidence(&project.Requirements[target], requirement.Evidence)
-		case runtimeSatisfies:
-			mergeRequirementEvidence(&project.Requirements[target], requirement.Evidence)
+		case runtimeUnevaluable:
+			addMatrixFact(project, name, requirement.Version, requirement.Evidence)
 		case runtimeMatrixExtra:
 			if matrix {
 				addMatrixFact(project, name, requirement.Version, requirement.Evidence)
@@ -77,6 +77,7 @@ type runtimeMatchKind int
 const (
 	runtimeEqual runtimeMatchKind = iota
 	runtimeSatisfies
+	runtimeUnevaluable
 	runtimeMatrixExtra
 )
 
@@ -86,10 +87,21 @@ func matchExistingRuntime(project plan.ProjectPlan, indexes []int, version strin
 			return index, runtimeEqual
 		}
 	}
+	unevaluable := -1
 	for _, index := range indexes {
-		if satisfies(project.Requirements[index].Version, version) {
+		ok, known := versionSatisfies(project.Requirements[index].Version, version)
+		if !known {
+			if unevaluable < 0 {
+				unevaluable = index
+			}
+			continue
+		}
+		if ok {
 			return index, runtimeSatisfies
 		}
+	}
+	if unevaluable >= 0 {
+		return unevaluable, runtimeUnevaluable
 	}
 	return indexes[0], runtimeMatrixExtra
 }
@@ -135,7 +147,7 @@ func evidenceForVersion(requirements []plan.Requirement, version string) []plan.
 func mergeIncoming(incoming []plan.Requirement) plan.Requirement {
 	merged := incoming[0]
 	for _, requirement := range incoming[1:] {
-		merged.Evidence = append(merged.Evidence, requirement.Evidence...)
+		merged.Evidence = mergeEvidence(merged.Evidence, requirement.Evidence)
 	}
 	return merged
 }
@@ -144,7 +156,7 @@ func unversionedRuntime(name string, incoming []plan.Requirement) plan.Requireme
 	var evidence []plan.Evidence
 	confidence := plan.ConfidenceHigh
 	for _, requirement := range incoming {
-		evidence = append(evidence, requirement.Evidence...)
+		evidence = mergeEvidence(evidence, requirement.Evidence)
 		if confidenceRank(requirement.Confidence) < confidenceRank(confidence) {
 			confidence = requirement.Confidence
 		}
@@ -171,7 +183,7 @@ func confidenceRank(confidence plan.Confidence) int {
 }
 
 func mergeRequirementEvidence(requirement *plan.Requirement, evidence []plan.Evidence) {
-	requirement.Evidence = append(append([]plan.Evidence{}, requirement.Evidence...), evidence...)
+	requirement.Evidence = mergeEvidence(requirement.Evidence, evidence)
 }
 
 func addMatrixFact(project *plan.ProjectPlan, runtime, version string, evidence []plan.Evidence) {
@@ -210,38 +222,168 @@ func normalizeVersion(version string) string {
 	return version
 }
 
-func satisfies(declared, version string) bool {
+func versionSatisfies(declared, version string) (ok, known bool) {
+	declared = strings.TrimSpace(declared)
+	version = normalizeVersion(version)
 	if declared == "" || version == "" {
-		return false
+		return false, true
 	}
 	if sameVersion(declared, version) {
-		return true
-	}
-	if !isVersionRange(declared) {
-		return false
+		return true, true
 	}
 
-	minimum, ok := rangeMinimum(declared)
-	if !ok {
-		return true
+	for _, group := range strings.Split(declared, "||") {
+		satisfied, groupKnown := andConstraints(strings.TrimSpace(group), version)
+		if !groupKnown {
+			return false, false
+		}
+		if satisfied {
+			return true, true
+		}
 	}
-	return compareVersions(normalizeVersion(version), minimum) >= 0
+	return false, true
 }
 
-func isVersionRange(version string) bool {
-	return strings.ContainsAny(version, "><^~*|") || strings.Contains(version, "||")
+func andConstraints(group, version string) (ok, known bool) {
+	tokens := splitConstraints(group)
+	if len(tokens) == 0 {
+		return false, false
+	}
+	for _, token := range tokens {
+		matched, tokenKnown := constraintSatisfies(token, version)
+		if !tokenKnown {
+			return false, false
+		}
+		if !matched {
+			return false, true
+		}
+	}
+	return true, true
 }
 
-func rangeMinimum(version string) (string, bool) {
-	trimmed := strings.TrimSpace(version)
+func splitConstraints(group string) []string {
+	var tokens []string
+	fields := strings.Fields(group)
+	for i := 0; i < len(fields); i++ {
+		field := fields[i]
+		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "^" || field == "~" {
+			if i+1 < len(fields) {
+				tokens = append(tokens, field+fields[i+1])
+				i++
+			}
+			continue
+		}
+		tokens = append(tokens, field)
+	}
+	return tokens
+}
+
+func constraintSatisfies(token, version string) (ok, known bool) {
 	switch {
-	case strings.HasPrefix(trimmed, ">="):
-		return normalizeVersion(strings.TrimSpace(trimmed[2:])), true
-	case strings.HasPrefix(trimmed, ">"):
-		return normalizeVersion(strings.TrimSpace(trimmed[1:])), true
+	case strings.HasPrefix(token, ">="):
+		bound := normalizeVersion(strings.TrimSpace(token[2:]))
+		if bound == "" {
+			return false, false
+		}
+		return compareVersions(version, bound) >= 0, true
+	case strings.HasPrefix(token, "<="):
+		bound := normalizeVersion(strings.TrimSpace(token[2:]))
+		if bound == "" {
+			return false, false
+		}
+		return compareVersions(version, bound) <= 0, true
+	case strings.HasPrefix(token, ">"):
+		bound := normalizeVersion(strings.TrimSpace(token[1:]))
+		if bound == "" {
+			return false, false
+		}
+		return compareVersions(version, bound) > 0, true
+	case strings.HasPrefix(token, "<"):
+		bound := normalizeVersion(strings.TrimSpace(token[1:]))
+		if bound == "" {
+			return false, false
+		}
+		return compareVersions(version, bound) < 0, true
+	case strings.HasPrefix(token, "^"):
+		return caretSatisfies(strings.TrimSpace(token[1:]), version)
+	case strings.HasPrefix(token, "~"):
+		return tildeSatisfies(strings.TrimSpace(token[1:]), version)
+	case strings.ContainsAny(token, "xX*"):
+		return wildcardSatisfies(token, version)
 	default:
-		return "", false
+		if strings.ContainsAny(token, "><^~|") {
+			return false, false
+		}
+		return sameVersion(token, version), true
 	}
+}
+
+func caretSatisfies(base, version string) (ok, known bool) {
+	base = normalizeVersion(base)
+	if base == "" {
+		return false, false
+	}
+	if compareVersions(version, base) < 0 {
+		return false, true
+	}
+	parts := strings.Split(base, ".")
+	major := versionPart(parts, 0)
+	minor := versionPart(parts, 1)
+	patch := versionPart(parts, 2)
+	switch {
+	case major > 0:
+		return compareVersions(version, formatVersion(major+1, 0, 0)) < 0, true
+	case minor > 0:
+		return compareVersions(version, formatVersion(0, minor+1, 0)) < 0, true
+	default:
+		return compareVersions(version, formatVersion(0, 0, patch+1)) < 0, true
+	}
+}
+
+func tildeSatisfies(raw, version string) (ok, known bool) {
+	raw = strings.TrimPrefix(strings.TrimSpace(raw), "v")
+	base := normalizeVersion(raw)
+	if base == "" {
+		return false, false
+	}
+	if compareVersions(version, base) < 0 {
+		return false, true
+	}
+	parts := strings.Split(raw, ".")
+	major := versionPart(parts, 0)
+	if len(parts) == 1 {
+		return compareVersions(version, formatVersion(major+1, 0, 0)) < 0, true
+	}
+	minor := versionPart(parts, 1)
+	return compareVersions(version, formatVersion(major, minor+1, 0)) < 0, true
+}
+
+func wildcardSatisfies(token, version string) (ok, known bool) {
+	token = strings.TrimPrefix(strings.TrimSpace(token), "v")
+	if token == "*" || token == "x" || token == "X" {
+		return true, true
+	}
+	parts := strings.Split(token, ".")
+	if len(parts) == 0 {
+		return false, false
+	}
+	if parts[0] == "*" || parts[0] == "x" || parts[0] == "X" {
+		return true, true
+	}
+	major := versionPart(parts, 0)
+	if len(parts) == 1 || isWildcardPart(parts[1]) {
+		return compareVersions(version, formatVersion(major, 0, 0)) >= 0 && compareVersions(version, formatVersion(major+1, 0, 0)) < 0, true
+	}
+	minor := versionPart(parts, 1)
+	return compareVersions(version, formatVersion(major, minor, 0)) >= 0 && compareVersions(version, formatVersion(major, minor+1, 0)) < 0, true
+}
+
+func isWildcardPart(part string) bool {
+	return part == "*" || part == "x" || part == "X"
+}
+
+func formatVersion(major, minor, patch int) string {
+	return strconv.Itoa(major) + "." + strconv.Itoa(minor) + "." + strconv.Itoa(patch)
 }
 
 func compareVersions(a, b string) int {

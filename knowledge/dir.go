@@ -25,6 +25,10 @@ func stripFlag(args []string, name, current string) ([]string, string) {
 	dir := current
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
+		if arg == "--" {
+			out = append(out, args[i:]...)
+			return out, dir
+		}
 		if arg == name {
 			if i+1 < len(args) {
 				dir = args[i+1]
