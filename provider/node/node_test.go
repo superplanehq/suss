@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/superplanehq/suss/plan"
@@ -244,6 +245,108 @@ func TestDetectInfersNpmFromNpmrcWhenNoLockfileIsPresent(t *testing.T) {
 	}
 	if !slices.Contains(commandCapabilities(project.Commands)["test"], plan.CapabilityCodeTypecheck) {
 		t.Fatalf("test interpretations = %v, want code.typecheck from tsc", commandCapabilities(project.Commands)["test"])
+	}
+}
+
+func TestDetectDoesNotTreatNpmrcAsCompetingWithALockfile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"package.json":   `{"scripts": {"test": "vitest"}}`,
+		"pnpm-lock.yaml": "lockfileVersion: '9.0'\n",
+		".npmrc":         "package-lock=false\n",
+	})
+	project := assembleProject(t, ".", result)
+
+	if got := namesOfTools(project.PackageManagers); !slices.Equal(got, []string{"pnpm"}) {
+		t.Fatalf("packageManagers = %v, want pnpm only", got)
+	}
+	if len(project.Ambiguities) != 0 {
+		t.Fatalf("ambiguities = %+v, want none", project.Ambiguities)
+	}
+	if len(project.Preparation) != 1 || deref(project.Preparation[0].Run) != "pnpm install --frozen-lockfile" {
+		t.Fatalf("preparation = %+v, want frozen pnpm install", project.Preparation)
+	}
+	if deref(commandByName(t, project, "test").Run) != "pnpm run test" {
+		t.Fatalf("test run = %v, want pnpm run test", commandByName(t, project, "test").Run)
+	}
+}
+
+func TestDetectPointsTypescriptEvidenceAtTheDeclaringSection(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"package.json": `{"peerDependencies": {"typescript": "^5.0.0"}}`,
+	})
+	project := assembleProject(t, ".", result)
+
+	var pointer string
+	for _, language := range project.Languages {
+		if language.Name != "typescript" {
+			continue
+		}
+		for _, evidence := range language.Evidence {
+			if evidence.Pointer != "" {
+				pointer = evidence.Pointer
+			}
+		}
+	}
+	if pointer != "/peerDependencies/typescript" {
+		t.Fatalf("typescript pointer = %q, want /peerDependencies/typescript", pointer)
+	}
+}
+
+func TestDetectMergesMatchingEnginesIntoAConflictingPin(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"package.json":  `{"engines": {"node": "22"}}`,
+		".nvmrc":        "22\n",
+		".node-version": "20\n",
+	})
+	project := assembleProject(t, ".", result)
+
+	if len(project.Requirements) != 2 {
+		t.Fatalf("requirements = %+v, want two pins, not a duplicate engines entry", project.Requirements)
+	}
+	pin := requirementByVersion(t, project.Requirements, "22")
+	if len(pin.Evidence) != 2 {
+		t.Fatalf("pin 22 evidence = %+v, want .nvmrc and engines", pin.Evidence)
+	}
+	var sawEngines bool
+	for _, evidence := range pin.Evidence {
+		if evidence.Pointer == "/engines/node" {
+			sawEngines = true
+		}
+	}
+	if !sawEngines {
+		t.Fatalf("pin 22 evidence = %+v, want engines merged into the matching pin", pin.Evidence)
+	}
+}
+
+func TestDetectReportsNpmCiForShrinkwrapInACompetingInstallAmbiguity(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"package.json":        `{"scripts": {"test": "vitest"}}`,
+		"npm-shrinkwrap.json": `{"lockfileVersion": 3}`,
+		"pnpm-lock.yaml":      "lockfileVersion: '9.0'\n",
+	})
+	project := assembleProject(t, ".", result)
+
+	var npmInstall string
+	for _, ambiguity := range project.Ambiguities {
+		if ambiguity.Subject != "dependencies.install" {
+			continue
+		}
+		for _, candidate := range ambiguity.Candidates {
+			if strings.HasPrefix(candidate.Value, "npm ") {
+				npmInstall = candidate.Value
+			}
+		}
+	}
+	if npmInstall != "npm ci" {
+		t.Fatalf("npm install candidate = %q, want npm ci", npmInstall)
 	}
 }
 

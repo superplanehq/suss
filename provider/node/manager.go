@@ -3,6 +3,7 @@ package node
 import (
 	"cmp"
 	"fmt"
+	"path"
 	"slices"
 	"strings"
 
@@ -150,12 +151,15 @@ func collectManagerSignals(ctx provider.Context, manifest packageManifest) ([]ma
 		return nil, err
 	}
 	if npmrc != nil {
-		signal := byName["npm"]
-		if signal == nil {
-			signal = &managerSignal{name: "npm", confidence: plan.ConfidenceHigh}
-			byName["npm"] = signal
+		if signal := byName["npm"]; signal != nil {
+			signal.evidence = append(signal.evidence, *npmrc)
+		} else if len(byName) == 0 {
+			byName["npm"] = &managerSignal{
+				name:       "npm",
+				confidence: plan.ConfidenceHigh,
+				evidence:   []plan.Evidence{*npmrc},
+			}
 		}
-		signal.evidence = append(signal.evidence, *npmrc)
 	}
 
 	signals := make([]managerSignal, 0, len(byName))
@@ -474,12 +478,7 @@ func installAmbiguity(ctx provider.Context, choice packageManagerChoice) plan.Am
 		if !ok || property.Property.Kind != plan.PropertyPackageManager {
 			continue
 		}
-		hasLockfile := false
-		for _, evidence := range property.Property.Evidence {
-			if evidence.Kind == plan.EvidenceFile && strings.Contains(evidence.Source, "lock") {
-				hasLockfile = true
-			}
-		}
+		hasLockfile := evidenceIncludesLockfile(property.Property.Evidence)
 		run := installRun(property.Property.Name, hasLockfile, property.Property.Name == "yarn" && isYarnBerry(ctx, "yarn"))
 		candidates = append(candidates, plan.Candidate{
 			Value:    run,
@@ -491,4 +490,19 @@ func installAmbiguity(ctx provider.Context, choice packageManagerChoice) plan.Am
 		Message:    "Competing lockfiles support different frozen dependency-install commands.",
 		Candidates: candidates,
 	}
+}
+
+func evidenceIncludesLockfile(evidence []plan.Evidence) bool {
+	for _, item := range evidence {
+		if item.Kind != plan.EvidenceFile {
+			continue
+		}
+		base := path.Base(item.Source)
+		for _, lockfile := range lockfiles {
+			if base == lockfile.file {
+				return true
+			}
+		}
+	}
+	return false
 }

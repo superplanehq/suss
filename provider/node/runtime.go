@@ -112,12 +112,17 @@ func disagreeingPins(pins []versionPin) bool {
 
 func conflictingPins(ctx provider.Context, pins []versionPin, engines *versionPin) runtimeResult {
 	assertions := make([]plan.Candidate, 0, len(pins))
-	findings := make([]plan.Finding, 0, len(pins))
+	findings := make([]plan.Finding, 0, len(pins)+1)
 	for _, pin := range pins {
 		assertions = append(assertions, plan.Candidate{
 			Value:    pin.version,
 			Evidence: []plan.Evidence{pin.evidence},
 		})
+		evidence := []plan.Evidence{pin.evidence}
+		if engines != nil && engines.version == pin.version {
+			evidence = append(evidence, engines.evidence)
+			engines = nil
+		}
 		findings = append(findings, plan.RequirementFinding{
 			ProjectPath: ctx.ProjectPath,
 			Detector:    providerName,
@@ -126,7 +131,7 @@ func conflictingPins(ctx provider.Context, pins []versionPin, engines *versionPi
 				Name:       "node",
 				Version:    pin.version,
 				Confidence: plan.ConfidenceMedium,
-				Evidence:   []plan.Evidence{pin.evidence},
+				Evidence:   evidence,
 			},
 		})
 	}

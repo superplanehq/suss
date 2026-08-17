@@ -20,13 +20,26 @@ func TestWriteReportsNoProjectRoots(t *testing.T) {
 	}
 }
 
-func TestWriteDistinguishesUncoveredProjects(t *testing.T) {
+func TestWriteRendersFixtureFactsOnUncoveredProjects(t *testing.T) {
 	t.Parallel()
 
-	document := plan.NewDocument([]plan.ProjectPlan{plan.NewProjectPlan("backend")})
-	got := renderDocument(document, []string{"node"})
+	project := plan.NewProjectPlan("testdata/sample")
+	project.Facts = []plan.ProjectFact{{
+		Name:       "project.role",
+		Value:      "fixture",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceFile, Source: "testdata/sample"}},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
 	if !strings.Contains(got, "No implemented provider produced findings") {
 		t.Fatalf("output %q, want an uncovered-project explanation", got)
+	}
+	if !strings.Contains(got, "project.role: fixture") {
+		t.Fatalf("output %q, want the fixture fact", got)
+	}
+	if !strings.Contains(got, "Evidence:") {
+		t.Fatalf("output %q, want fixture evidence", got)
 	}
 	if strings.Contains(got, "Languages:") {
 		t.Fatalf("output %q, want no empty field wall", got)

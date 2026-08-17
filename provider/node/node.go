@@ -144,11 +144,7 @@ func typescriptEvidence(ctx provider.Context, manifest packageManifest) []plan.E
 			Source: ctx.SourcePath("tsconfig.json"),
 		})
 	}
-	if hasDependency(manifest, "typescript") {
-		pointer := "/devDependencies/typescript"
-		if _, ok := stringFields(manifest.Dependencies)["typescript"]; ok {
-			pointer = "/dependencies/typescript"
-		}
+	if pointer, ok := dependencyPointer(manifest, "typescript"); ok {
 		evidence = append(evidence, plan.Evidence{
 			Kind:    plan.EvidenceDeclaration,
 			Source:  ctx.SourcePath("package.json"),
@@ -158,19 +154,22 @@ func typescriptEvidence(ctx provider.Context, manifest packageManifest) []plan.E
 	return evidence
 }
 
-func hasDependency(manifest packageManifest, name string) bool {
-	maps := []map[string]json.RawMessage{
-		manifest.Dependencies,
-		manifest.DevDependencies,
-		manifest.OptionalDependencies,
-		manifest.PeerDependencies,
+func dependencyPointer(manifest packageManifest, name string) (string, bool) {
+	sections := []struct {
+		field string
+		deps  map[string]json.RawMessage
+	}{
+		{"/dependencies/", manifest.Dependencies},
+		{"/devDependencies/", manifest.DevDependencies},
+		{"/optionalDependencies/", manifest.OptionalDependencies},
+		{"/peerDependencies/", manifest.PeerDependencies},
 	}
-	for _, deps := range maps {
-		if _, ok := stringFields(deps)[name]; ok {
-			return true
+	for _, section := range sections {
+		if _, ok := stringFields(section.deps)[name]; ok {
+			return section.field + name, true
 		}
 	}
-	return false
+	return "", false
 }
 
 func stringFields(raw map[string]json.RawMessage) map[string]string {

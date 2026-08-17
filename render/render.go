@@ -62,6 +62,8 @@ func writeProject(w io.Writer, project plan.ProjectPlan, providers []string) {
 	if !claimed(project) {
 		fmt.Fprintln(w)
 		fmt.Fprintf(w, "No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json.\n", joinProviders(providers))
+		writeFacts(w, project.Facts)
+		writeEvidence(w, project)
 		return
 	}
 
