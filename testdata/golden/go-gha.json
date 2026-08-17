@@ -23,13 +23,18 @@
         {
           "kind": "runtime",
           "name": "go",
-          "version": "1.26",
+          "version": "1.22",
           "confidence": "high",
           "evidence": [
             {
               "kind": "declaration",
               "source": "go.mod",
               "pointer": "/go"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/1/with/go-version"
             }
           ]
         }
@@ -72,6 +77,95 @@
         }
       ],
       "commands": [
+        {
+          "id": "cmd_128b73c8074d9654abe41930be1da37b",
+          "name": "golangci-lint run",
+          "run": "golangci-lint run --verbose",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/3/uses"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/3/uses",
+                  "description": "The command runs golangci-lint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_33a3282f3cadbdc5ea6cc1eee9d174e5",
+          "name": "test",
+          "run": "go test ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/2/run"
+            },
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "file",
+              "source": "lib_test.go"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "test",
+              "description": "Go modules with test files conventionally run all package tests with go test ./...."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "go test -race ./...",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/2/run"
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "cmd_771e916f311f45ac53eeb33ca2ee8376",
           "name": "vet",

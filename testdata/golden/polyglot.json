@@ -15,13 +15,146 @@
     },
     {
       "path": "backend",
-      "languages": [],
+      "languages": [
+        {
+          "name": "go",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "backend/go.mod",
+              "pointer": "/module"
+            }
+          ]
+        }
+      ],
       "frameworks": [],
       "packageManagers": [],
       "facts": [],
-      "requirements": [],
-      "preparation": [],
-      "commands": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "go",
+          "version": "1.26",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "backend/go.mod",
+              "pointer": "/go"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_448d5848be482229f7aacc07d5ca06ac",
+          "name": "download dependencies",
+          "run": "go mod download",
+          "directory": "backend",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "backend/go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "dependencies",
+              "description": "Go modules conventionally download dependencies with go mod download."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_0f01b74b535c96bc1adda5b0d0198995",
+          "name": "vet",
+          "run": "go vet ./...",
+          "directory": "backend",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "backend/go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "vet",
+              "description": "Go modules conventionally run go vet ./... to check packages."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "vet"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_2123d2d16e210a36e2e01d4eaddcc7f3",
+          "name": "build",
+          "run": "go build ./...",
+          "directory": "backend",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "backend/go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "build",
+              "description": "Go modules conventionally compile packages with go build ./...."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
       "ambiguities": [],
       "conflicts": []
     },

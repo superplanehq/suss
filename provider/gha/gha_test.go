@@ -233,6 +233,27 @@ jobs:
 	}
 }
 
+func TestDetectSkipsEnvSshAndRsyncPlumbing(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: |
+          env
+          ssh host echo hi
+          rsync -a src/ dest/
+          go test ./...
+`,
+	})
+
+	if got := keys(commandByName(result)); !slices.Equal(got, []string{"go test"}) {
+		t.Fatalf("commands = %v, want only go test", got)
+	}
+}
+
 func TestDetectSkipsRemoteGoInstallAndGoPlumbing(t *testing.T) {
 	t.Parallel()
 

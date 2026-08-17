@@ -23,11 +23,11 @@ type Options struct {
 // knowledge/invocations.json and can drift; derive both from one source when
 // the knowledge base grows.
 var toolCapabilities = map[string][]plan.Capability{
-	"eslint":   {plan.CapabilityCodeLint},
-	"prettier": {plan.CapabilityCodeFormat},
-	"tsc":      {plan.CapabilityCodeTypecheck},
-	"vitest":   {plan.CapabilityTestRun},
-	"jest":     {plan.CapabilityTestRun},
+	"eslint":        {plan.CapabilityCodeLint},
+	"prettier":      {plan.CapabilityCodeFormat},
+	"tsc":           {plan.CapabilityCodeTypecheck},
+	"vitest":        {plan.CapabilityTestRun},
+	"jest":          {plan.CapabilityTestRun},
 	"vite":          {plan.CapabilityArtifactBuild, plan.CapabilityApplicationRun},
 	"golangci-lint": {plan.CapabilityCodeLint},
 }

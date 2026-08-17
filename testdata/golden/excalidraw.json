@@ -244,6 +244,26 @@
               "pointer": "/packageManager"
             },
             {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/lint/steps/2/run#command=0"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/sentry-production.yml",
+              "pointer": "/jobs/sentry/steps/2/run#command=0"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-coverage-pr.yml",
+              "pointer": "/jobs/coverage/steps/2/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/test/steps/2/run#command=0"
+            },
+            {
               "kind": "file",
               "source": "yarn.lock"
             },

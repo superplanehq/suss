@@ -23,9 +23,9 @@ func TestDetectReadsModuleVersionAndInfersConventions(t *testing.T) {
 	t.Parallel()
 
 	result := detectFiles(t, map[string]string{
-		"go.mod":       "module example.com/lib\n\ngo 1.22\n",
-		"lib.go":       "package lib\n",
-		"lib_test.go":  "package lib\n",
+		"go.mod":        "module example.com/lib\n\ngo 1.22\n",
+		"lib.go":        "package lib\n",
+		"lib_test.go":   "package lib\n",
 		".golangci.yml": "version: \"2\"\n",
 	})
 	project := assembleProject(t, ".", result)

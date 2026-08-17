@@ -462,6 +462,7 @@ var skippedExecutables = map[string]struct{}{
 	"dirname": {}, "basename": {}, "realpath": {}, "pwd": {},
 	"which": {}, "command": {}, "type": {},
 	"git": {}, "curl": {}, "wget": {},
+	"env": {}, "ssh": {}, "rsync": {},
 }
 
 func envFindings(source, pointer, dir string, env stringMap, keepLiterals bool) []plan.Finding {
