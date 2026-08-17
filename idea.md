@@ -382,7 +382,7 @@ Reconciliation should consider the role and context of each source:
 - CI shows which commands are used in a particular automated context;
 - configuration confirms which tools are present;
 - conventions fill gaps when explicit evidence is absent;
-- documentation provides supporting evidence but may be stale.
+- documentation provides supporting evidence but may be stale (parsing READMEs and docs is out of scope for v0; only structured sources are used).
 
 The preferred answer depends on the question:
 
@@ -449,7 +449,7 @@ generate
 
 Suss should not infer behavior from a task name alone.
 
-### Execution profiles
+### Execution profiles (post-v0)
 
 A command may have a profile describing the context in which it is used.
 
@@ -472,7 +472,7 @@ Both commands provide `application.run`, but they operate in different contexts.
 
 If Suss cannot establish what `start` or `dev` does, it should report the command without assigning a profile.
 
-### Command behavior
+### Command behavior (post-v0)
 
 Suss may also record useful execution characteristics:
 
@@ -570,15 +570,14 @@ Suss uses a provider model:
 ```text
 NodeProvider
 GoProvider
-PythonProvider
-RustProvider
-JvmProvider
-DotnetProvider
+ElixirProvider
 GitHubActionsProvider
 SemaphoreProvider
 MakeProvider
 DockerComposeProvider
 ```
+
+Post-v0 providers include Python, Ruby, Rust, JVM, and .NET.
 
 Providers emit evidence-backed findings rather than directly producing a final plan.
 
@@ -691,8 +690,6 @@ The initial version should support:
 - Node.js and TypeScript;
 - Go;
 - Elixir;
-- Python;
-- Ruby;
 - GitHub Actions;
 - Semaphore;
 - Docker Compose;
@@ -700,6 +697,45 @@ The initial version should support:
 - package-manager scripts;
 - common runtime-version files;
 - common test, lint, type-check, and build tools.
+
+Python, Ruby, and other ecosystems come after v0.
+
+### Dogfood repositories and evaluation
+
+v0 is working when it produces correct, evidence-backed plans for the repositories in our orbit:
+
+- `superplanehq/superplane`
+- `operately/operately`
+- `semaphoreio/semaphore`
+
+To avoid overfitting to our own conventions, the corpus also includes neutral open-source repositories of different shapes, ordered roughly from simple to complex:
+
+- `chalk/chalk` — a trivial single-package npm library with plain scripts; the baseline case.
+- `spf13/cobra` — a simple Go library with no task runner; exercises pure convention-based inference (`go test ./...`) plus golangci-lint and GitHub Actions.
+- `elixir-ecto/ecto` — an Elixir library driven by Mix, whose CI matrix runs against database services.
+- `caddyserver/caddy` — a Go application with a plain toolchain and a cross-platform GitHub Actions matrix.
+- `excalidraw/excalidraw` — a TypeScript Yarn-workspaces monorepo with Vitest, where root scripts delegate into packages; exercises workspace detection.
+- `plausible/analytics` — a polyglot Elixir/Phoenix application with a React/TypeScript frontend, a Makefile, and PostgreSQL + ClickHouse services; structurally close to the dogfood repositories but neutral.
+- `grafana/grafana` — a very large Go + TypeScript monorepo with a heavy Makefile and extensive CI; the stress test.
+
+Each corpus repository has an expected golden plan checked in, and detection runs against the corpus as snapshot tests. The corpus is the definition of done for v0 and the regression suite as providers evolve.
+
+### Interpretations in v0
+
+Detection is purely static and deterministic; no LLM is involved. Capabilities are assigned from a small, declarative knowledge base that maps well-known tool invocations (`vitest`, `jest`, `eslint`, `tsc`, `go test`, `golangci-lint`, `mix test`, ...) to capabilities. The knowledge base is data, not code, so it is testable and easy to extend.
+
+If a command does not match the knowledge base, it is reported without interpretation. Execution profiles and command behavior characteristics are deferred past v0.
+
+### Workspaces in v0
+
+v0 detects project roots and per-project commands. Workspace orchestrators (`pnpm-workspace.yaml`, `turbo.json`, `nx.json`, `go.work`) are detected and reported as project facts, and root-level orchestrator commands are recorded with repository-wide scope. Fan-out from orchestrator commands to member packages is not modeled, and orchestrator commands are never attributed to individual packages.
+
+### Implementation
+
+- Suss is implemented in Go and distributed as a single static binary, so agents and CI can invoke it with no runtime dependencies.
+- The versioned JSON output is the primary product. The human-readable CLI output is a renderer of the JSON, never a separate code path.
+- A published JSON Schema describes the output, and the schema version appears in every plan.
+- Command IDs are deterministic and stable across re-detections of the same repository, so consumers can reference commands persistently.
 
 Initial commands:
 
