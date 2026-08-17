@@ -1,0 +1,3280 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": ".eslintrc.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "prettier",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/prettier"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "tsconfig.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vitest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "vitest.config.mts"
+            }
+          ]
+        },
+        {
+          "name": "workspace.orchestrator",
+          "value": "yarn",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/workspaces"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": ">=18.0.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/engines/node"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/autorelease-excalidraw.yml",
+              "pointer": "/jobs/Auto-release-excalidraw-next/steps/1/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/lint/steps/1/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/locales-coverage.yml",
+              "pointer": "/jobs/locales/steps/1/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/sentry-production.yml",
+              "pointer": "/jobs/sentry/steps/1/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/size-limit.yml",
+              "pointer": "/jobs/size/steps/1/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-coverage-pr.yml",
+              "pointer": "/jobs/coverage/steps/1/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/test/steps/1/with/node-version"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GH_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/semantic-pr-title.yml",
+              "pointer": "/jobs/label-scope/steps/0/env/GH_TOKEN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "NPM_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/autorelease-excalidraw.yml",
+              "pointer": "/jobs/Auto-release-excalidraw-next/steps/2/env/NPM_TOKEN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SENTRY_AUTH_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/sentry-production.yml",
+              "pointer": "/jobs/sentry/steps/4/env/SENTRY_AUTH_TOKEN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SENTRY_ORG",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/sentry-production.yml",
+              "pointer": "/jobs/sentry/steps/4/env/SENTRY_ORG"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SENTRY_PROJECT",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/sentry-production.yml",
+              "pointer": "/jobs/sentry/steps/4/env/SENTRY_PROJECT"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_ae21e52c391ccef56f7107de041061bb",
+          "name": "install dependencies",
+          "run": "yarn install --frozen-lockfile",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "yarn-frozen"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "yarn-frozen"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn --frozen-lockfile",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/sentry-production.yml",
+                  "pointer": "/jobs/sentry/steps/2/run#command=0"
+                }
+              ]
+            },
+            {
+              "context": "ci",
+              "run": "yarn install",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint.yml",
+                  "pointer": "/jobs/lint/steps/2/run#command=0"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test-coverage-pr.yml",
+                  "pointer": "/jobs/coverage/steps/2/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test.yml",
+                  "pointer": "/jobs/test/steps/2/run#command=0"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_01820381f9edf10baac6d90fa56f8d39",
+          "name": "prepare",
+          "run": "yarn run prepare",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/prepare"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_084c129b7d35ea0d999f4d83d86de83b",
+          "name": "rm:build",
+          "run": "yarn run rm:build",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/rm:build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2384ae61a416baf31ed5065d488885b0",
+          "name": "start:production",
+          "run": "yarn run start:production",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/start:production"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2483ff0fc8ec1495406972a3f12ac980",
+          "name": "test:other",
+          "run": "yarn run test:other",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:other"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn test:other",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint.yml",
+                  "pointer": "/jobs/lint/steps/2/run#command=1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_2e9c671dd141188c59132d28c399a2d5",
+          "name": "sentry-cli releases",
+          "run": "sentry-cli releases set-commits --auto $SENTRY_RELEASE",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/sentry-production.yml",
+              "pointer": "/jobs/sentry/steps/4/run#command=2"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_31c3d26487e29bf77adc90d7c4871726",
+          "name": "build:version",
+          "run": "yarn run build:version",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:version"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3af46eb6309144acb0a4d81bc889bd92",
+          "name": "npm config",
+          "run": "npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/autorelease-excalidraw.yml",
+              "pointer": "/jobs/Auto-release-excalidraw-next/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_40bcab586cb573af2ce9fdce54e23be6",
+          "name": "locales-coverage",
+          "run": "yarn run locales-coverage",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/locales-coverage"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn locales-coverage",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/locales-coverage.yml",
+                  "pointer": "/jobs/locales/steps/2/run#command=0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_42cc2e70624dddc6b73a5cdadd84eb1d",
+          "name": "build:math",
+          "run": "yarn run build:math",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:math"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_43059e70c9170bc9be27285ebb426117",
+          "name": "release:latest",
+          "run": "yarn run release:latest",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/release:latest"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4a1c88e46c121856908971c735014bf1",
+          "name": "sentry-cli releases",
+          "run": "sentry-cli releases new $SENTRY_RELEASE --project $SENTRY_PROJECT",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/sentry-production.yml",
+              "pointer": "/jobs/sentry/steps/4/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4b6e872d53135230fbbe15f5fb909aa5",
+          "name": "fix:other",
+          "run": "yarn run fix:other",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/fix:other"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4e29e0cb5e8a357394421db703a568bc",
+          "name": "build:app:docker",
+          "run": "yarn run build:app:docker",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:app:docker"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_532e4676659f42b7d65055647cd85ef2",
+          "name": "start",
+          "run": "yarn run start",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/start"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_64bd5cbc6d628a43fafb5f3c7b81f46e",
+          "name": "build:fractional-indexing",
+          "run": "yarn run build:fractional-indexing",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:fractional-indexing"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_66c71913a93033ee38d43c9f2e088704",
+          "name": "test",
+          "run": "yarn run test",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6a24d9ea4f68ce9773165dbfbbb06769",
+          "name": "build:app",
+          "run": "yarn run build:app",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:app"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn build:app",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/sentry-production.yml",
+                  "pointer": "/jobs/sentry/steps/2/run#command=1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_701a44efdc50a5f0f3efc0b9fe5d8a0a",
+          "name": "build:element",
+          "run": "yarn run build:element",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:element"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_745c8503fe62bf6ff1cfc03988b41552",
+          "name": "build:packages",
+          "run": "yarn run build:packages",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:packages"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7a2b10f4297d8f42d1dd3298a82618a5",
+          "name": "release",
+          "run": "yarn run release",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/release"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn release --tag=next --non-interactive",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/autorelease-excalidraw.yml",
+                  "pointer": "/jobs/Auto-release-excalidraw-next/steps/3/run#command=1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_7c55b3529225bfdbf351de2097654c25",
+          "name": "build:common",
+          "run": "yarn run build:common",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:common"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8f164c4d640455ddeba1e8091cd2839c",
+          "name": "sentry-cli releases",
+          "run": "sentry-cli releases finalize $SENTRY_RELEASE",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/sentry-production.yml",
+              "pointer": "/jobs/sentry/steps/4/run#command=4"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8ff5429d44c7db0220df71ab9d3437be",
+          "name": "start:example",
+          "run": "yarn run start:example",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/start:example"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9816e50fa0e2dff159e39ff35704893a",
+          "name": "test:update",
+          "run": "yarn run test:update",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:update"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ab9077bc5313a0fe128e3d5af21168be",
+          "name": "rm:node_modules",
+          "run": "yarn run rm:node_modules",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/rm:node_modules"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ac1d00ae28290dacfd227b74a3abb62d",
+          "name": "build",
+          "run": "yarn run build",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b22034fe83ff0c4d9a6e7d084d0e35d6",
+          "name": "clean-install",
+          "run": "yarn run clean-install",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/clean-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/clean-install",
+                  "description": "The command installs Yarn dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_c0ba7a2b896dbce0ef59027941af51e8",
+          "name": "sentry-cli sourcemaps",
+          "run": "sentry-cli sourcemaps upload --release $SENTRY_RELEASE --no-rewrite ./build/static/js/ --url-prefix \"~/static/js\"",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/sentry-production.yml",
+              "pointer": "/jobs/sentry/steps/4/run#command=3"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c7af63d635b57616d34f93585e4ffa89",
+          "name": "yarn add",
+          "run": "yarn add @actions/core -W",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/autorelease-excalidraw.yml",
+              "pointer": "/jobs/Auto-release-excalidraw-next/steps/3/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cbdd302350f31122443e0948dd43989a",
+          "name": "locales-coverage:description",
+          "run": "yarn run locales-coverage:description",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/locales-coverage:description"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cde541e22b3c309b3945a3107142b9a5",
+          "name": "test:typecheck",
+          "run": "yarn run test:typecheck",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:typecheck"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/test:typecheck",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn test:typecheck",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint.yml",
+                  "pointer": "/jobs/lint/steps/2/run#command=3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_cfb281bb7e9f75a978e4dc9fb44c4258",
+          "name": "test:coverage:watch",
+          "run": "yarn run test:coverage:watch",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:coverage:watch"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/test:coverage:watch",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_d048ea5a32fe5854442536156866cb26",
+          "name": "test:app",
+          "run": "yarn run test:app",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:app"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/test:app",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn test:app",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test.yml",
+                  "pointer": "/jobs/test/steps/2/run#command=1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_d1914f41bda2605fa73011111eba6f05",
+          "name": "release:next",
+          "run": "yarn run release:next",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/release:next"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d3095d0598745f8bc3fa6eaa520664c9",
+          "name": "release:test",
+          "run": "yarn run release:test",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/release:test"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d68389baa5757b9901022c684c7dbe57",
+          "name": "test:coverage",
+          "run": "yarn run test:coverage",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:coverage"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/test:coverage",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn test:coverage",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test-coverage-pr.yml",
+                  "pointer": "/jobs/coverage/steps/3/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_df6432bc9762f765716885369ab4caf4",
+          "name": "test:ui",
+          "run": "yarn run test:ui",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:ui"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e355d1f8b38c33e1c4c113a267f3e9b3",
+          "name": "fix",
+          "run": "yarn run fix",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/fix"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e515e0b4e1266c571312103376ffd225",
+          "name": "build:preview",
+          "run": "yarn run build:preview",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:preview"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e55b13da1d99e71d1207f9ab23dfc217",
+          "name": "gh api",
+          "run": "gh api        --method DELETE        \"repos/${REPOSITORY}/issues/${PR_NUMBER}/labels/${label}\"        --silent 2>/dev/null",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/semantic-pr-title.yml",
+              "pointer": "/jobs/label-scope/steps/0/run#command=20"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e82b9078baa525bde1be0e83893b55ad",
+          "name": "prettier",
+          "run": "yarn run prettier",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/prettier"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/prettier",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_e94c3d49b021bdc25afc42ecba9c2c9c",
+          "name": "docker build",
+          "run": "docker build -t excalidraw .",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build-docker.yml",
+              "pointer": "/jobs/build-docker/steps/1/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ea9a3a4042570f13f9715837ed5aa7a6",
+          "name": "build:excalidraw",
+          "run": "yarn run build:excalidraw",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:excalidraw"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_eba317736ef7f376c66dead0c72852de",
+          "name": "fix:code",
+          "run": "yarn run fix:code",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/fix:code"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f12925b3153041f349e70b19618d953e",
+          "name": "build:laser-pointer",
+          "run": "yarn run build:laser-pointer",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:laser-pointer"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f984a95c51dd6f813d5f309227200612",
+          "name": "sentry-cli releases",
+          "run": "sentry-cli releases deploys $SENTRY_RELEASE new -e production",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/sentry-production.yml",
+              "pointer": "/jobs/sentry/steps/4/run#command=5"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fbb366bfc21a985af35327e695246841",
+          "name": "test:code",
+          "run": "yarn run test:code",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:code"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/test:code",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "yarn test:code",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint.yml",
+                  "pointer": "/jobs/lint/steps/2/run#command=2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_fc05f1cc6925a4802bbcd5a7a859c308",
+          "name": "build-node",
+          "run": "yarn run build-node",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build-node"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fce9b9c6a3387d2a15205776ef2b6fca",
+          "name": "test:all",
+          "run": "yarn run test:all",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:all"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "dev-docs",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "dev-docs/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "dev-docs/yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "dev-docs/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": ">=16.14",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/engines/node"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_0fe7e00cf2b3c8335eceac8408ee4813",
+          "name": "install dependencies",
+          "run": "yarn install --frozen-lockfile",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "dev-docs/yarn.lock"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "yarn-frozen"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "yarn-frozen"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_0839c006e7ef047af9a7811bfc07d864",
+          "name": "deploy",
+          "run": "yarn run deploy",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/scripts/deploy"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_15eece1a3108c1eb179ff6c8a7d11c08",
+          "name": "start",
+          "run": "yarn run start",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/scripts/start"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2883206d59c3fe2d2bad8f2d3e68119f",
+          "name": "serve",
+          "run": "yarn run serve",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/scripts/serve"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_31a5c13ebcb48da4992a520e600f3ace",
+          "name": "write-heading-ids",
+          "run": "yarn run write-heading-ids",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/scripts/write-heading-ids"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_320224802ac34cdfa14d82f681f53493",
+          "name": "build",
+          "run": "yarn run build",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_af740b464cb1a61ed1a9a6d19e245848",
+          "name": "typecheck",
+          "run": "yarn run typecheck",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/scripts/typecheck"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "dev-docs/package.json",
+                  "pointer": "/scripts/typecheck",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_afb1dbe24767c65aa99119e9460d22cf",
+          "name": "write-translations",
+          "run": "yarn run write-translations",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/scripts/write-translations"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d25e2133111bb4c67e55ed93fc009e81",
+          "name": "swizzle",
+          "run": "yarn run swizzle",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/scripts/swizzle"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_dd5e695c93244e6085fd33be4a789730",
+          "name": "docusaurus",
+          "run": "yarn run docusaurus",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/scripts/docusaurus"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fd14ffa4bcf2bba150119a925f33f2ab",
+          "name": "clear",
+          "run": "yarn run clear",
+          "directory": "dev-docs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev-docs/package.json",
+              "pointer": "/scripts/clear"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/with-nextjs",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-nextjs/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-nextjs/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "examples/with-nextjs/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/with-nextjs/yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/with-nextjs",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "examples/with-nextjs/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_3b712551adb47a527605649c25415108",
+          "name": "build:workspace",
+          "run": "yarn run build:workspace",
+          "directory": "examples/with-nextjs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-nextjs/package.json",
+              "pointer": "/scripts/build:workspace"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3f7adfa60ae2c61510527114b5d09ae2",
+          "name": "dev",
+          "run": "yarn run dev",
+          "directory": "examples/with-nextjs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-nextjs/package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_756b4edd608efb29c8394de43ef70c35",
+          "name": "build:packages",
+          "run": "yarn run build:packages",
+          "directory": "examples/with-nextjs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-nextjs/package.json",
+              "pointer": "/scripts/build:packages"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a00fe3941227e5a871f503bf3439aaee",
+          "name": "lint",
+          "run": "yarn run lint",
+          "directory": "examples/with-nextjs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-nextjs/package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b4f56e857003efae01708e86b2962dbd",
+          "name": "build",
+          "run": "yarn run build",
+          "directory": "examples/with-nextjs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-nextjs/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_bbe5b7acf5d6958f77c4d764605513be",
+          "name": "copy:assets",
+          "run": "yarn run copy:assets",
+          "directory": "examples/with-nextjs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-nextjs/package.json",
+              "pointer": "/scripts/copy:assets"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c3e1500750afcfa022d8bcf3c4a97749",
+          "name": "start",
+          "run": "yarn run start",
+          "directory": "examples/with-nextjs",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-nextjs/package.json",
+              "pointer": "/scripts/start"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/with-script-in-browser",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-script-in-browser/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-script-in-browser/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "examples/with-script-in-browser/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "examples/with-script-in-browser/vite.config.mts"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/with-script-in-browser",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "examples/with-script-in-browser/tsconfig.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "examples/with-script-in-browser/vite.config.mts"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_024f2abe810c23b41eaaee841581d96f",
+          "name": "start",
+          "run": "yarn run start",
+          "directory": "examples/with-script-in-browser",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-script-in-browser/package.json",
+              "pointer": "/scripts/start"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "examples/with-script-in-browser/package.json",
+                  "pointer": "/scripts/start",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_2a1d9c1fbed246d0290e853f1aadc9d9",
+          "name": "build:packages",
+          "run": "yarn run build:packages",
+          "directory": "examples/with-script-in-browser",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-script-in-browser/package.json",
+              "pointer": "/scripts/build:packages"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3290f96e5ccca2ccc2cf2cd04725a93c",
+          "name": "build:preview",
+          "run": "yarn run build:preview",
+          "directory": "examples/with-script-in-browser",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-script-in-browser/package.json",
+              "pointer": "/scripts/build:preview"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_94352a7b514bc6c9dec027a17c0bdea9",
+          "name": "preview",
+          "run": "yarn run preview",
+          "directory": "examples/with-script-in-browser",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-script-in-browser/package.json",
+              "pointer": "/scripts/preview"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "examples/with-script-in-browser/package.json",
+                  "pointer": "/scripts/preview",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_f3368234d4e774bb4d5c09f44de92d05",
+          "name": "build",
+          "run": "yarn run build",
+          "directory": "examples/with-script-in-browser",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/with-script-in-browser/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "examples/with-script-in-browser/package.json",
+                  "pointer": "/scripts/build",
+                  "description": "The script invokes vite build."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "excalidraw-app",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "excalidraw-app/vite.config.mts"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "prettier",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/prettier"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "excalidraw-app/vite.config.mts"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": ">=18.0.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/engines/node"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_23f9f27873e812e9e09ebc4d592bb82d",
+          "name": "start:production",
+          "run": "yarn run start:production",
+          "directory": "excalidraw-app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/scripts/start:production"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3a2b7c59ed8102db082c2d1d674dfa55",
+          "name": "build",
+          "run": "yarn run build",
+          "directory": "excalidraw-app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_42c539ce8449c2aad3bd09fba9bb983f",
+          "name": "build:app:docker",
+          "run": "yarn run build:app:docker",
+          "directory": "excalidraw-app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/scripts/build:app:docker"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_543de67718e2ebf3444373ef432df23e",
+          "name": "build:preview",
+          "run": "yarn run build:preview",
+          "directory": "excalidraw-app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/scripts/build:preview"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "excalidraw-app/package.json",
+                  "pointer": "/scripts/build:preview",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_6b96ec7b119bf5af4fd2c0bf826bb601",
+          "name": "build:app",
+          "run": "yarn run build:app",
+          "directory": "excalidraw-app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/scripts/build:app"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_710358f218e051c734c20c9139b4326e",
+          "name": "start",
+          "run": "yarn run start",
+          "directory": "excalidraw-app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/scripts/start"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "excalidraw-app/package.json",
+                  "pointer": "/scripts/start",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_8e7d390b06d568000761625c4d75bce2",
+          "name": "serve",
+          "run": "yarn run serve",
+          "directory": "excalidraw-app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/scripts/serve"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9981959b3ded61ba383478f1d2d83fc5",
+          "name": "build-node",
+          "run": "yarn run build-node",
+          "directory": "excalidraw-app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/scripts/build-node"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d35ade03be0ac9c58a0e6e0833a3a8db",
+          "name": "build:version",
+          "run": "yarn run build:version",
+          "directory": "excalidraw-app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "excalidraw-app/package.json",
+              "pointer": "/scripts/build:version"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/common",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/common/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/common/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/common/.eslintrc.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/common/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_1ff9ddc063fc1fd5779452ea308e631e",
+          "name": "gen:types",
+          "run": "yarn run gen:types",
+          "directory": "packages/common",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/common/package.json",
+              "pointer": "/scripts/gen:types"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "packages/common/package.json",
+                  "pointer": "/scripts/gen:types",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_7e374003c01932f14c87b907ebf847b1",
+          "name": "build:esm",
+          "run": "yarn run build:esm",
+          "directory": "packages/common",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/common/package.json",
+              "pointer": "/scripts/build:esm"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/element",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/element/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/element/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/element/.eslintrc.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/element/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_20450f37795390f47fd77a2c2254c535",
+          "name": "build:esm",
+          "run": "yarn run build:esm",
+          "directory": "packages/element",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/element/package.json",
+              "pointer": "/scripts/build:esm"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_5386cee7e31878827ae9b5da99b8b489",
+          "name": "gen:types",
+          "run": "yarn run gen:types",
+          "directory": "packages/element",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/element/package.json",
+              "pointer": "/scripts/gen:types"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "packages/element/package.json",
+                  "pointer": "/scripts/gen:types",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/excalidraw",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/excalidraw/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/excalidraw/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "packages/excalidraw/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/excalidraw/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_c4d84b74ccda5b7105ed65c658dca109",
+          "name": "install dependencies",
+          "run": "yarn",
+          "directory": "packages/excalidraw",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/size-limit.yml",
+              "pointer": "/jobs/size/steps/2/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/size-limit.yml",
+                  "pointer": "/jobs/size/steps/2/run",
+                  "description": "The command installs package-manager dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_a63d1a127a1a296c4726a9e839d9604d",
+          "name": "build:esm",
+          "run": "yarn run build:esm",
+          "directory": "packages/excalidraw",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/excalidraw/package.json",
+              "pointer": "/scripts/build:esm"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c29950f226f29054da68922f380ee79b",
+          "name": "gen:types",
+          "run": "yarn run gen:types",
+          "directory": "packages/excalidraw",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/excalidraw/package.json",
+              "pointer": "/scripts/gen:types"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "packages/excalidraw/package.json",
+                  "pointer": "/scripts/gen:types",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/fractional-indexing",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/fractional-indexing/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/fractional-indexing/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "packages/fractional-indexing/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/fractional-indexing/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": "^14.13.1 || >=16.0.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/fractional-indexing/package.json",
+              "pointer": "/engines/node"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_918bafb8b4429d5e38b45262172590a8",
+          "name": "gen:types",
+          "run": "yarn run gen:types",
+          "directory": "packages/fractional-indexing",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/fractional-indexing/package.json",
+              "pointer": "/scripts/gen:types"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "packages/fractional-indexing/package.json",
+                  "pointer": "/scripts/gen:types",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_a128a7f9f6de10a796e0a6794fef776d",
+          "name": "build:esm",
+          "run": "yarn run build:esm",
+          "directory": "packages/fractional-indexing",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/fractional-indexing/package.json",
+              "pointer": "/scripts/build:esm"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/laser-pointer",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/laser-pointer/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/laser-pointer/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/laser-pointer/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_7454bbd8f9f09b8c7f05fabeaca5c139",
+          "name": "build:esm",
+          "run": "yarn run build:esm",
+          "directory": "packages/laser-pointer",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/laser-pointer/package.json",
+              "pointer": "/scripts/build:esm"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b6950d1bf140a3077ddd6664cc6f655e",
+          "name": "gen:types",
+          "run": "yarn run gen:types",
+          "directory": "packages/laser-pointer",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/laser-pointer/package.json",
+              "pointer": "/scripts/gen:types"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "packages/laser-pointer/package.json",
+                  "pointer": "/scripts/gen:types",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/math",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/math/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/math/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/math/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_01b192355f98fccd0102e003d8b4d1cf",
+          "name": "build:esm",
+          "run": "yarn run build:esm",
+          "directory": "packages/math",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/math/package.json",
+              "pointer": "/scripts/build:esm"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_78811fff7fe605e174c0b42f1c478d3d",
+          "name": "gen:types",
+          "run": "yarn run gen:types",
+          "directory": "packages/math",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/math/package.json",
+              "pointer": "/scripts/gen:types"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "packages/math/package.json",
+                  "pointer": "/scripts/gen:types",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "packages/utils",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/utils/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/utils/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "packages/utils/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "packages/utils/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_1dc03fe1f7f292e715a5429610d4cb07",
+          "name": "build:esm",
+          "run": "yarn run build:esm",
+          "directory": "packages/utils",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/utils/package.json",
+              "pointer": "/scripts/build:esm"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_41f3c8bf68f21c51e81a932cfbaa1957",
+          "name": "gen:types",
+          "run": "yarn run gen:types",
+          "directory": "packages/utils",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "packages/utils/package.json",
+              "pointer": "/scripts/gen:types"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "packages/utils/package.json",
+                  "pointer": "/scripts/gen:types",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

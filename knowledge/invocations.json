@@ -81,6 +81,22 @@
       "description": "The command installs Yarn dependencies."
     },
     {
+      "id": "yarn-frozen-short",
+      "executable": "yarn",
+      "argsPrefix": ["--frozen-lockfile"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command performs a frozen Yarn Classic install."
+    },
+    {
+      "id": "yarn-immutable-short",
+      "executable": "yarn",
+      "argsPrefix": ["--immutable"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command performs a frozen Yarn Berry install."
+    },
+    {
       "id": "bun-frozen-install",
       "executable": "bun",
       "argsPrefix": ["install", "--frozen-lockfile"],

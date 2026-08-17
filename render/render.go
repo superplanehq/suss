@@ -4,6 +4,7 @@
 package render
 
 import (
+	"cmp"
 	"fmt"
 	"io"
 	"slices"
@@ -149,21 +150,47 @@ func writeCommands(w io.Writer, title string, commands []plan.Command) {
 		return
 	}
 	fmt.Fprintf(w, "\n%s:\n", title)
+	commands = commandsForDisplay(commands)
 	width := commandNameWidth(commands)
 	for _, command := range commands {
 		run := "(unresolved invocation)"
 		if command.Run != nil {
 			run = *command.Run
 		}
-		fmt.Fprintf(w, "  %-*s  %s%s\n", width, command.Name, run, capabilitySuffix(command))
+		fmt.Fprintf(w, "  %-*s  %s%s\n", width, oneLine(command.Name), oneLine(run), capabilitySuffix(command))
+		for _, variant := range command.Variants {
+			fmt.Fprintf(w, "    %s  %s\n", oneLine(variant.Context), oneLine(variant.Run))
+		}
 	}
+}
+
+func commandsForDisplay(commands []plan.Command) []plan.Command {
+	out := slices.Clone(commands)
+	slices.SortStableFunc(out, func(a, b plan.Command) int {
+		aKnown, bKnown := len(a.Interpretations) > 0, len(b.Interpretations) > 0
+		if aKnown != bKnown {
+			if aKnown {
+				return -1
+			}
+			return 1
+		}
+		if n := cmp.Compare(capabilitySuffix(a), capabilitySuffix(b)); n != 0 {
+			return n
+		}
+		return cmp.Compare(a.Name, b.Name)
+	})
+	return out
+}
+
+func oneLine(value string) string {
+	return strings.Join(strings.Fields(value), " ")
 }
 
 func commandNameWidth(commands []plan.Command) int {
 	width := 0
 	for _, command := range commands {
-		if len(command.Name) > width {
-			width = len(command.Name)
+		if n := len(oneLine(command.Name)); n > width {
+			width = n
 		}
 	}
 	return width
@@ -290,6 +317,9 @@ func uniqueSources(project plan.ProjectPlan) []string {
 		visit(command.Evidence)
 		for _, interpretation := range command.Interpretations {
 			visit(interpretation.Evidence)
+		}
+		for _, variant := range command.Variants {
+			visit(variant.Evidence)
 		}
 	}
 	for _, ambiguity := range project.Ambiguities {

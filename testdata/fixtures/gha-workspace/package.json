@@ -1,0 +1,11 @@
+{
+  "name": "gha-workspace",
+  "packageManager": "yarn@1.22.22",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "vitest",
+    "lint": "eslint ."
+  }
+}

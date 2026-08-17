@@ -23,6 +23,7 @@ func assemble(path string, result provider.Result) plan.ProjectPlan {
 	}
 	project.Ambiguities = append(project.Ambiguities, result.Ambiguities...)
 	project.Conflicts = append(project.Conflicts, result.Conflicts...)
+	project.ApplyWorkspaceScope()
 	return project
 }
 

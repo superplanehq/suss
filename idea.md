@@ -251,9 +251,13 @@ This may provide evidence about:
 - working directories;
 - test, lint, type-check, and build commands;
 - CI-specific command variants;
-- environment variable names;
+- environment variable names that a developer must supply (CI secrets) or that have a literal default;
 - required services;
 - ordering and prerequisites.
+
+A CI `run` step is a repository command when it invokes a declared task, a package manager, or another project tool. Shell builtins, unix utilities, and VCS plumbing (`cp`, `mkdir`, `git fetch`, `sed`) are how the job is wired, not how the project is built or tested.
+
+GitHub context interpolations (`${{ github.* }}`, `${{ steps.* }}`, matrix indexes) are not environment requirements. A name whose value is `${{ secrets.X }}` is. Literal defaults count only when they are set on the workflow, not on a job or step.
 
 A CI invocation is not necessarily the preferred local invocation.
 

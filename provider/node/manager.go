@@ -107,6 +107,26 @@ func choosePackageManager(ctx provider.Context, manifest packageManifest) (packa
 }
 
 func collectManagerSignals(ctx provider.Context, manifest packageManifest) ([]managerSignal, error) {
+	signals, err := collectManagerSignalsAt(ctx, manifest)
+	if err != nil || len(signals) > 0 {
+		return signals, err
+	}
+
+	ancestor, ok, err := workspaceAncestor(ctx)
+	if err != nil || !ok {
+		return nil, err
+	}
+	parentManifest, found, err := readManifest(*ancestor)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		parentManifest = packageManifest{}
+	}
+	return collectManagerSignalsAt(*ancestor, parentManifest)
+}
+
+func collectManagerSignalsAt(ctx provider.Context, manifest packageManifest) ([]managerSignal, error) {
 	byName := make(map[string]*managerSignal)
 
 	if manifest.PackageManager != "" {

@@ -38,6 +38,96 @@ func TestInterpretLeavesUnknownExecutablesUnmatched(t *testing.T) {
 	}
 }
 
+func TestParseScriptStillSplitsPipes(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("curl -sL https://example.com | bash")
+	if len(got) != 2 || got[0].Executable != "curl" || got[1].Executable != "bash" {
+		t.Fatalf("ParseScript() = %+v, want curl and bash", got)
+	}
+}
+
+func TestParseStatementsKeepPipelinesDoesNotSplitPipes(t *testing.T) {
+	t.Parallel()
+
+	got := ParseStatementsKeepPipelines("curl -sL https://example.com | bash")
+	if len(got) != 1 || got[0].Invocation.Executable != "curl" {
+		t.Fatalf("ParseStatementsKeepPipelines() = %+v, want one curl pipeline", got)
+	}
+}
+
+func TestParseStatementsHandlesComments(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		script string
+		want   []string
+	}{
+		{
+			name: "apostrophe in a comment does not swallow the next command",
+			script: `
+# into K buckets so each upload's finalize body is small
+# suite leftover
+pnpm test
+pnpm lint
+`,
+			want: []string{"pnpm test", "pnpm lint"},
+		},
+		{
+			name:   "trailing comment is stripped from the statement",
+			script: "pnpm test # run the suite",
+			want:   []string{"pnpm test"},
+		},
+		{
+			name:   "hash inside double quotes is not a comment",
+			script: `echo "keep # this"`,
+			want:   []string{`echo "keep # this"`},
+		},
+		{
+			name:   "hash inside single quotes is not a comment",
+			script: "echo 'keep # this'",
+			want:   []string{"echo 'keep # this'"},
+		},
+		{
+			name:   "hash inside a word is not a comment",
+			script: "sed 's#/[^/]*$##'",
+			want:   []string{"sed 's#/[^/]*$##'"},
+		},
+		{
+			name:   "comment-only script yields no statements",
+			script: "# only a comment\n# and another",
+			want:   nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := statementRaws(ParseStatementsKeepPipelines(tt.script))
+			if !slices.Equal(got, tt.want) {
+				t.Fatalf("ParseStatementsKeepPipelines() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseStatementsCapturesCdAndEnvNames(t *testing.T) {
+	t.Parallel()
+
+	got := ParseStatements("FOO=bar cd frontend && pnpm test --run")
+	if len(got) != 2 {
+		t.Fatalf("ParseStatements() len = %d, want 2", len(got))
+	}
+	if got[0].Chdir != "frontend" || !slices.Equal(got[0].EnvNames, []string{"FOO"}) {
+		t.Fatalf("first statement = %+v, want cd frontend with FOO", got[0])
+	}
+	if got[1].Raw != "pnpm test --run" || got[1].Invocation.Executable != "pnpm" {
+		t.Fatalf("second statement = %+v, want pnpm test --run", got[1])
+	}
+}
+
 func TestParseScriptSplitsShellListsAndSkipsEnvAssignments(t *testing.T) {
 	t.Parallel()
 
@@ -90,6 +180,113 @@ func capabilities(matches []Match) []plan.Capability {
 	out := make([]plan.Capability, 0, len(matches))
 	for _, match := range matches {
 		out = append(out, match.Capability)
+	}
+	return out
+}
+
+func TestRedactAssignmentValuesStripsLiteralValues(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		raw  string
+		want string
+	}{
+		{raw: "API_TOKEN=hunter2 npm test", want: "API_TOKEN=$API_TOKEN npm test"},
+		{raw: `FOO='bar baz' BAR="qux" npm test`, want: "FOO=$FOO BAR=$BAR npm test"},
+		{raw: "npm test", want: "npm test"},
+	}
+	for _, tt := range tests {
+		if got := RedactAssignmentValues(tt.raw); got != tt.want {
+			t.Fatalf("RedactAssignmentValues(%q) = %q, want %q", tt.raw, got, tt.want)
+		}
+	}
+}
+
+func TestStripDirectoryFlagsStopsAtDoubleDash(t *testing.T) {
+	t.Parallel()
+
+	dir, got := StripDirectoryFlags(Invocation{Executable: "npm", Args: []string{"test", "--", "--prefix", "fixtures"}})
+	if dir != "" {
+		t.Fatalf("dir = %q, want empty", dir)
+	}
+	want := Invocation{Executable: "npm", Args: []string{"test", "--", "--prefix", "fixtures"}}
+	if !invocationsEqual(got, want) {
+		t.Fatalf("canonical = %+v, want %+v", got, want)
+	}
+}
+
+func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
+	t.Parallel()
+
+	dir, got := StripDirectoryFlags(Invocation{Executable: "yarn", Args: []string{"--cwd", "./packages/app", "test", "--watch=false"}})
+	if dir != "./packages/app" {
+		t.Fatalf("dir = %q, want ./packages/app", dir)
+	}
+	want := Invocation{Executable: "yarn", Args: []string{"test", "--watch=false"}}
+	if !invocationsEqual(got, want) {
+		t.Fatalf("canonical = %+v, want %+v", got, want)
+	}
+}
+
+func TestInterpretMatchesShortYarnFrozenInstall(t *testing.T) {
+	t.Parallel()
+
+	matches := Interpret(Invocation{Executable: "yarn", Args: []string{"--frozen-lockfile"}})
+	got := capabilities(matches)
+	want := []plan.Capability{plan.CapabilityDependenciesInstall}
+	if !slices.Equal(got, want) {
+		t.Fatalf("Interpret(yarn --frozen-lockfile) = %v, want %v", got, want)
+	}
+}
+
+func TestClassifyManagerTreatsYarnScriptAndInstall(t *testing.T) {
+	t.Parallel()
+
+	script, ok := ClassifyManager(Invocation{Executable: "yarn", Args: []string{"run", "test:app", "--watch=false"}})
+	if !ok || script.Manager != "yarn" || script.Script != "test:app" || !slices.Equal(script.Args, []string{"--watch=false"}) {
+		t.Fatalf("ClassifyManager(yarn run test:app) = %+v, ok=%v", script, ok)
+	}
+
+	bare, ok := ClassifyManager(Invocation{Executable: "yarn", Args: []string{"--frozen-lockfile"}})
+	if !ok || !bare.Install || bare.Script != "" {
+		t.Fatalf("ClassifyManager(yarn --frozen-lockfile) = %+v, ok=%v", bare, ok)
+	}
+
+	npmTest, ok := ClassifyManager(Invocation{Executable: "npm", Args: []string{"test", "--coverage"}})
+	if !ok || npmTest.Script != "test" || !slices.Equal(npmTest.Args, []string{"--coverage"}) {
+		t.Fatalf("ClassifyManager(npm test) = %+v, ok=%v", npmTest, ok)
+	}
+}
+
+func TestClassifyManagerReadsPnpmFilterAndSkipsGlobalInstall(t *testing.T) {
+	t.Parallel()
+
+	filtered, ok := ClassifyManager(Invocation{Executable: "pnpm", Args: []string{"--filter", "mermaid", "run", "docs:build:vitepress"}})
+	if !ok || filtered.Script != "docs:build:vitepress" || filtered.Install {
+		t.Fatalf("ClassifyManager(pnpm --filter … run) = %+v, ok=%v", filtered, ok)
+	}
+
+	runFilter, ok := ClassifyManager(Invocation{Executable: "pnpm", Args: []string{"run", "--filter", "mermaid", "types:build-config"}})
+	if !ok || runFilter.Script != "types:build-config" {
+		t.Fatalf("ClassifyManager(pnpm run --filter) = %+v, ok=%v", runFilter, ok)
+	}
+
+	global, ok := ClassifyManager(Invocation{Executable: "npm", Args: []string{"i", "json@11.0.0", "--global"}})
+	if !ok || global.Install || global.Script != "" {
+		t.Fatalf("ClassifyManager(npm i --global) = %+v, ok=%v", global, ok)
+	}
+	if !IsGlobalInstall(Invocation{Executable: "npm", Args: []string{"install", "-g", "npm@11"}}) {
+		t.Fatal("IsGlobalInstall(npm install -g) = false, want true")
+	}
+}
+
+func statementRaws(statements []Statement) []string {
+	if len(statements) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(statements))
+	for _, stmt := range statements {
+		out = append(out, stmt.Raw)
 	}
 	return out
 }

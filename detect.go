@@ -10,18 +10,27 @@ import (
 
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
+	"github.com/superplanehq/suss/provider/gha"
 	"github.com/superplanehq/suss/provider/node"
+	"github.com/superplanehq/suss/reconcile"
 )
 
-var detectors = []provider.Provider{
+var projectProviders = []provider.Provider{
 	node.Provider{},
+}
+
+var repositoryProviders = []provider.Provider{
+	gha.Provider{},
 }
 
 // Providers returns the names of detectors that run during Detect.
 func Providers() []string {
-	names := make([]string, len(detectors))
-	for i, detector := range detectors {
-		names[i] = detector.Name()
+	names := make([]string, 0, len(projectProviders)+len(repositoryProviders))
+	for _, detector := range projectProviders {
+		names = append(names, detector.Name())
+	}
+	for _, detector := range repositoryProviders {
+		names = append(names, detector.Name())
 	}
 	return names
 }
@@ -55,6 +64,12 @@ func Detect(root string) (plan.Document, error) {
 		projects = append(projects, project)
 	}
 
+	repo, err := detectRepository(absolute)
+	if err != nil {
+		return plan.Document{}, fmt.Errorf("detect %s: %w", root, err)
+	}
+	projects = reconcile.Apply(projects, repo)
+
 	document := plan.NewDocument(projects)
 	document.Sort()
 	if err := document.Validate(); err != nil {
@@ -64,16 +79,9 @@ func Detect(root string) (plan.Document, error) {
 }
 
 func detectProject(repositoryRoot, path string) (plan.ProjectPlan, error) {
-	ctx := provider.Context{RepositoryRoot: repositoryRoot, ProjectPath: path}
-	var combined provider.Result
-	for _, detector := range detectors {
-		result, err := detector.Detect(ctx)
-		if err != nil {
-			return plan.ProjectPlan{}, fmt.Errorf("%s: %w", detector.Name(), err)
-		}
-		combined.Findings = append(combined.Findings, result.Findings...)
-		combined.Ambiguities = append(combined.Ambiguities, result.Ambiguities...)
-		combined.Conflicts = append(combined.Conflicts, result.Conflicts...)
+	combined, err := runProviders(projectProviders, provider.Context{RepositoryRoot: repositoryRoot, ProjectPath: path})
+	if err != nil {
+		return plan.ProjectPlan{}, err
 	}
 
 	project := assemble(path, combined)
@@ -81,4 +89,22 @@ func detectProject(repositoryRoot, path string) (plan.ProjectPlan, error) {
 		project.Facts = append(project.Facts, fact)
 	}
 	return project, nil
+}
+
+func detectRepository(repositoryRoot string) (provider.Result, error) {
+	return runProviders(repositoryProviders, provider.Context{RepositoryRoot: repositoryRoot, ProjectPath: "."})
+}
+
+func runProviders(detectors []provider.Provider, ctx provider.Context) (provider.Result, error) {
+	var combined provider.Result
+	for _, detector := range detectors {
+		result, err := detector.Detect(ctx)
+		if err != nil {
+			return provider.Result{}, fmt.Errorf("%s: %w", detector.Name(), err)
+		}
+		combined.Findings = append(combined.Findings, result.Findings...)
+		combined.Ambiguities = append(combined.Ambiguities, result.Ambiguities...)
+		combined.Conflicts = append(combined.Conflicts, result.Conflicts...)
+	}
+	return combined, nil
 }

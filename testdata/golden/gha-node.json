@@ -13,29 +13,23 @@
               "source": "package.json"
             }
           ]
-        },
-        {
-          "name": "typescript",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "package.json",
-              "pointer": "/devDependencies/typescript"
-            }
-          ]
         }
       ],
       "frameworks": [],
       "packageManagers": [
         {
           "name": "npm",
+          "version": "10.8.2",
           "confidence": "high",
           "evidence": [
             {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
               "kind": "file",
-              "source": ".npmrc",
-              "description": "The file sets npm's package-lock option to false."
+              "source": "package-lock.json"
             }
           ]
         }
@@ -45,48 +39,81 @@
         {
           "kind": "runtime",
           "name": "node",
-          "version": ">=22",
+          "version": "22",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "declaration",
-              "source": "package.json",
-              "pointer": "/engines/node"
-            },
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/1/with/node-version"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "redis",
+          "version": "7",
+          "confidence": "high",
+          "evidence": [
             {
               "kind": "invocation",
-              "source": ".github/workflows/main.yml",
-              "pointer": "/jobs/test/steps/1/with/node-version",
-              "description": "CI tests node 22 as part of a job matrix."
-            },
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/services/redis/image"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "API_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
             {
               "kind": "invocation",
-              "source": ".github/workflows/main.yml",
-              "pointer": "/jobs/test/steps/1/with/node-version",
-              "description": "CI tests node 26 as part of a job matrix."
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/env/API_TOKEN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "APP_URL",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/env/APP_URL"
             }
           ]
         }
       ],
       "preparation": [
         {
-          "id": "cmd_9c96a8d27136c457a33b55a71e643120",
+          "id": "cmd_ae21e52c391ccef56f7107de041061bb",
           "name": "install dependencies",
-          "run": "npm install",
+          "run": "npm ci",
           "directory": ".",
           "scope": "project",
           "origin": "inferred",
           "confidence": "high",
           "evidence": [
             {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
               "kind": "file",
-              "source": ".npmrc",
-              "description": "The file sets npm's package-lock option to false."
+              "source": "package-lock.json"
             },
             {
               "kind": "convention",
               "source": "node-ecosystem",
-              "pointer": "npm-install"
+              "pointer": "npm-ci"
             }
           ],
           "interpretations": [
@@ -97,7 +124,7 @@
                 {
                   "kind": "convention",
                   "source": "node-ecosystem",
-                  "pointer": "npm-install"
+                  "pointer": "npm-ci"
                 }
               ]
             }
@@ -105,13 +132,13 @@
           "variants": [
             {
               "context": "ci",
-              "run": "npm install",
+              "run": "npm ci",
               "directory": ".",
               "confidence": "high",
               "evidence": [
                 {
                   "kind": "invocation",
-                  "source": ".github/workflows/main.yml",
+                  "source": ".github/workflows/ci.yml",
                   "pointer": "/jobs/test/steps/2/run"
                 }
               ]
@@ -121,18 +148,18 @@
       ],
       "commands": [
         {
-          "id": "cmd_30dc6aa870b7de7ba7baa6a157640c86",
-          "name": "bench",
-          "run": "npm run bench",
+          "id": "cmd_508a9378b52b9e4ea0c23b26a6c1fbb1",
+          "name": "node scripts/check-generated.mjs",
+          "run": "node scripts/check-generated.mjs",
           "directory": ".",
           "scope": "project",
-          "origin": "declared",
+          "origin": "observed",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "declaration",
-              "source": "package.json",
-              "pointer": "/scripts/bench"
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/5/run"
             }
           ],
           "interpretations": [],
@@ -155,30 +182,6 @@
           ],
           "interpretations": [
             {
-              "capability": "code.lint",
-              "confidence": "high",
-              "evidence": [
-                {
-                  "kind": "declaration",
-                  "source": "package.json",
-                  "pointer": "/scripts/test",
-                  "description": "The script invokes XO."
-                }
-              ]
-            },
-            {
-              "capability": "code.typecheck",
-              "confidence": "high",
-              "evidence": [
-                {
-                  "kind": "declaration",
-                  "source": "package.json",
-                  "pointer": "/scripts/test",
-                  "description": "The script invokes the TypeScript compiler."
-                }
-              ]
-            },
-            {
               "capability": "test.run",
               "confidence": "high",
               "evidence": [
@@ -186,7 +189,7 @@
                   "kind": "declaration",
                   "source": "package.json",
                   "pointer": "/scripts/test",
-                  "description": "The script invokes AVA."
+                  "description": "The script invokes Vitest."
                 }
               ]
             }
@@ -194,14 +197,59 @@
           "variants": [
             {
               "context": "ci",
-              "run": "npm test",
+              "run": "npm test -- --run",
               "directory": ".",
               "confidence": "high",
               "evidence": [
                 {
                   "kind": "invocation",
-                  "source": ".github/workflows/main.yml",
+                  "source": ".github/workflows/ci.yml",
                   "pointer": "/jobs/test/steps/3/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_c82219de565763e76cbf1f67a24e8809",
+          "name": "lint",
+          "run": "npm run lint",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/lint",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run lint",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/4/run"
                 }
               ]
             }

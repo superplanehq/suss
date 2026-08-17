@@ -1,0 +1,8 @@
+{
+  "name": "gha-node",
+  "packageManager": "npm@10.8.2",
+  "scripts": {
+    "test": "vitest",
+    "lint": "eslint src"
+  }
+}
