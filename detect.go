@@ -9,10 +9,24 @@ import (
 	"path/filepath"
 
 	"github.com/superplanehq/suss/plan"
+	"github.com/superplanehq/suss/provider"
+	"github.com/superplanehq/suss/provider/node"
 )
 
+var detectors = []provider.Provider{
+	node.Provider{},
+}
+
+// Providers returns the names of detectors that run during Detect.
+func Providers() []string {
+	names := make([]string, len(detectors))
+	for i, detector := range detectors {
+		names[i] = detector.Name()
+	}
+	return names
+}
+
 // Detect inspects root and returns a schema-versioned plan document.
-// Milestone 1 only discovers project roots; providers fill in the rest later.
 func Detect(root string) (plan.Document, error) {
 	absolute, err := filepath.Abs(root)
 	if err != nil {
@@ -34,7 +48,11 @@ func Detect(root string) (plan.Document, error) {
 
 	projects := make([]plan.ProjectPlan, 0, len(paths))
 	for _, path := range paths {
-		projects = append(projects, plan.NewProjectPlan(path))
+		project, err := detectProject(absolute, path)
+		if err != nil {
+			return plan.Document{}, fmt.Errorf("detect %s: %w", path, err)
+		}
+		projects = append(projects, project)
 	}
 
 	document := plan.NewDocument(projects)
@@ -43,4 +61,24 @@ func Detect(root string) (plan.Document, error) {
 		return plan.Document{}, fmt.Errorf("detect %s: invalid plan: %w", root, err)
 	}
 	return document, nil
+}
+
+func detectProject(repositoryRoot, path string) (plan.ProjectPlan, error) {
+	ctx := provider.Context{RepositoryRoot: repositoryRoot, ProjectPath: path}
+	var combined provider.Result
+	for _, detector := range detectors {
+		result, err := detector.Detect(ctx)
+		if err != nil {
+			return plan.ProjectPlan{}, fmt.Errorf("%s: %w", detector.Name(), err)
+		}
+		combined.Findings = append(combined.Findings, result.Findings...)
+		combined.Ambiguities = append(combined.Ambiguities, result.Ambiguities...)
+		combined.Conflicts = append(combined.Conflicts, result.Conflicts...)
+	}
+
+	project := assemble(path, combined)
+	if fact, ok := fixtureRoleFact(path); ok {
+		project.Facts = append(project.Facts, fact)
+	}
+	return project, nil
 }

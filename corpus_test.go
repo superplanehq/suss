@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"flag"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/superplanehq/suss/schema"
@@ -12,9 +15,11 @@ import (
 
 var updateGoldens = flag.Bool("update", false, "update golden plan snapshots")
 
-// corpusEntry is one snapshot case. Milestone 1 uses local fixtures.
-// Later milestones add gitURL and commit so remote repositories are pinned
-// by SHA and checked out into testdata/cache before detection.
+var cacheMu sync.Mutex
+
+// corpusEntry is one snapshot case. Local fixtures live under testdata/fixtures.
+// Remote repositories are pinned by commit SHA and shallow-fetched into
+// testdata/cache, which is gitignored and reused across runs.
 type corpusEntry struct {
 	name    string
 	fixture string
@@ -28,6 +33,16 @@ var corpus = []corpusEntry{
 	{name: "go-root", fixture: "go-root", golden: "go-root.json"},
 	{name: "polyglot", fixture: "polyglot", golden: "polyglot.json"},
 	{name: "nested-ignored", fixture: "nested-ignored", golden: "nested-ignored.json"},
+	{name: "node-simple", fixture: "node-simple", golden: "node-simple.json"},
+	{name: "node-competing-lockfiles", fixture: "node-competing-lockfiles", golden: "node-competing-lockfiles.json"},
+	{name: "node-config-only", fixture: "node-config-only", golden: "node-config-only.json"},
+	{name: "fixture-paths", fixture: "fixture-paths", golden: "fixture-paths.json"},
+	{
+		name:   "chalk",
+		gitURL: "https://github.com/chalk/chalk.git",
+		commit: "661317e6f91fe7c90306c2c48ea9354562ee9146",
+		golden: "chalk.json",
+	},
 }
 
 func TestCorpusSnapshots(t *testing.T) {
@@ -74,8 +89,64 @@ func (e corpusEntry) repository(t *testing.T) string {
 		return filepath.Join("testdata", "fixtures", e.fixture)
 	}
 	if e.gitURL != "" && e.commit != "" {
-		t.Fatalf("pinned git corpus entries are not implemented yet: %s@%s", e.gitURL, e.commit)
+		return checkoutPinned(t, e.gitURL, e.commit)
 	}
 	t.Fatal("corpus entry has neither a local fixture nor a pinned git commit")
 	return ""
+}
+
+func checkoutPinned(t *testing.T, gitURL, commit string) string {
+	t.Helper()
+
+	cacheMu.Lock()
+	defer cacheMu.Unlock()
+
+	dest := filepath.Join("testdata", "cache", cacheKey(gitURL, commit))
+	if gitHEAD(dest) == commit {
+		return dest
+	}
+
+	if err := os.RemoveAll(dest); err != nil {
+		t.Fatalf("os.RemoveAll(%s) error = %v", dest, err)
+	}
+	if err := os.MkdirAll(dest, 0o755); err != nil {
+		t.Fatalf("os.MkdirAll(%s) error = %v", dest, err)
+	}
+
+	commands := [][]string{
+		{"git", "init", "--quiet"},
+		{"git", "remote", "add", "origin", gitURL},
+		{"git", "fetch", "--quiet", "--depth=1", "origin", commit},
+		{"git", "checkout", "--quiet", "--detach", "FETCH_HEAD"},
+	}
+	for _, args := range commands {
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Dir = dest
+		cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("%s: %v\n%s", strings.Join(args, " "), err, out)
+		}
+	}
+
+	if head := gitHEAD(dest); head != commit {
+		t.Fatalf("checked out %s, want %s", head, commit)
+	}
+	return dest
+}
+
+func gitHEAD(dir string) string {
+	cmd := exec.Command("git", "-C", dir, "rev-parse", "HEAD")
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+func cacheKey(gitURL, commit string) string {
+	trimmed := strings.TrimSuffix(gitURL, ".git")
+	trimmed = strings.TrimPrefix(trimmed, "https://")
+	trimmed = strings.TrimPrefix(trimmed, "http://")
+	trimmed = strings.ReplaceAll(trimmed, ":", "/")
+	return filepath.Join(filepath.FromSlash(trimmed), commit)
 }

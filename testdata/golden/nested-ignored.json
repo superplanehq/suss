@@ -3,12 +3,81 @@
   "projects": [
     {
       "path": ".",
-      "languages": [],
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            }
+          ]
+        }
+      ],
       "frameworks": [],
-      "packageManagers": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            }
+          ]
+        }
+      ],
       "facts": [],
       "requirements": [],
-      "preparation": [],
+      "preparation": [
+        {
+          "id": "cmd_9c96a8d27136c457a33b55a71e643120",
+          "name": "install dependencies",
+          "run": "npm install",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-install"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
       "commands": [],
       "ambiguities": [],
       "conflicts": []

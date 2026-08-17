@@ -4,14 +4,36 @@ Suss inspects a repository and reports how a developer or agent should set it up
 
 Suss is under active development. See [plan.md](plan.md) for current status and [idea.md](idea.md) for the design.
 
+## Requirements
+
+Go 1.26 or later (see `go.mod`).
+
+## Build
+
 ```text
-suss . --json
+go build -o suss ./cmd/suss
 ```
 
-## Development
+That writes a `suss` binary in the repository root. `go install ./cmd/suss` installs it to `$(go env GOPATH)/bin`.
+
+## Run
 
 ```text
-go test ./...
+./suss .
+./suss . --json
+./suss path/to/repo
 ```
+
+Without `--json`, Suss prints a human-readable plan. With `--json`, it emits the versioned plan document. Detection is static: it does not install dependencies or execute repository commands.
+
+## Test
+
+`make check` runs the full local gate (format, lint, race tests, module tidiness, vulnerability scan) and is what CI enforces.
+
+```text
+make check
+```
+
+Corpus snapshots live under `testdata/golden/`. Remote corpus repositories are shallow-fetched into `testdata/cache/` on first run.
 
 Licensed under the Apache License, Version 2.0.
