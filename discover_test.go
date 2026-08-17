@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+
+	"github.com/superplanehq/suss/plan"
 )
 
 func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T) {
@@ -64,6 +66,68 @@ func TestFindProjectRootsSkipsSymlinkedDirectories(t *testing.T) {
 	want := []string{"real"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestDetectFillsANodeProjectAndLeavesUncoveredRootsEmpty(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "frontend", "package.json"), `{"scripts": {"test": "vitest"}}`)
+	writeFile(t, filepath.Join(root, "frontend", "package-lock.json"), "{}\n")
+	writeFile(t, filepath.Join(root, "backend", "go.mod"), "module example.com/backend\n\ngo 1.26\n")
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if len(document.Projects) != 2 {
+		t.Fatalf("len(projects) = %d, want 2", len(document.Projects))
+	}
+
+	backend := document.Projects[0]
+	if backend.Path != "backend" || len(backend.Languages) != 0 || len(backend.Commands) != 0 {
+		t.Fatalf("backend = %+v, want an uncovered Go project root", backend)
+	}
+
+	frontend := document.Projects[1]
+	if frontend.Path != "frontend" {
+		t.Fatalf("frontend path = %q", frontend.Path)
+	}
+	if len(frontend.Languages) == 0 || len(frontend.Commands) == 0 || len(frontend.Preparation) == 0 {
+		t.Fatalf("frontend = %+v, want Node findings", frontend)
+	}
+}
+
+func TestDetectMarksFixtureLikeProjectRoots(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "package.json"), `{"name": "app"}`)
+	writeFile(t, filepath.Join(root, "testdata", "sample", "package.json"), `{"name": "sample"}`)
+	writeFile(t, filepath.Join(root, "examples", "demo", "package.json"), `{"name": "demo"}`)
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+
+	facts := map[string]plan.ProjectFact{}
+	for _, project := range document.Projects {
+		for _, fact := range project.Facts {
+			if fact.Name == "project.role" {
+				facts[project.Path] = fact
+			}
+		}
+	}
+	if _, ok := facts["."]; ok {
+		t.Fatalf("root project was marked as a fixture: %+v", facts["."])
+	}
+	if facts["testdata/sample"].Value != "fixture" || facts["testdata/sample"].Confidence != plan.ConfidenceHigh {
+		t.Fatalf("testdata fact = %+v, want high-confidence fixture", facts["testdata/sample"])
+	}
+	if facts["examples/demo"].Value != "fixture" || facts["examples/demo"].Confidence != plan.ConfidenceMedium {
+		t.Fatalf("examples fact = %+v, want medium-confidence fixture", facts["examples/demo"])
 	}
 }
 

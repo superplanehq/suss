@@ -1,0 +1,164 @@
+{
+  "invocations": [
+    {
+      "id": "npm-ci",
+      "executable": "npm",
+      "argsPrefix": ["ci"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command performs a frozen npm install."
+    },
+    {
+      "id": "npm-install",
+      "executable": "npm",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs npm dependencies."
+    },
+    {
+      "id": "npm-i",
+      "executable": "npm",
+      "argsPrefix": ["i"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs npm dependencies."
+    },
+    {
+      "id": "pnpm-frozen-install",
+      "executable": "pnpm",
+      "argsPrefix": ["install", "--frozen-lockfile"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command performs a frozen pnpm install."
+    },
+    {
+      "id": "pnpm-install",
+      "executable": "pnpm",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs pnpm dependencies."
+    },
+    {
+      "id": "pnpm-i-frozen",
+      "executable": "pnpm",
+      "argsPrefix": ["i", "--frozen-lockfile"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command performs a frozen pnpm install."
+    },
+    {
+      "id": "pnpm-i",
+      "executable": "pnpm",
+      "argsPrefix": ["i"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs pnpm dependencies."
+    },
+    {
+      "id": "yarn-immutable",
+      "executable": "yarn",
+      "argsPrefix": ["install", "--immutable"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command performs a frozen Yarn Berry install."
+    },
+    {
+      "id": "yarn-frozen",
+      "executable": "yarn",
+      "argsPrefix": ["install", "--frozen-lockfile"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command performs a frozen Yarn Classic install."
+    },
+    {
+      "id": "yarn-install",
+      "executable": "yarn",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs Yarn dependencies."
+    },
+    {
+      "id": "bun-frozen-install",
+      "executable": "bun",
+      "argsPrefix": ["install", "--frozen-lockfile"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command performs a frozen bun install."
+    },
+    {
+      "id": "bun-install",
+      "executable": "bun",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs bun dependencies."
+    },
+    {
+      "id": "vitest",
+      "executable": "vitest",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The script invokes Vitest."
+    },
+    {
+      "id": "jest",
+      "executable": "jest",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The script invokes Jest."
+    },
+    {
+      "id": "xo",
+      "executable": "xo",
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The script invokes XO."
+    },
+    {
+      "id": "ava",
+      "executable": "ava",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The script invokes AVA."
+    },
+    {
+      "id": "eslint",
+      "executable": "eslint",
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The script invokes ESLint."
+    },
+    {
+      "id": "tsc",
+      "executable": "tsc",
+      "capabilities": ["code.typecheck"],
+      "confidence": "high",
+      "description": "The script invokes the TypeScript compiler."
+    },
+    {
+      "id": "prettier",
+      "executable": "prettier",
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The script invokes Prettier."
+    },
+    {
+      "id": "vite-build",
+      "executable": "vite",
+      "argsPrefix": ["build"],
+      "capabilities": ["artifact.build"],
+      "confidence": "high",
+      "description": "The script invokes vite build."
+    },
+    {
+      "id": "vite",
+      "executable": "vite",
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The script invokes the Vite development server."
+    }
+  ]
+}

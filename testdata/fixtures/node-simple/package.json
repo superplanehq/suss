@@ -1,0 +1,12 @@
+{
+  "name": "node-simple",
+  "packageManager": "npm@10.8.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint src",
+    "build": "tsc --noEmit"
+  }
+}

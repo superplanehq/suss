@@ -11,7 +11,7 @@ This plan turns [idea.md](idea.md) into ordered milestones. Read that document f
 - **Schema before providers.** The versioned JSON output is the primary product. Its shape is pinned down first, and everything else conforms to it.
 - **Honest output over clever output.** At every milestone, a command Suss cannot interpret is reported without interpretation. No guessing to make demos look better.
 
-## Milestone 1 — Skeleton and contract
+## Milestone 1 — Skeleton and contract — DONE
 
 Establish the Go module, the output contract, and the test harness.
 
@@ -62,7 +62,7 @@ These are not recorded in idea.md and an agent would otherwise guess them silent
 - **CI for Suss itself**: GitHub Actions (decided). A useful side effect: Suss's own repository becomes a natural GHA corpus candidate later, so its workflow files should stay clean and conventional.
 - **License**: Apache 2.0 (decided). It is the norm for company-backed Go developer tooling (Buildpacks, Caddy, Cobra, CNCF projects), and its explicit patent grant makes corporate adoption and contribution easier than MIT for the agent/CI audience Suss targets.
 
-## Milestone 2 — Node provider and human renderer
+## Milestone 2 — Node provider and human renderer — DONE
 
 First end-to-end useful output.
 
@@ -72,12 +72,14 @@ Scope:
 - Initial declarative knowledge base (data file): npm/pnpm/yarn/bun invocations, `vitest`, `jest`, `eslint`, `tsc`, `prettier`, `vite`.
 - Tool-configuration detection for the same tools (configured-but-no-command reporting).
 - Human-readable renderer for `suss .`, implemented strictly as a renderer of the JSON. The renderer must distinguish "the repository has no detectable content" from "no provider covers this yet", and say which providers ran. A wall of empty fields with no explanation reads as a broken tool.
-- Decide a policy for fixture-like project roots. Milestone 1 discovery reports manifests under paths such as `testdata/`, `fixtures/`, and `examples/` as ordinary projects (running Suss on its own repository surfaces its test fixtures). Options: ignore such paths, report them with a distinguishing fact or lower confidence, or report them as-is. Whatever is chosen must be evidence-backed and consistent; large corpus repositories (grafana) are full of fixtures and will stress this.
+- Fixture-like project roots are reported, not hidden. Path segments `testdata`, `fixtures`, and `__fixtures__` attach an evidence-backed `project.role=fixture` fact at high confidence; `examples` uses medium confidence because real packages sometimes live there. Large corpus repositories (grafana) will stress this.
 - Remote corpus fetching. The milestone 1 harness only supports local fixtures; `corpusEntry` already has `gitURL` and `commit` fields but `repository()` fails on them. This milestone implements that path, since `chalk/chalk` is the first remote corpus entry: pin an exact commit SHA (not a branch), shallow-fetch it into `testdata/cache`, reuse the cache across runs, and gitignore the cache directory. A fresh checkout and CI must be able to run the corpus test with no manual cloning.
 
 Acceptance:
 
 - Golden plan for `chalk/chalk` is correct: install, test, lint commands with evidence.
+
+Status: completed and approved after one review iteration. Notable decisions: fixture-like roots (`testdata`, `fixtures`, `__fixtures__` high confidence; `examples` medium) are reported as ordinary projects with an evidence-backed `project.role=fixture` fact, not hidden. Script invocations use `pnpm run` / `yarn run` rather than bare `pnpm <name>` / `yarn <name>`, so builtin subcommands are not shadowed. `engines.node` is merged into a `.nvmrc` / `.node-version` pin only when the version strings are equal; otherwise it is a separate requirement.
 
 ## Milestone 3 — GitHub Actions provider and reconciliation (make-or-break)
 

@@ -1,11 +1,14 @@
 package suss
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/superplanehq/suss/plan"
 )
 
 var projectManifests = map[string]struct{}{
@@ -71,6 +74,69 @@ func shouldSkipDirectory(entry fs.DirEntry) bool {
 		return true
 	}
 	return entry.Type()&os.ModeSymlink != 0
+}
+
+// Fixture-like roots are reported, not hidden. Path evidence is attached as
+// project.role=fixture so consumers can filter without losing visibility.
+// testdata, fixtures, and __fixtures__ are high-confidence; examples is
+// medium because real packages sometimes live there.
+var fixtureSegments = map[string]plan.Confidence{
+	"testdata":     plan.ConfidenceHigh,
+	"fixtures":     plan.ConfidenceHigh,
+	"__fixtures__": plan.ConfidenceHigh,
+	"examples":     plan.ConfidenceMedium,
+}
+
+func fixtureRoleFact(projectPath string) (plan.ProjectFact, bool) {
+	segment, confidence, ok := fixtureSegment(projectPath)
+	if !ok {
+		return plan.ProjectFact{}, false
+	}
+	return plan.ProjectFact{
+		Name:       "project.role",
+		Value:      "fixture",
+		Confidence: confidence,
+		Evidence: []plan.Evidence{{
+			Kind:        plan.EvidenceFile,
+			Source:      projectPath,
+			Description: fmt.Sprintf("The project root sits under the %s path segment.", segment),
+		}},
+	}, true
+}
+
+func fixtureSegment(projectPath string) (string, plan.Confidence, bool) {
+	if projectPath == "." || projectPath == "" {
+		return "", "", false
+	}
+
+	bestSegment := ""
+	var bestConfidence plan.Confidence
+	found := false
+	for _, segment := range strings.Split(projectPath, "/") {
+		confidence, ok := fixtureSegments[segment]
+		if !ok {
+			continue
+		}
+		if !found || confidenceRank(confidence) > confidenceRank(bestConfidence) {
+			bestSegment = segment
+			bestConfidence = confidence
+			found = true
+		}
+	}
+	return bestSegment, bestConfidence, found
+}
+
+func confidenceRank(confidence plan.Confidence) int {
+	switch confidence {
+	case plan.ConfidenceHigh:
+		return 3
+	case plan.ConfidenceMedium:
+		return 2
+	case plan.ConfidenceLow:
+		return 1
+	default:
+		return 0
+	}
 }
 
 func relativeProjectPath(root, dir string) (string, error) {

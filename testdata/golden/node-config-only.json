@@ -2,31 +2,7 @@
   "schemaVersion": "1",
   "projects": [
     {
-      "path": "apps/web",
-      "languages": [],
-      "frameworks": [],
-      "packageManagers": [],
-      "facts": [],
-      "requirements": [],
-      "preparation": [],
-      "commands": [],
-      "ambiguities": [],
-      "conflicts": []
-    },
-    {
-      "path": "backend",
-      "languages": [],
-      "frameworks": [],
-      "packageManagers": [],
-      "facts": [],
-      "requirements": [],
-      "preparation": [],
-      "commands": [],
-      "ambiguities": [],
-      "conflicts": []
-    },
-    {
-      "path": "frontend",
+      "path": ".",
       "languages": [
         {
           "name": "javascript",
@@ -34,7 +10,17 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "frontend/package.json"
+              "source": "package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "tsconfig.json"
             }
           ]
         }
@@ -47,7 +33,7 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "frontend/package.json"
+              "source": "package.json"
             },
             {
               "kind": "convention",
@@ -58,21 +44,44 @@
           ]
         }
       ],
-      "facts": [],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "eslint.config.js"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "tsconfig.json"
+            }
+          ]
+        }
+      ],
       "requirements": [],
       "preparation": [
         {
-          "id": "cmd_912b9ceb94c83ca6bcd0877bcad10284",
+          "id": "cmd_9c96a8d27136c457a33b55a71e643120",
           "name": "install dependencies",
           "run": "npm install",
-          "directory": "frontend",
+          "directory": ".",
           "scope": "project",
           "origin": "inferred",
           "confidence": "medium",
           "evidence": [
             {
               "kind": "declaration",
-              "source": "frontend/package.json"
+              "source": "package.json"
             },
             {
               "kind": "convention",

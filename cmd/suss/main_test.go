@@ -48,7 +48,7 @@ func TestRunJSONEmitsSchemaValidPlan(t *testing.T) {
 	}
 }
 
-func TestRunWithoutJSONListsProjectPaths(t *testing.T) {
+func TestRunWithoutJSONRendersThePlan(t *testing.T) {
 	t.Parallel()
 
 	root := t.TempDir()
@@ -59,8 +59,12 @@ func TestRunWithoutJSONListsProjectPaths(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("run() = %d, stderr = %s", code, stderr.String())
 	}
-	if got := stdout.String(); got != "backend\n" {
-		t.Fatalf("stdout = %q, want %q", got, "backend\n")
+	got := stdout.String()
+	if !strings.Contains(got, "Providers: node") {
+		t.Fatalf("stdout = %q, want providers", got)
+	}
+	if !strings.Contains(got, "No implemented provider produced findings") {
+		t.Fatalf("stdout = %q, want an uncovered-project explanation", got)
 	}
 }
 

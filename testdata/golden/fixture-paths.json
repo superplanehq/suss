@@ -1,0 +1,368 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_9c96a8d27136c457a33b55a71e643120",
+          "name": "install dependencies",
+          "run": "npm install",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-install"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/demo",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/demo/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/demo/package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/demo",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_6a1292d5c37ff134186fb00dec9cbbf9",
+          "name": "install dependencies",
+          "run": "npm install",
+          "directory": "examples/demo",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/demo/package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-install"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "fixtures/pkg",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "fixtures/pkg/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "fixtures/pkg/package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "fixtures/pkg",
+              "description": "The project root sits under the fixtures path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_1cd35bedc376826aa95b4f522489b364",
+          "name": "install dependencies",
+          "run": "npm install",
+          "directory": "fixtures/pkg",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "fixtures/pkg/package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-install"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "testdata/sample",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "testdata/sample/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "testdata/sample/package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "testdata/sample",
+              "description": "The project root sits under the testdata path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_8b27631d9c736d19dcd4b9d206773732",
+          "name": "install dependencies",
+          "run": "npm install",
+          "directory": "testdata/sample",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "testdata/sample/package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-install"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}
