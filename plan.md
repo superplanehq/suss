@@ -1,0 +1,122 @@
+# Suss v0 development plan
+
+_Made with Fable 5._
+
+This plan turns [idea.md](idea.md) into ordered milestones. Read that document first; this one does not restate the design, only the build order.
+
+## Principles
+
+- **Risk first.** Reconciliation — matching CI invocations to declared tasks — is the make-or-break part of the design. It is proven by milestone 3, not bolted on at the end.
+- **Corpus-driven.** Every milestone ends with the golden-plan snapshot harness passing on more corpus repositories. The harness exists from milestone 1, even with a single repository in it.
+- **Schema before providers.** The versioned JSON output is the primary product. Its shape is pinned down first, and everything else conforms to it.
+- **Honest output over clever output.** At every milestone, a command Suss cannot interpret is reported without interpretation. No guessing to make demos look better.
+
+## Milestone 1 — Skeleton and contract
+
+Establish the Go module, the output contract, and the test harness.
+
+Scope:
+
+- Go module, repository layout, CI for Suss itself.
+- Core types: `Finding`, `Evidence`, `Command`, `Requirement`, `ProjectPlan`.
+- The concrete JSON schema: field-by-field contract, confidence enum, deterministic command ID scheme, ambiguity/conflict representation, schema version field. Published as JSON Schema.
+- Project-root discovery (manifest-based: `package.json`, `go.mod`, `mix.exs`).
+- `suss . --json` producing a valid (if nearly empty) plan.
+- Golden-corpus snapshot harness: corpus repositories pinned by commit, expected plans checked in, `go test` compares detection output against them.
+
+Acceptance:
+
+- `suss . --json` on a fixture repository emits schema-valid output.
+- The harness runs in CI with at least one fixture repository.
+
+## Milestone 2 — Node provider and human renderer
+
+First end-to-end useful output.
+
+Scope:
+
+- Node provider: `package.json` scripts, `packageManager` field, lockfile detection (npm/pnpm/yarn/bun), competing-lockfile ambiguity reporting, runtime version files (`.nvmrc`, `.node-version`, `engines`).
+- Initial declarative knowledge base (data file): npm/pnpm/yarn/bun invocations, `vitest`, `jest`, `eslint`, `tsc`, `prettier`, `vite`.
+- Tool-configuration detection for the same tools (configured-but-no-command reporting).
+- Human-readable renderer for `suss .`, implemented strictly as a renderer of the JSON.
+
+Acceptance:
+
+- Golden plan for `chalk/chalk` is correct: install, test, lint commands with evidence.
+
+## Milestone 3 — GitHub Actions provider and reconciliation (make-or-break)
+
+Prove the core design against real workflow files.
+
+Scope:
+
+- GitHub Actions provider: jobs, steps, `working-directory`, `setup-node`/`setup-go` version evidence, matrix builds, env var names, service containers. Reusable workflows and composite actions may be deferred, but deferral must be recorded as a known limitation.
+- Reconciliation layer: grouping findings, matching CI invocations to declared tasks (shell parsing for `cd X && ...` and env prefixes), variant recording, conflict recording, confidence assignment.
+- Written matching rules: when is a CI command a variant of a declared task, when is it unrelated, and what happens when no link can be established. This design work happens here, against fixtures, not in the abstract.
+- Workspace-orchestrator detection as project facts (`pnpm-workspace.yaml`, `turbo.json`, `nx.json`, yarn workspaces); repository-wide scope on root commands; no fan-out.
+
+Acceptance:
+
+- Golden plan for `excalidraw/excalidraw` is correct: workspace facts, root scripts, CI variants linked to declared tasks, unlinked CI commands reported honestly.
+- If the reconciliation model does not survive contact with excalidraw's workflows, stop and revise idea.md before proceeding.
+
+## Milestone 4 — Go provider and convention inference
+
+The opposite evidence regime: few declared tasks, strong conventions.
+
+Scope:
+
+- Go provider: `go.mod` (module, Go version), test file presence, `go.work` as workspace fact.
+- Convention-based inference (`go test ./...`, `go build`, `go vet`) with explicit inferred status, source convention, and confidence.
+- golangci-lint config detection; knowledge base entries for the Go toolchain.
+
+Acceptance:
+
+- Golden plans for `spf13/cobra` and `caddyserver/caddy` are correct, including inferred commands marked as inferred and CI cross-confirmation raising confidence.
+
+## Milestone 5 — Make, Compose, and requirements
+
+Cross-cutting sources and the requirements model.
+
+Scope:
+
+- Make provider: target enumeration, recipe text as evidence (no variable expansion beyond simple cases; recorded as a limitation).
+- Docker Compose provider: services as requirements, service commands as preparation candidates.
+- Requirements assembly: runtimes, tools, services, environment variable names (from CI env, `.env.example`, compose) with the never-expose-secret-values rule.
+- Preparation command detection (install steps, `docker compose up -d ...`).
+
+Acceptance:
+
+- Golden plan for `plausible/analytics` is substantially correct on the Node/Make/Compose/requirements side (Elixir commands arrive in milestone 6).
+
+## Milestone 6 — Elixir provider, Semaphore provider, dogfood
+
+Close the loop on our own repositories.
+
+Scope:
+
+- Elixir provider: `mix.exs`, Mix tasks and aliases, `.tool-versions`, ExUnit, Credo/Dialyzer configs; knowledge base entries.
+- Semaphore provider: pipelines, blocks, jobs, working directories, version and service evidence — same reconciliation path as GitHub Actions.
+- Whatever gaps the dogfood repositories expose.
+
+Acceptance:
+
+- Golden plans for `elixir-ecto/ecto`, then `superplanehq/superplane`, `operately/operately`, and `semaphoreio/semaphore` are correct end to end.
+
+## Milestone 7 — Polish and v0 release
+
+Scope:
+
+- `suss explain <capability>`: show the chosen command for a capability with its full evidence chain and alternatives.
+- `suss list`: enumerate all discovered commands across projects.
+- `grafana/grafana` added to the corpus as the stress test; fix what it breaks or record limitations.
+- Schema review and freeze for v0; document the compatibility policy.
+- README, distribution (release binaries), library API (`detect(path) → []ProjectPlan`) documented.
+
+Acceptance:
+
+- Full corpus green in CI. Tagged v0 release with binaries.
+
+## Out of scope for v0
+
+Per idea.md: command execution, execution profiles, behavior characteristics, README/docs parsing, workspace fan-out modeling, Python/Ruby/Rust/JVM/.NET providers, GitLab/CircleCI/Buildkite.
