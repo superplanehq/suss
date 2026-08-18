@@ -458,8 +458,9 @@ func dropWrappers(tokens []string) []string {
 			return dropLeadingFlags(tokens[2:])
 		}
 	case "php":
-		if len(tokens) >= 2 && isVendorBinPath(tokens[1]) {
-			return tokens[1:]
+		rest := skipPHPCLIOptions(tokens[1:])
+		if len(rest) > 0 && isVendorBinPath(rest[0]) {
+			return rest
 		}
 	case "npm", "pnpm", "yarn":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
@@ -476,6 +477,62 @@ func dropWrappers(tokens []string) []string {
 func isVendorBinPath(value string) bool {
 	value = strings.ReplaceAll(value, "\\", "/")
 	return strings.HasPrefix(value, "vendor/bin/") || strings.Contains(value, "/vendor/bin/")
+}
+
+// skipPHPCLIOptions drops php(1) flags and their values so a following
+// vendor/bin executable can be unwrapped. Value-taking options are those
+// documented by `php --help`.
+func skipPHPCLIOptions(tokens []string) []string {
+	i := 0
+	for i < len(tokens) {
+		token := tokens[i]
+		if token == "--" {
+			return tokens[i+1:]
+		}
+		if !strings.HasPrefix(token, "-") {
+			return tokens[i:]
+		}
+		name, hasValue := phpCLIOption(token)
+		if phpCLIOptionTakesValue(name) && !hasValue {
+			if i+1 >= len(tokens) {
+				return nil
+			}
+			i += 2
+			continue
+		}
+		i++
+	}
+	return nil
+}
+
+func phpCLIOption(token string) (name string, hasValue bool) {
+	if strings.HasPrefix(token, "--") {
+		name, _, hasValue = strings.Cut(token, "=")
+		return name, hasValue
+	}
+	if len(token) > 2 {
+		return token[:2], true
+	}
+	return token, false
+}
+
+func phpCLIOptionTakesValue(name string) bool {
+	switch name {
+	case "-c", "--php-ini",
+		"-d", "--define",
+		"-f", "--file",
+		"-r", "--run",
+		"-B", "--process-begin",
+		"-R", "--process-code",
+		"-F", "--process-file",
+		"-E", "--process-end",
+		"-S", "--server",
+		"-t", "--docroot",
+		"-z", "--zend-extension":
+		return true
+	default:
+		return false
+	}
 }
 
 func dropLeadingFlags(tokens []string) []string {

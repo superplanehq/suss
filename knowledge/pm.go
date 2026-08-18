@@ -224,8 +224,11 @@ func IsToolPlumbing(inv Invocation) bool {
 		return isDockerPlumbing(inv.Args)
 	case "docker-compose":
 		return isVersionInfoHelp(inv.Args)
-	case "node", "python", "python3", "ruby", "java", "php", "composer":
+	case "node", "python", "python3", "ruby", "java", "php":
 		return isFlagVersionHelp(inv.Args)
+	case "composer":
+		// Composer uses -v for verbosity and -V / --version for its version.
+		return isComposerVersionHelp(inv.Args)
 	case "npm", "pnpm", "yarn", "bun":
 		// `npm version` / `yarn version` bump the package version; only
 		// `--version` / `-v` are probes.
@@ -285,6 +288,22 @@ func isFlagVersionHelp(args []string) bool {
 func isVersionHelpFlag(arg string) bool {
 	name, _, _ := strings.Cut(arg, "=")
 	return name == "--version" || name == "-v" || name == "--help" || name == "-h"
+}
+
+func isComposerVersionHelp(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if !strings.HasPrefix(arg, "-") {
+			return false
+		}
+		name, _, _ := strings.Cut(arg, "=")
+		if name == "--version" || name == "-V" || name == "--help" || name == "-h" {
+			return true
+		}
+	}
+	return false
 }
 
 func isGlobalInstall(args []string) bool {

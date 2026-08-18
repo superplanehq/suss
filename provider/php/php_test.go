@@ -192,6 +192,82 @@ func TestDetectMergesMatchingRuntimeEvidence(t *testing.T) {
 	t.Fatal("missing merged PHP 8.3.6 requirement")
 }
 
+func TestDetectAcceptsDisabledComposerPlatformPackages(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "require": {"php": "^8.3"},
+  "config": {
+    "platform": {
+      "php": "8.3.0",
+      "ext-xdebug": false
+    }
+  }
+}`,
+	})
+
+	if !hasRuntime(result, "8.3.0") {
+		t.Fatalf("missing platform.php 8.3.0 in %+v", result.Findings)
+	}
+	if !hasRuntime(result, "^8.3") {
+		t.Fatalf("missing require.php ^8.3 in %+v", result.Findings)
+	}
+}
+
+func TestDetectInterpretsPHPCLIOptionsInDeclaredTestScript(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "scripts": {
+    "test": "@php -d memory_limit=-1 vendor/bin/phpunit"
+  }
+}`,
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "composer run-script test", plan.CommandDeclared, plan.CapabilityTestRun)
+}
+
+func TestDetectDoesNotInferTestsFromNestedComposerProject(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json":                        `{"require":{"php":"^8.2"}}`,
+		"tests/fixtures/child/composer.json":   `{"require":{"php":"^8.2"}}`,
+		"tests/fixtures/child/ExampleTest.php": "<?php\nclass ExampleTest {}\n",
+	})
+
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("parent inferred a test command from a nested Composer project's tests")
+	}
+}
+
+func TestDetectEscapesComposerScriptKeysInPointers(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "scripts": {
+    "test/unit": "@php vendor/bin/phpunit"
+  }
+}`,
+	})
+
+	command := commandsByName(result)["test/unit"]
+	if command.Name != "test/unit" {
+		t.Fatalf("missing test/unit command in %+v", result.Findings)
+	}
+	if len(command.Evidence) == 0 || command.Evidence[0].Pointer != "/scripts/test~1unit" {
+		t.Fatalf("evidence pointer = %+v, want /scripts/test~1unit", command.Evidence)
+	}
+	for _, interpretation := range command.Interpretations {
+		if len(interpretation.Evidence) == 0 || interpretation.Evidence[0].Pointer != "/scripts/test~1unit" {
+			t.Fatalf("interpretation pointer = %+v, want /scripts/test~1unit", interpretation.Evidence)
+		}
+	}
+}
+
 func TestDetectDeclaresComposerScriptsAndSkipsEventHooks(t *testing.T) {
 	t.Parallel()
 

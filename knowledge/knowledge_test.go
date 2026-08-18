@@ -241,6 +241,20 @@ func TestParseScriptStripsComposerExecAndPHPVendorBin(t *testing.T) {
 	}
 }
 
+func TestParseScriptSkipsPHPCLIOptionsBeforeVendorBin(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("php -d memory_limit=-1 vendor/bin/phpunit && php -dmemory_limit=-1 vendor/bin/phpunit --testdox && php -n vendor/bin/pest")
+	want := []Invocation{
+		{Executable: "phpunit"},
+		{Executable: "phpunit", Args: []string{"--testdox"}},
+		{Executable: "pest"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
 func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
 	t.Parallel()
 
@@ -486,6 +500,18 @@ func TestIsToolPlumbingCoversVersionProbes(t *testing.T) {
 	}
 	if IsToolPlumbing(Invocation{Executable: "npm", Args: []string{"version", "--no-git-tag-version", "1.2.3"}}) {
 		t.Fatal("IsToolPlumbing(npm version ...) = true, want false; npm version bumps the package")
+	}
+	if IsToolPlumbing(Invocation{Executable: "composer", Args: []string{"-v", "install"}}) {
+		t.Fatal("IsToolPlumbing(composer -v install) = true, want false; -v is verbosity")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "composer", Args: []string{"-V"}}) {
+		t.Fatal("IsToolPlumbing(composer -V) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "composer", Args: []string{"--version"}}) {
+		t.Fatal("IsToolPlumbing(composer --version) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "php", Args: []string{"-v"}}) {
+		t.Fatal("IsToolPlumbing(php -v) = false, want true")
 	}
 }
 

@@ -55,7 +55,7 @@ func commandFindings(ctx provider.Context, manifest composerManifest) ([]plan.Fi
 }
 
 func declaredScriptSpec(ctx provider.Context, name string, raw []byte) commandSpec {
-	pointer := "/scripts/" + name
+	pointer := "/scripts/" + pointerToken(name)
 	return commandSpec{
 		name:        name,
 		run:         "composer run-script " + name,
@@ -206,6 +206,9 @@ func firstPHPTestIn(root, directory string) (string, error) {
 			return fs.SkipAll
 		}
 		if entry.IsDir() {
+			if path != testRoot && fileExists(path, "composer.json") {
+				return fs.SkipDir
+			}
 			return nil
 		}
 		if entry.Type()&os.ModeSymlink != 0 || !matchesPHPTestName(entry.Name()) {

@@ -272,7 +272,7 @@ jobs:
 	}
 }
 
-func TestDetectReadsSetupPHPVersionFileInput(t *testing.T) {
+func TestDetectIgnoresUnknownSetupPHPVersionFileInput(t *testing.T) {
 	t.Parallel()
 
 	result := detectFiles(t, map[string]string{
@@ -287,8 +287,8 @@ jobs:
 `,
 	})
 
-	if !hasRequirement(result, plan.RequirementRuntime, "php", "8.3.6") {
-		t.Fatalf("missing PHP 8.3.6 from .php-version in %+v", result.Findings)
+	if hasRequirement(result, plan.RequirementRuntime, "php", "8.3.6") {
+		t.Fatal("setup-php php-version-file input was treated as a supported version pin")
 	}
 }
 
@@ -399,6 +399,26 @@ jobs:
 
 	if got := keys(commandByName(result)); !slices.Equal(got, []string{"go test"}) {
 		t.Fatalf("commands = %v, want only go test", got)
+	}
+}
+
+func TestDetectKeepsComposerVerboseInstallAndSkipsComposerVersion(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: |
+          composer -V
+          composer --version
+          composer -v install
+`,
+	})
+
+	if got := keys(commandByName(result)); !slices.Equal(got, []string{"install dependencies"}) {
+		t.Fatalf("commands = %v, want only composer -v install", got)
 	}
 }
 

@@ -13,7 +13,7 @@ type composerManifest struct {
 }
 
 type composerConfig struct {
-	Platform map[string]string `json:"platform"`
+	Platform map[string]json.RawMessage `json:"platform"`
 }
 
 func hasPackage(manifest composerManifest, name string) bool {
@@ -36,7 +36,15 @@ func requirePHP(manifest composerManifest) string {
 }
 
 func platformPHP(manifest composerManifest) string {
-	return strings.TrimSpace(manifest.Config.Platform["php"])
+	raw, ok := manifest.Config.Platform["php"]
+	if !ok {
+		return ""
+	}
+	var version string
+	if err := json.Unmarshal(raw, &version); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(version)
 }
 
 func scriptBodies(raw json.RawMessage) []string {
