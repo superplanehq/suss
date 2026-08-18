@@ -1,0 +1,1360 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "maven",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "ci.matrix.java",
+          "value": "11",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/build/steps/1/with/java-version",
+              "description": "CI tests java 11 as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.java",
+          "value": "17",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/build/steps/1/with/java-version",
+              "description": "CI tests java 17 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/verify-reproducible-build/steps/1/with/java-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/check-android-compatibility.yml",
+              "pointer": "/jobs/check-android-compatibility/steps/1/with/java-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/check-api-compatibility.yml",
+              "pointer": "/jobs/check-api-compatibility/steps/1/with/java-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/codeql-analysis.yml",
+              "pointer": "/jobs/analyze/steps/1/with/java-version"
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.java",
+          "value": "21",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/build-gson-subset/steps/1/with/java-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/build/steps/1/with/java-version",
+              "description": "CI tests java 21 as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.java",
+          "value": "25",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/build/steps/1/with/java-version",
+              "description": "CI tests java 25 as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "name": "workspace.orchestrator",
+          "value": "maven",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/modules"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "8",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/properties/maven.compiler.release"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MAVEN_ARGS",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/env/MAVEN_ARGS"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/check-android-compatibility.yml",
+              "pointer": "/env/MAVEN_ARGS"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/check-api-compatibility.yml",
+              "pointer": "/env/MAVEN_ARGS"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/codeql-analysis.yml",
+              "pointer": "/env/MAVEN_ARGS"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_23d2397ce7df975c9522026de6647baf",
+          "name": "mvn artifact:check-buildplan",
+          "run": "mvn artifact:check-buildplan --projects '!metrics,!test-graal-native-image,!test-jpms,!test-shrinker'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/verify-reproducible-build/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_35bda3e45b7975a3c66c1ad94e369a5f",
+          "name": "mvn clean",
+          "run": "mvn clean verify artifact:compare -Dmaven.test.skip --projects '!metrics,!test-graal-native-image,!test-jpms,!test-shrinker' -Dbuildinfo.attach=false",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/verify-reproducible-build/steps/3/run#command=1"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/build.yml",
+                  "pointer": "/jobs/verify-reproducible-build/steps/3/run#command=1",
+                  "description": "The command runs the Maven verify lifecycle, which builds artifacts and runs tests."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/build.yml",
+                  "pointer": "/jobs/verify-reproducible-build/steps/3/run#command=1",
+                  "description": "The command runs the Maven verify lifecycle, which builds artifacts and runs tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_56513fbc2193e7f8cc776282d97c733f",
+          "name": "mvn install",
+          "run": "mvn install -Dmaven.test.skip --projects '!metrics,!test-graal-native-image,!test-jpms,!test-shrinker'",
+          "directory": "gson-old-japicmp",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/check-api-compatibility.yml",
+              "pointer": "/jobs/check-api-compatibility/steps/2/run#command=2"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/check-api-compatibility.yml",
+                  "pointer": "/jobs/check-api-compatibility/steps/2/run#command=2",
+                  "description": "The command installs a Maven artifact to the local repository."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_7f9ff2c426b87d35a89afe890eb2b27d",
+          "name": "mvn org.codehaus.mojo:versions-maven-plugin:2.16.2:set",
+          "run": "mvn org.codehaus.mojo:versions-maven-plugin:2.16.2:set \"-DnewVersion=0.0.0-JAPICMP-OLD\"",
+          "directory": "gson-old-japicmp",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/check-api-compatibility.yml",
+              "pointer": "/jobs/check-api-compatibility/steps/2/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_98cf0be98f285c9d180c07cdd3d9e152",
+          "name": "mvn compile",
+          "run": "mvn compile animal-sniffer:check@check-android-compatibility -Dmaven.test.skip --projects '!metrics,!proto,!test-graal-native-image,!test-jpms,!test-shrinker'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/check-android-compatibility.yml",
+              "pointer": "/jobs/check-android-compatibility/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a3cda228c2ae97e4e53d26e682e8c2df",
+          "name": "build",
+          "run": "mvn package",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/check-api-compatibility.yml",
+              "pointer": "/jobs/check-api-compatibility/steps/4/run"
+            },
+            {
+              "kind": "file",
+              "source": "pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Maven projects conventionally produce artifacts with mvn package."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "mvn package japicmp:cmp --fail-at-end -Dmaven.test.skip --projects '!extras,!metrics,!test-graal-native-image,!test-jpms,!test-shrinker'",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/check-api-compatibility.yml",
+                  "pointer": "/jobs/check-api-compatibility/steps/4/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_a8fc4346b6e536882782a9156f47cf81",
+          "name": "test",
+          "run": "mvn test",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/build-gson-subset/steps/2/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/native-image-test/steps/2/run"
+            },
+            {
+              "kind": "file",
+              "source": "extras/src/test/java/com/google/gson/interceptors/InterceptorTest.java"
+            },
+            {
+              "kind": "file",
+              "source": "pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "test",
+              "description": "Maven projects conventionally run tests with mvn test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Maven tests."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "mvn clean test --projects gson --activate-profiles gson-subset",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/build.yml",
+                  "pointer": "/jobs/build-gson-subset/steps/2/run"
+                }
+              ]
+            },
+            {
+              "context": "ci",
+              "run": "mvn test --activate-profiles native-image-test --projects test-graal-native-image --also-make ${{ matrix.extra-mvn-args || '' }}",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/build.yml",
+                  "pointer": "/jobs/native-image-test/steps/2/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_b5523bba65fea13a0f34d3bf0d7732b0",
+          "name": "mvn verify",
+          "run": "mvn verify javadoc:jar ${{ matrix.extra-mvn-args || '' }}",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/build/steps/2/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/build.yml",
+                  "pointer": "/jobs/build/steps/2/run",
+                  "description": "The command runs the Maven verify lifecycle, which builds artifacts and runs tests."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/build.yml",
+                  "pointer": "/jobs/build/steps/2/run",
+                  "description": "The command runs the Maven verify lifecycle, which builds artifacts and runs tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_e3b205e22d32744805c7684d1ace207a",
+          "name": "mvn compile",
+          "run": "mvn compile",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/codeql-analysis.yml",
+              "pointer": "/jobs/analyze/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fd57b6e0a4170c320e12d2f1210719af",
+          "name": "mvn clean",
+          "run": "mvn clean install -Dmaven.test.skip --projects '!metrics,!test-graal-native-image,!test-jpms,!test-shrinker'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/verify-reproducible-build/steps/3/run#command=0"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/build.yml",
+                  "pointer": "/jobs/verify-reproducible-build/steps/3/run#command=0",
+                  "description": "The command installs a Maven artifact to the local repository."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "extras",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "extras/pom.xml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "maven",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "extras/pom.xml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "8",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "extras/pom.xml",
+              "pointer": "/properties/maven.compiler.release"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_008fc1914780ea0a8bf655b3ed374aa4",
+          "name": "test",
+          "run": "mvn test",
+          "directory": "extras",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "extras/pom.xml"
+            },
+            {
+              "kind": "file",
+              "source": "extras/src/test/java/com/google/gson/interceptors/InterceptorTest.java"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "test",
+              "description": "Maven projects conventionally run tests with mvn test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Maven tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_a753a55f6eb460c1328f2306c2fcc496",
+          "name": "build",
+          "run": "mvn package",
+          "directory": "extras",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "extras/pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Maven projects conventionally produce artifacts with mvn package."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "gson",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "gson/pom.xml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "maven",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "gson/pom.xml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "8",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "gson/pom.xml",
+              "pointer": "/properties/maven.compiler.release"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_15a00e0e467ed2582ff60b289699473c",
+          "name": "test",
+          "run": "mvn test",
+          "directory": "gson",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "gson/pom.xml"
+            },
+            {
+              "kind": "file",
+              "source": "gson/src/test/java/com/google/gson/CommentsTest.java"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "test",
+              "description": "Maven projects conventionally run tests with mvn test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Maven tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_52705d3c929cd36bb559225b81f1a734",
+          "name": "build",
+          "run": "mvn package",
+          "directory": "gson",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "gson/pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Maven projects conventionally produce artifacts with mvn package."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "metrics",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "metrics/pom.xml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "maven",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "metrics/pom.xml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "8",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "metrics/pom.xml",
+              "pointer": "/properties/maven.compiler.release"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_d3a19966381ca255fa14ed6c48baabb7",
+          "name": "build",
+          "run": "mvn package",
+          "directory": "metrics",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "metrics/pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Maven projects conventionally produce artifacts with mvn package."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "proto",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "proto/pom.xml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "maven",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "proto/pom.xml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "8",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "proto/pom.xml",
+              "pointer": "/properties/maven.compiler.release"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_aa058e6abe23a715662ed90baeadec50",
+          "name": "test",
+          "run": "mvn test",
+          "directory": "proto",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "proto/pom.xml"
+            },
+            {
+              "kind": "file",
+              "source": "proto/src/test/java/com/google/gson/protobuf/functional/LegacyProtoTypeAdapterFactoryTest.java"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "test",
+              "description": "Maven projects conventionally run tests with mvn test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Maven tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_bc4ddda87223ccc1ac8816e841f66c71",
+          "name": "build",
+          "run": "mvn package",
+          "directory": "proto",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "proto/pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Maven projects conventionally produce artifacts with mvn package."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "test-graal-native-image",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "test-graal-native-image/pom.xml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "maven",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "test-graal-native-image/pom.xml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "8",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "test-graal-native-image/pom.xml",
+              "pointer": "/properties/maven.compiler.release"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_2744320c1c6f63b41556b7f79935e36f",
+          "name": "test",
+          "run": "mvn test",
+          "directory": "test-graal-native-image",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "test-graal-native-image/pom.xml"
+            },
+            {
+              "kind": "file",
+              "source": "test-graal-native-image/src/test/java/com/google/gson/native_test/Java17RecordReflectionTest.java"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "test",
+              "description": "Maven projects conventionally run tests with mvn test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Maven tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_510bfc311931e6055d6d1cc57404dbef",
+          "name": "build",
+          "run": "mvn package",
+          "directory": "test-graal-native-image",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "test-graal-native-image/pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Maven projects conventionally produce artifacts with mvn package."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "test-jpms",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "test-jpms/pom.xml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "maven",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "test-jpms/pom.xml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "11",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "test-jpms/pom.xml",
+              "pointer": "/properties/maven.compiler.release"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_b7da7031912dbcd0ce0bdc4e45d76161",
+          "name": "build",
+          "run": "mvn package",
+          "directory": "test-jpms",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "test-jpms/pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Maven projects conventionally produce artifacts with mvn package."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_bdb31f9293e4f7696f4cc0211e4d1dc4",
+          "name": "test",
+          "run": "mvn test",
+          "directory": "test-jpms",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "test-jpms/pom.xml"
+            },
+            {
+              "kind": "file",
+              "source": "test-jpms/src/test/java/com/google/gson/jpms_test/ExportedPackagesTest.java"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "test",
+              "description": "Maven projects conventionally run tests with mvn test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Maven tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "test-shrinker",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "test-shrinker/pom.xml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "maven",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "test-shrinker/pom.xml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "8",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "test-shrinker/pom.xml",
+              "pointer": "/properties/maven.compiler.release"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_c67664dfdbb860a774f8f2266a4882df",
+          "name": "build",
+          "run": "mvn package",
+          "directory": "test-shrinker",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "test-shrinker/pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Maven projects conventionally produce artifacts with mvn package."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_e3b5ad2bcdb0bdc0903c91765564fc23",
+          "name": "test",
+          "run": "mvn test",
+          "directory": "test-shrinker",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "test-shrinker/pom.xml"
+            },
+            {
+              "kind": "file",
+              "source": "test-shrinker/src/test/java/com/google/gson/it/ShrinkingIT.java"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "test",
+              "description": "Maven projects conventionally run tests with mvn test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Maven tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

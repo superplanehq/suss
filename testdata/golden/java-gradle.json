@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "build.gradle.kts"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "gradle",
+          "version": "8.14",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "build.gradle.kts"
+            },
+            {
+              "kind": "declaration",
+              "source": "gradle/wrapper/gradle-wrapper.properties",
+              "pointer": "/distributionUrl"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "checkstyle",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "build.gradle.kts",
+              "pointer": "/plugins/checkstyle"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "21",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "build.gradle.kts",
+              "pointer": "/java/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/1/with/java-version"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_63dac854e503a7f63296ff73a1d243f5",
+          "name": "test",
+          "run": "./gradlew test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/2/run"
+            },
+            {
+              "kind": "file",
+              "source": "build.gradle.kts"
+            },
+            {
+              "kind": "file",
+              "source": "src/test/java/com/example/WidgetTest.java"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "test",
+              "description": "Gradle projects conventionally run tests with gradle test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Gradle tests."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "./gradlew test",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/2/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_c86385d3201259432ce62f1b6a8bb4bd",
+          "name": "build",
+          "run": "./gradlew build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "build.gradle.kts"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Gradle projects conventionally produce artifacts with gradle build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command builds a Gradle project."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

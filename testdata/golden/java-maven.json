@@ -1,0 +1,230 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "spring-boot",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/parent/artifactId",
+              "description": "The Maven project declares Spring Boot."
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "maven",
+          "version": "3.9.9",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".mvn/wrapper/maven-wrapper.properties",
+              "pointer": "/distributionUrl"
+            },
+            {
+              "kind": "declaration",
+              "source": "pom.xml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "checkstyle",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/maven-checkstyle-plugin"
+            },
+            {
+              "kind": "configuration",
+              "source": "checkstyle.xml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "17",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".java-version"
+            },
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/properties/java.version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/1/with/java-version"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_964de63e58530cd97ef0f32432681e83",
+          "name": "server",
+          "run": "./mvnw spring-boot:run",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "server",
+              "description": "Spring Boot applications conventionally start with mvn spring-boot:run."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "server",
+                  "description": "The command starts the Spring Boot application."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_a3cda228c2ae97e4e53d26e682e8c2df",
+          "name": "build",
+          "run": "./mvnw package",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "pom.xml"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Maven projects conventionally produce artifacts with mvn package."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_a8fc4346b6e536882782a9156f47cf81",
+          "name": "test",
+          "run": "./mvnw test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/2/run"
+            },
+            {
+              "kind": "file",
+              "source": "pom.xml"
+            },
+            {
+              "kind": "file",
+              "source": "src/test/java/com/example/DemoApplicationTest.java"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "test",
+              "description": "Maven projects conventionally run tests with mvn test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Maven tests."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "./mvnw test",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/2/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

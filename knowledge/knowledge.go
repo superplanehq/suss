@@ -87,6 +87,10 @@ func Interpret(inv Invocation) []Match {
 	if executable == "" {
 		return nil
 	}
+	args := inv.Args
+	if executable == "mvn" || executable == "gradle" {
+		args = mavenGradleArgs(args)
+	}
 
 	bestLen := -1
 	var matches []Match
@@ -94,7 +98,7 @@ func Interpret(inv Invocation) []Match {
 		if rule.Executable != executable {
 			continue
 		}
-		if !hasArgsPrefix(inv.Args, rule.ArgsPrefix) {
+		if !hasArgsPrefix(args, rule.ArgsPrefix) {
 			continue
 		}
 		if !hasArgsContains(inv.Args, rule.ArgsContains) {
@@ -505,6 +509,10 @@ func dropWrappers(tokens []string) []string {
 	switch tokens[0] {
 	case "npx", "pnpx", "bunx", "c8", "nyc":
 		return dropLeadingFlags(tokens[1:])
+	case "sudo":
+		if len(tokens) >= 2 && !strings.HasPrefix(tokens[1], "-") {
+			return tokens[1:]
+		}
 	case "bundle":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
 			return dropLeadingFlags(tokens[2:])
@@ -684,7 +692,27 @@ func canonicalizeExecutable(executable string) string {
 	base := path.Base(executable)
 	base = strings.TrimSuffix(base, ".cmd")
 	base = strings.TrimSuffix(base, ".exe")
-	return base
+	base = strings.TrimSuffix(base, ".bat")
+	switch base {
+	case "mvnw":
+		return "mvn"
+	case "gradlew":
+		return "gradle"
+	default:
+		return base
+	}
+}
+
+// mavenGradleArgs drops leading flags and a leading `clean` lifecycle
+// phase so `mvn -B clean test` matches the `mvn test` rule. Maven and
+// Gradle put options before tasks; other tools in this knowledge base
+// put the subcommand first.
+func mavenGradleArgs(args []string) []string {
+	args = dropLeadingFlags(args)
+	if len(args) > 1 && args[0] == "clean" {
+		return args[1:]
+	}
+	return args
 }
 
 func hasArgsPrefix(args, prefix []string) bool {

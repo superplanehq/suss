@@ -369,5 +369,6 @@ var semaphorePlumbing = map[string]struct{}{
 	"cp": {}, "mv": {}, "rm": {}, "mkdir": {}, "rmdir": {}, "ln": {}, "find": {}, "sed": {}, "awk": {}, "grep": {}, "diff": {},
 	"sort": {}, "uniq": {}, "xargs": {}, "tr": {}, "cut": {}, "head": {}, "tail": {}, "ls": {}, "chmod": {}, "touch": {},
 	"pushd": {}, "popd": {}, "dirname": {}, "basename": {}, "realpath": {}, "pwd": {}, "which": {}, "command": {}, "type": {},
+	"test": {}, "udevadm": {},
 	"git": {}, "curl": {}, "wget": {}, "env": {}, "ssh": {}, "rsync": {}, "sudo": {},
 }

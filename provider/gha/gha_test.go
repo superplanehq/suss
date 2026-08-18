@@ -320,6 +320,84 @@ jobs:
 	}
 }
 
+func TestDetectReadsSetupJavaMatrixVersions(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        java: ["17", "21"]
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+`,
+	})
+
+	if got := sortedCopy(runtimeRequirementVersions(result, "java")); !slices.Equal(got, []string{"17", "21"}) {
+		t.Fatalf("Java versions = %v, want matrix pins", got)
+	}
+}
+
+func TestDetectReadsSetupJavaVersionFileInput(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".java-version": "21\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version-file: .java-version
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "java", "21") {
+		t.Fatalf("missing Java 21 from .java-version in %+v", result.Findings)
+	}
+}
+
+func TestDetectSkipsUdevadmAfterSudo(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: sudo udevadm trigger --name-match=kvm
+`,
+	})
+
+	if commands := commandByName(result); len(commands) != 0 {
+		t.Fatalf("udevadm plumbing was emitted as a repository command: %+v", result.Findings)
+	}
+}
+
+func TestDetectSkipsUnixTestBuiltin(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: test -f README.md
+`,
+	})
+
+	if commands := commandByName(result); len(commands) != 0 {
+		t.Fatalf("unix test builtin was emitted as a repository command: %+v", result.Findings)
+	}
+}
+
 func TestDetectSkipsRemoteGemInstalls(t *testing.T) {
 	t.Parallel()
 

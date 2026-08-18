@@ -147,6 +147,8 @@ func usesFindings(ctx provider.Context, source, dir, stepPointer string, step st
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "ruby", step.With, matrix, []string{"ruby-version"})
 	case "shivammathur/setup-php":
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "php", step.With, matrix, []string{"php-version"})
+	case "actions/setup-java":
+		return setupRuntimeFindings(ctx, source, dir, stepPointer, "java", step.With, matrix, []string{"java-version", "java-version-file"})
 	case "golangci/golangci-lint-action":
 		return golangciActionFindings(source, dir, stepPointer, step)
 	default:
@@ -485,6 +487,7 @@ var skippedExecutables = map[string]struct{}{
 	"which": {}, "command": {}, "type": {},
 	"git": {}, "curl": {}, "wget": {},
 	"env": {}, "ssh": {}, "rsync": {},
+	"test": {}, "udevadm": {},
 }
 
 func envFindings(source, pointer, dir string, env stringMap, keepLiterals bool) []plan.Finding {

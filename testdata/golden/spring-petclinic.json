@@ -1,0 +1,536 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "build.gradle"
+            },
+            {
+              "kind": "declaration",
+              "source": "pom.xml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "spring-boot",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "build.gradle",
+              "pointer": "/plugins/org.springframework.boot",
+              "description": "The Gradle build declares Spring Boot."
+            },
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/parent/artifactId",
+              "description": "The Maven project declares Spring Boot."
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "gradle",
+          "version": "9.5.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "build.gradle"
+            },
+            {
+              "kind": "declaration",
+              "source": "gradle/wrapper/gradle-wrapper.properties",
+              "pointer": "/distributionUrl"
+            }
+          ]
+        },
+        {
+          "name": "maven",
+          "version": "3.9.16",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".mvn/wrapper/maven-wrapper.properties",
+              "pointer": "/distributionUrl"
+            },
+            {
+              "kind": "declaration",
+              "source": "pom.xml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "checkstyle",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "build.gradle",
+              "pointer": "/plugins/checkstyle"
+            },
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/maven-checkstyle-plugin"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "17",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "build.gradle",
+              "pointer": "/java/toolchain"
+            },
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/properties/java.version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/gradle-build.yml",
+              "pointer": "/jobs/build/steps/1/with/java-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/maven-build.yml",
+              "pointer": "/jobs/build/steps/1/with/java-version"
+            }
+          ]
+        },
+        {
+          "kind": "tool",
+          "name": "docker",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "docker-compose.yml"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "mysql",
+          "version": "9.7",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/mysql/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "postgres",
+          "version": "18.4",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/postgres/image"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MYSQL_ALLOW_EMPTY_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/mysql/environment/1"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MYSQL_DATABASE",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/mysql/environment/4"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MYSQL_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/mysql/environment/3"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MYSQL_ROOT_PASSWORD",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/mysql/environment/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MYSQL_USER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/mysql/environment/2"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_DB",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/postgres/environment/2"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/postgres/environment/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_USER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/postgres/environment/1"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_2a49c08cb6e05e972cef3f77ec5e790e",
+          "name": "start services",
+          "run": "docker compose up -d",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "docker-compose.yml"
+            },
+            {
+              "kind": "convention",
+              "source": "compose",
+              "pointer": "up",
+              "description": "Docker Compose services are started with docker compose up -d."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_0fbb4ab5d125fe60a0c0d6065ad429f4",
+          "name": "kubectl wait",
+          "run": "kubectl wait --for=condition=ready pod -l app=petclinic --timeout=180s",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/deploy-and-test-cluster.yml",
+              "pointer": "/jobs/deploy-and-test-cluster/steps/3/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1f1c74008806499fcbb4cba8b9c1fcd0",
+          "name": "gradle build",
+          "run": "./gradlew build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/gradle-build.yml",
+              "pointer": "/jobs/build/steps/3/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/gradle-build.yml",
+                  "pointer": "/jobs/build/steps/3/run",
+                  "description": "The command builds a Gradle project."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_2b9b0002cb22e7482262cf7487f84a50",
+          "name": "kubectl apply",
+          "run": "kubectl apply -f k8s/",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/deploy-and-test-cluster.yml",
+              "pointer": "/jobs/deploy-and-test-cluster/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d2f08b5128b54840a6f4c0d675b3f994",
+          "name": "mvn verify",
+          "run": "./mvnw -B verify",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/maven-build.yml",
+              "pointer": "/jobs/build/steps/2/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/maven-build.yml",
+                  "pointer": "/jobs/build/steps/2/run",
+                  "description": "The command runs the Maven verify lifecycle, which builds artifacts and runs tests."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/maven-build.yml",
+                  "pointer": "/jobs/build/steps/2/run",
+                  "description": "The command runs the Maven verify lifecycle, which builds artifacts and runs tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_ef3a7b2852633bd609c7e5fa3575101e",
+          "name": "kubectl wait",
+          "run": "kubectl wait --for=condition=ready pod -l app=demo-db --timeout=180s",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/deploy-and-test-cluster.yml",
+              "pointer": "/jobs/deploy-and-test-cluster/steps/3/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [
+        {
+          "subject": "application.run",
+          "message": "Maven and Gradle manifests are both present; the server command cannot be selected.",
+          "candidates": [
+            {
+              "value": "./gradlew bootRun",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "build.gradle"
+                },
+                {
+                  "kind": "declaration",
+                  "source": "gradle/wrapper/gradle-wrapper.properties",
+                  "pointer": "/distributionUrl"
+                }
+              ]
+            },
+            {
+              "value": "./mvnw spring-boot:run",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": ".mvn/wrapper/maven-wrapper.properties",
+                  "pointer": "/distributionUrl"
+                },
+                {
+                  "kind": "declaration",
+                  "source": "pom.xml"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "subject": "artifact.build",
+          "message": "Maven and Gradle manifests are both present; the build command cannot be selected.",
+          "candidates": [
+            {
+              "value": "./gradlew build",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "build.gradle"
+                },
+                {
+                  "kind": "declaration",
+                  "source": "gradle/wrapper/gradle-wrapper.properties",
+                  "pointer": "/distributionUrl"
+                }
+              ]
+            },
+            {
+              "value": "./mvnw package",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": ".mvn/wrapper/maven-wrapper.properties",
+                  "pointer": "/distributionUrl"
+                },
+                {
+                  "kind": "declaration",
+                  "source": "pom.xml"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "subject": "test.run",
+          "message": "Maven and Gradle manifests are both present; the test command cannot be selected.",
+          "candidates": [
+            {
+              "value": "./gradlew test",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "build.gradle"
+                },
+                {
+                  "kind": "declaration",
+                  "source": "gradle/wrapper/gradle-wrapper.properties",
+                  "pointer": "/distributionUrl"
+                }
+              ]
+            },
+            {
+              "value": "./mvnw test",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": ".mvn/wrapper/maven-wrapper.properties",
+                  "pointer": "/distributionUrl"
+                },
+                {
+                  "kind": "declaration",
+                  "source": "pom.xml"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "conflicts": []
+    }
+  ]
+}

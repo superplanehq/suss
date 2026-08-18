@@ -440,6 +440,30 @@ func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
 	}
 }
 
+func TestInterpretMatchesJavaInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		invocation   Invocation
+		capabilities []plan.Capability
+	}{
+		{invocation: Invocation{Executable: "mvn", Args: []string{"test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "mvnw", Args: []string{"-B", "clean", "test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "./mvnw", Args: []string{"spring-boot:run"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"verify"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "gradlew", Args: []string{"-Pfoo=1", "build"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{invocation: Invocation{Executable: "./gradlew", Args: []string{"bootRun"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
+		{invocation: Invocation{Executable: "gradlew.bat", Args: []string{"test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "gradle", Args: []string{"spotlessCheck"}}, capabilities: []plan.Capability{plan.CapabilityCodeLint}},
+	}
+	for _, tt := range tests {
+		got := capabilities(Interpret(tt.invocation))
+		if !slices.Equal(got, tt.capabilities) {
+			t.Fatalf("Interpret(%+v) = %v, want %v", tt.invocation, got, tt.capabilities)
+		}
+	}
+}
+
 func TestIsRemoteGemInstall(t *testing.T) {
 	t.Parallel()
 

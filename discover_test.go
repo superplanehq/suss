@@ -21,17 +21,19 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	writeFile(t, filepath.Join(root, "admin", "Gemfile"), "source \"https://rubygems.org\"\n")
 	writeFile(t, filepath.Join(root, "api", "composer.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "vendor-bin", "phpstan", "composer.json"), "{}\n")
+	writeFile(t, filepath.Join(root, "services", "api", "pom.xml"), "<project></project>\n")
 	writeFile(t, filepath.Join(root, "node_modules", "left-pad", "package.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "vendor", "module", "go.mod"), "module example.com/vendored\n\ngo 1.26\n")
 	writeFile(t, filepath.Join(root, "deps", "plug", "mix.exs"), "defmodule Plug.MixProject do\nend\n")
 	writeFile(t, filepath.Join(root, "tmp", "go", "pkg", "mod", "modernc.org", "sqlite@v1.20.3", "vfs", "Makefile"), "build:\n")
+	writeFile(t, filepath.Join(root, "buildSrc", "build.gradle.kts"), "plugins { id(\"java\") }\n")
 	writeFile(t, filepath.Join(root, ".hidden", "go.mod"), "module example.com/hidden\n\ngo 1.26\n")
 
 	got, err := findProjectRoots(root)
 	if err != nil {
 		t.Fatalf("findProjectRoots() error = %v", err)
 	}
-	want := []string{".", "admin", "api", "apps/web", "backend", "frontend"}
+	want := []string{".", "admin", "api", "apps/web", "backend", "frontend", "services/api"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
 	}
@@ -95,6 +97,25 @@ func TestFindProjectRootsCollapsesMultipleManifestsInOneDirectory(t *testing.T) 
 		t.Fatalf("findProjectRoots() error = %v", err)
 	}
 	want := []string{"."}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestFindProjectRootsSkipsNestedGradleMembers(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "settings.gradle.kts"), "rootProject.name = \"demo\"\ninclude(\"lib\")\n")
+	writeFile(t, filepath.Join(root, "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "lib", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "services", "api", "pom.xml"), "<project></project>\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{".", "services/api"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
 	}

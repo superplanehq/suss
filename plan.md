@@ -232,6 +232,23 @@ Acceptance:
 
 - Full corpus green in CI. Tagged v0 release with binaries.
 
+## Milestone 9 — Java (Maven and Gradle)
+
+The JVM analog of milestone 7's Ruby work: two dominant build systems, plus Spring Boot as the application framework.
+
+Scope:
+
+- Java provider: `pom.xml`, `build.gradle` / `build.gradle.kts`, `settings.gradle` / `settings.gradle.kts`, Maven and Gradle wrappers, Java version files (`.java-version`, `.tool-versions`, `.sdkmanrc`), compiler/toolchain pins, Spring Boot, JUnit-style test files, Checkstyle/PMD/SpotBugs/Spotless configs; knowledge base entries. GitHub Actions recognizes `actions/setup-java` runtime evidence.
+- Nested Gradle members under a `settings.gradle` are not separate project roots (the wrapper lives at the settings root; fan-out is not modeled). Nested Maven `pom.xml` files remain project roots, matching `package.json`.
+- When Maven and Gradle manifests coexist, report both package managers and an ambiguity rather than silently selecting one. `run: null` is not used: that form is reserved for declared commands.
+
+Acceptance:
+
+- The focused `java-maven` and `java-gradle` golden fixtures are correct: identity, runtime, wrapper-aware commands, tool configuration, and GitHub Actions reconciliation remain evidence-backed.
+- Golden plans for `google/gson` (Maven library), `mockito/mockito` (Gradle library), and `spring-projects/spring-petclinic` (Spring Boot application with both build systems) are correct at pinned commits.
+
+Status: implementation complete; awaiting review.
+
 ## Out of scope for v0
 
-Per idea.md: command execution, execution profiles, behavior characteristics, README/docs parsing, workspace fan-out modeling, Python/Rust/JVM/.NET providers, GitLab/CircleCI/Buildkite.
+Per idea.md: command execution, execution profiles, behavior characteristics, README/docs parsing, workspace fan-out modeling, Python/Rust/.NET providers, GitLab/CircleCI/Buildkite. Ant, Bazel, and Android-first Gradle builds are out of scope for the Java provider.

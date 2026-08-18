@@ -12,17 +12,27 @@ import (
 )
 
 var projectManifests = map[string]struct{}{
-	"package.json":  {},
-	"go.mod":        {},
-	"mix.exs":       {},
-	"Gemfile":       {},
-	"composer.json": {},
-	"GNUmakefile":   {},
-	"Makefile":      {},
-	"makefile":      {},
-	".env.example":  {},
-	".env.sample":   {},
-	".env.template": {},
+	"package.json":        {},
+	"go.mod":              {},
+	"mix.exs":             {},
+	"Gemfile":             {},
+	"composer.json":       {},
+	"pom.xml":             {},
+	"build.gradle":        {},
+	"build.gradle.kts":    {},
+	"settings.gradle":     {},
+	"settings.gradle.kts": {},
+	"GNUmakefile":         {},
+	"Makefile":            {},
+	"makefile":            {},
+	".env.example":        {},
+	".env.sample":         {},
+	".env.template":       {},
+}
+
+var gradleSettingsFiles = map[string]struct{}{
+	"settings.gradle":     {},
+	"settings.gradle.kts": {},
 }
 
 var skippedDirectories = map[string]struct{}{
@@ -34,10 +44,13 @@ var skippedDirectories = map[string]struct{}{
 	"dist":         {},
 	"target":       {},
 	"tmp":          {},
+	"buildSrc":     {},
 }
 
 func findProjectRoots(root string) ([]string, error) {
 	found := make(map[string]struct{})
+	settings := make(map[string]struct{})
+	poms := make(map[string]struct{})
 
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -61,6 +74,12 @@ func findProjectRoots(root string) ([]string, error) {
 			return err
 		}
 		found[relative] = struct{}{}
+		if _, ok := gradleSettingsFiles[entry.Name()]; ok {
+			settings[relative] = struct{}{}
+		}
+		if entry.Name() == "pom.xml" {
+			poms[relative] = struct{}{}
+		}
 		return nil
 	})
 	if err != nil {
@@ -69,10 +88,43 @@ func findProjectRoots(root string) ([]string, error) {
 
 	paths := make([]string, 0, len(found))
 	for path := range found {
+		if isNestedGradleMember(path, settings, poms) {
+			continue
+		}
 		paths = append(paths, path)
 	}
 	slices.Sort(paths)
 	return paths, nil
+}
+
+func isNestedGradleMember(path string, settings, poms map[string]struct{}) bool {
+	if _, ok := poms[path]; ok {
+		return false
+	}
+	if _, ok := settings[path]; ok {
+		return false
+	}
+	dir := path
+	for dir != "." && dir != "" {
+		parent := parentProjectPath(dir)
+		if parent == dir {
+			break
+		}
+		if _, ok := settings[parent]; ok {
+			return true
+		}
+		dir = parent
+	}
+	return false
+}
+
+func parentProjectPath(projectPath string) string {
+	projectPath = strings.Trim(projectPath, "/")
+	index := strings.LastIndex(projectPath, "/")
+	if index <= 0 {
+		return "."
+	}
+	return projectPath[:index]
 }
 
 func shouldSkipDirectory(entry fs.DirEntry) bool {

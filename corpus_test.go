@@ -46,6 +46,8 @@ var corpus = []corpusEntry{
 	{name: "compose-env", fixture: "compose-env", golden: "compose-env.json"},
 	{name: "ruby-rails", fixture: "ruby-rails", golden: "ruby-rails.json"},
 	{name: "php-laravel", fixture: "php-laravel", golden: "php-laravel.json"},
+	{name: "java-maven", fixture: "java-maven", golden: "java-maven.json"},
+	{name: "java-gradle", fixture: "java-gradle", golden: "java-gradle.json"},
 	{
 		name:   "chalk",
 		gitURL: "https://github.com/chalk/chalk.git",
@@ -123,6 +125,24 @@ var corpus = []corpusEntry{
 		gitURL: "https://github.com/koel/koel.git",
 		commit: "dfec91ff290509c622ff7cf392fb5e506841ee2b",
 		golden: "koel.json",
+	},
+	{
+		name:   "gson",
+		gitURL: "https://github.com/google/gson.git",
+		commit: "dae37cf0fe12235b76fb09f01118a0a8c8823f42",
+		golden: "gson.json",
+	},
+	{
+		name:   "mockito",
+		gitURL: "https://github.com/mockito/mockito.git",
+		commit: "5a676bcd9ef9a10db46e1dc34e190eb46faa2687",
+		golden: "mockito.json",
+	},
+	{
+		name:   "spring-petclinic",
+		gitURL: "https://github.com/spring-projects/spring-petclinic.git",
+		commit: "88e37c15cf6fc8490b01bc3e8e2c800cec1ac272",
+		golden: "spring-petclinic.json",
 	},
 }
 
