@@ -128,11 +128,17 @@ func projectFindings(ctx provider.Context, project pythonProject, choice manager
 }
 
 func depSourceFile(dep depDeclaration, fallback string) string {
-	file, _, ok := strings.Cut(dep.Source, "/")
-	if ok && file != "" {
-		return file
+	if dep.Source == "" {
+		return fallback
 	}
-	return fallback
+	file, _, ok := strings.Cut(dep.Source, "/")
+	if !ok {
+		return dep.Source
+	}
+	if file == "" {
+		return fallback
+	}
+	return file
 }
 
 func frameworkDescription(name string) string {

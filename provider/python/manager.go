@@ -102,7 +102,7 @@ func collectManagerSignals(ctx provider.Context, project pythonProject) []manage
 		})
 	}
 
-	if fileExists(ctx.ProjectDir(), "requirements.txt") && len(lockfileManagers(signals)) == 0 && !hasManager(signals, "pipenv") {
+	if fileExists(ctx.ProjectDir(), "requirements.txt") && len(signals) == 0 {
 		signals = append(signals, managerSignal{
 			name: "pip",
 			evidence: []plan.Evidence{{

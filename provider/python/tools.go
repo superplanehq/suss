@@ -57,28 +57,33 @@ func configuredToolEvidence(ctx provider.Context, project pythonProject, tool co
 	}
 	for _, name := range tool.dependencies {
 		dep, ok := project.Dependencies[normalizeDependency(name)]
-		if !ok && !hasPrefixedDependency(project, name) {
-			continue
+		if !ok {
+			dep, ok = prefixedDependency(project, name)
 		}
-		source := project.Manifest
-		if ok {
-			source = depSourceFile(dep, project.Manifest)
+		if !ok {
+			continue
 		}
 		evidence = append(evidence, plan.Evidence{
 			Kind:    plan.EvidenceDeclaration,
-			Source:  ctx.SourcePath(source),
-			Pointer: depPointer(name),
+			Source:  ctx.SourcePath(depSourceFile(dep, project.Manifest)),
+			Pointer: depPointer(dep.Name),
 		})
 	}
 	return evidence
 }
 
-func hasPrefixedDependency(project pythonProject, prefix string) bool {
+func prefixedDependency(project pythonProject, prefix string) (depDeclaration, bool) {
 	prefix = normalizeDependency(prefix)
-	for name := range project.Dependencies {
-		if name == prefix || strings.HasPrefix(name, prefix+"-") {
-			return true
+	var best depDeclaration
+	found := false
+	for name, dep := range project.Dependencies {
+		if name != prefix && !strings.HasPrefix(name, prefix+"-") {
+			continue
+		}
+		if !found || name < best.Name {
+			best = dep
+			found = true
 		}
 	}
-	return false
+	return best, found
 }

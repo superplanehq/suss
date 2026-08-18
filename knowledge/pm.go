@@ -245,10 +245,13 @@ func IsRemotePipInstall(inv Invocation) bool {
 }
 
 func isLocalPythonInstall(arg string) bool {
-	if arg == "." || strings.HasPrefix(arg, "./") || strings.HasPrefix(arg, "/") {
+	if arg == "." || strings.HasPrefix(arg, "./") || strings.HasPrefix(arg, "../") || strings.HasPrefix(arg, "/") || strings.HasPrefix(arg, ".[") {
 		return true
 	}
-	if strings.HasPrefix(arg, ".[") || strings.HasPrefix(arg, "./") {
+	if strings.Contains(arg, "://") {
+		return false
+	}
+	if strings.ContainsAny(arg, "/\\") {
 		return true
 	}
 	return strings.HasSuffix(arg, ".whl") || strings.HasSuffix(arg, ".tar.gz") || strings.HasSuffix(arg, ".zip") || strings.HasPrefix(arg, "requirements")

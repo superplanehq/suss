@@ -516,6 +516,17 @@ func takeLeadingAssignments(tokens []string) ([]string, []string) {
 }
 
 func dropWrappers(tokens []string) []string {
+	for range 8 {
+		next := unwrapOnce(tokens)
+		if sameTokens(next, tokens) {
+			return next
+		}
+		tokens = next
+	}
+	return tokens
+}
+
+func unwrapOnce(tokens []string) []string {
 	if len(tokens) == 0 {
 		return tokens
 	}
@@ -565,8 +576,7 @@ func dropWrappers(tokens []string) []string {
 			return dropLeadingFlags(tokens[2:])
 		}
 		if len(tokens) >= 2 && path.Base(tokens[1]) == "manage.py" {
-			rewritten := append([]string{tokens[0], "manage.py"}, tokens[2:]...)
-			return rewritten
+			return append([]string{tokens[0], "manage.py"}, tokens[2:]...)
 		}
 	case "npm", "pnpm", "yarn":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
@@ -805,6 +815,18 @@ func isCargoVerboseFlag(name string) bool {
 	}
 	for _, r := range name[1:] {
 		if r != 'v' {
+			return false
+		}
+	}
+	return true
+}
+
+func sameTokens(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
 			return false
 		}
 	}

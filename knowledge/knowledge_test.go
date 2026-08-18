@@ -443,12 +443,14 @@ func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
 func TestParseScriptStripsPythonWrappers(t *testing.T) {
 	t.Parallel()
 
-	got := ParseScript("poetry run pytest -q && uv run --locked --group dev tox run && python -m pytest && python src/manage.py test")
+	got := ParseScript("poetry run pytest -q && uv run --locked --group dev tox run && python -m pytest && python src/manage.py test && uv run python -m pytest && poetry run python -m pytest")
 	want := []Invocation{
 		{Executable: "pytest", Args: []string{"-q"}},
 		{Executable: "tox", Args: []string{"run"}},
 		{Executable: "pytest"},
 		{Executable: "python", Args: []string{"manage.py", "test"}},
+		{Executable: "pytest"},
+		{Executable: "pytest"},
 	}
 	if !slices.EqualFunc(got, want, invocationsEqual) {
 		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
@@ -493,6 +495,12 @@ func TestIsRemotePipInstall(t *testing.T) {
 	}
 	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "-e", "."}}) {
 		t.Fatal("IsRemotePipInstall(editable project) = true, want false")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "../shared"}}) {
+		t.Fatal("IsRemotePipInstall(relative parent path) = true, want false")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "packages/widget"}}) {
+		t.Fatal("IsRemotePipInstall(relative package path) = true, want false")
 	}
 }
 

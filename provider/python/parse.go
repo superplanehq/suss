@@ -130,7 +130,7 @@ func parseSetupPy(contents string) pythonProject {
 		},
 		HasPackageTable: true,
 	}
-	for _, match := range quotedStrings(contents) {
+	for _, match := range setupDependencyStrings(contents) {
 		addKnownDependency(&parsed, "setup.py", "/setup", match)
 	}
 	return parsed
@@ -523,6 +523,88 @@ func stripTOMLComments(contents string) string {
 	return out.String()
 }
 
+var setupDependencyKeys = []string{
+	"install_requires",
+	"tests_require",
+	"setup_requires",
+	"extras_require",
+}
+
+func setupDependencyStrings(contents string) []string {
+	var values []string
+	i := 0
+	for i < len(contents) {
+		if contents[i] == '#' {
+			i = skipTOMLLine(contents, i)
+			continue
+		}
+		if contents[i] == '"' || contents[i] == '\'' {
+			_, next, ok := readQuoted(contents, i)
+			if !ok {
+				break
+			}
+			i = next
+			continue
+		}
+		key, next, ok := readSetupKeyword(contents, i)
+		if !ok {
+			i++
+			continue
+		}
+		i = skipTOMLSpace(contents, next)
+		if i >= len(contents) || contents[i] != '=' {
+			i = next
+			continue
+		}
+		i = skipTOMLSpace(contents, i+1)
+		switch {
+		case i < len(contents) && (contents[i] == '[' || contents[i] == '{' || contents[i] == '('):
+			open, closer := contents[i], contents[i]
+			if open == '[' {
+				closer = ']'
+			} else if open == '{' {
+				closer = '}'
+			} else {
+				closer = ')'
+			}
+			body, after := readBalanced(contents, i, open, closer)
+			if key == "extras_require" {
+				values = append(values, quotedStringsInBracketLists(body)...)
+			} else {
+				values = append(values, quotedStrings(body)...)
+			}
+			i = after
+		case i < len(contents) && (contents[i] == '"' || contents[i] == '\''):
+			value, after, ok := readQuoted(contents, i)
+			if !ok {
+				return values
+			}
+			values = append(values, value)
+			i = after
+		default:
+			i = next
+		}
+	}
+	return values
+}
+
+func readSetupKeyword(contents string, i int) (string, int, bool) {
+	if i > 0 && isBareKey(contents[i-1]) {
+		return "", i, false
+	}
+	for _, key := range setupDependencyKeys {
+		if !strings.HasPrefix(contents[i:], key) {
+			continue
+		}
+		end := i + len(key)
+		if end < len(contents) && isBareKey(contents[end]) {
+			continue
+		}
+		return key, end, true
+	}
+	return "", i, false
+}
+
 func quotedStrings(contents string) []string {
 	var values []string
 	for i := 0; i < len(contents); i++ {
@@ -535,6 +617,23 @@ func quotedStrings(contents string) []string {
 		}
 		values = append(values, value)
 		i = next - 1
+	}
+	return values
+}
+
+func quotedStringsInBracketLists(contents string) []string {
+	var values []string
+	for i := 0; i < len(contents); {
+		if contents[i] != '[' {
+			i++
+			continue
+		}
+		end := strings.IndexByte(contents[i:], ']')
+		if end < 0 {
+			break
+		}
+		values = append(values, quotedStrings(contents[i:i+end+1])...)
+		i += end + 1
 	}
 	return values
 }

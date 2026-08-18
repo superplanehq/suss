@@ -266,6 +266,121 @@ dev = ["pytest", "ruff"]
 	}
 }
 
+func TestDetectDjangoFromRequirementsCitesRequirements(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml":   "[project]\nname = \"widget\"\n",
+		"requirements.txt": "django>=5.0\n",
+		"manage.py":        "#!/usr/bin/env python\n",
+	})
+
+	if !hasProperty(result, plan.PropertyFramework, "django") {
+		t.Fatalf("missing Django framework in %+v", result.Findings)
+	}
+	sources := propertySources(result, plan.PropertyFramework, "django")
+	if !slices.Contains(sources, "requirements.txt") {
+		t.Fatalf("Django evidence sources = %v, want requirements.txt", sources)
+	}
+	if slices.Contains(sources, "pyproject.toml") {
+		t.Fatalf("Django evidence sources = %v, did not want pyproject.toml", sources)
+	}
+}
+
+func TestDetectSetupPyDescriptionIsNotDjango(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"setup.py":  "from setuptools import setup\nsetup(name=\"widget\", description=\"Django helper\")\n",
+		"manage.py": "#!/usr/bin/env python\n",
+		"tests.py":  "import unittest\n",
+	})
+
+	if hasProperty(result, plan.PropertyFramework, "django") {
+		t.Fatalf("description literal unexpectedly produced Django in %+v", result.Findings)
+	}
+	if commands := commandsByName(result); commands["test"].Run != nil && *commands["test"].Run == "python manage.py test" {
+		t.Fatal("setup.py description unexpectedly inferred Django tests")
+	}
+}
+
+func TestParseSetupPyIgnoresNonDependencyLiterals(t *testing.T) {
+	t.Parallel()
+
+	parsed := parseSetupPy(`
+from setuptools import setup
+setup(
+    name="widget",
+    description="Django helper",
+    extras_require={"django": ["pytest"]},
+)
+`)
+	if hasDependency(parsed, "django") {
+		t.Fatalf("dependencies = %+v, did not want django from description or extra name", parsed.Dependencies)
+	}
+	if !hasDependency(parsed, "pytest") {
+		t.Fatalf("dependencies = %+v, want pytest from extras_require", parsed.Dependencies)
+	}
+}
+
+func TestDetectPoetryTableWithoutLockfileIgnoresRequirements(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[tool.poetry]
+name = "widget"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+`,
+		"requirements.txt": "requests\n",
+	})
+
+	if !hasPackageManager(result, "poetry") {
+		t.Fatalf("missing poetry in %+v", result.Findings)
+	}
+	if hasPackageManager(result, "pip") {
+		t.Fatalf("explicit poetry table unexpectedly added pip in %+v", result.Findings)
+	}
+	if len(result.Ambiguities) != 0 {
+		t.Fatalf("ambiguities = %+v, want none", result.Ambiguities)
+	}
+	assertCommand(t, commandsByName(result)["install dependencies"], "poetry install", plan.CapabilityDependenciesInstall)
+}
+
+func TestDetectDjangoTestsPyEmitsManagePyTest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nname = \"widget\"\ndependencies = [\"django\"]\n",
+		"manage.py":      "#!/usr/bin/env python\n",
+		"tests.py":       "from django.test import TestCase\n",
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "python manage.py test", plan.CapabilityTestRun)
+}
+
+func TestDetectPrefixedPytestCovCitesRequirements(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml":   "[project]\nname = \"widget\"\n",
+		"requirements.txt": "pytest-cov\n",
+	})
+
+	if !slices.Contains(factValues(result, "tool.configured"), "pytest") {
+		t.Fatalf("configured tools = %v, want pytest", factValues(result, "tool.configured"))
+	}
+	sources := factSources(result, "tool.configured", "pytest")
+	if !slices.Contains(sources, "requirements.txt") {
+		t.Fatalf("pytest evidence sources = %v, want requirements.txt", sources)
+	}
+	if slices.Contains(sources, "pyproject.toml") {
+		t.Fatalf("pytest evidence sources = %v, did not want pyproject.toml", sources)
+	}
+}
+
 func detectFiles(t *testing.T, files map[string]string) provider.Result {
 	t.Helper()
 
@@ -350,4 +465,34 @@ func factValues(result provider.Result, name string) []string {
 		}
 	}
 	return values
+}
+
+func propertySources(result provider.Result, kind plan.PropertyKind, name string) []string {
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.PropertyFinding)
+		if !ok || item.Property.Kind != kind || item.Property.Name != name {
+			continue
+		}
+		sources := make([]string, 0, len(item.Property.Evidence))
+		for _, evidence := range item.Property.Evidence {
+			sources = append(sources, evidence.Source)
+		}
+		return sources
+	}
+	return nil
+}
+
+func factSources(result provider.Result, name, value string) []string {
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.PropertyFinding)
+		if !ok || item.Property.Kind != plan.PropertyFact || item.Property.Name != name || item.Property.Value != value {
+			continue
+		}
+		sources := make([]string, 0, len(item.Property.Evidence))
+		for _, evidence := range item.Property.Evidence {
+			sources = append(sources, evidence.Source)
+		}
+		return sources
+	}
+	return nil
 }

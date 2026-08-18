@@ -709,6 +709,33 @@ jobs:
 	}
 }
 
+func TestDetectRetainsRelativeLocalPipInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: pip install ../shared
+      - run: pip install packages/widget
+`,
+	})
+
+	found := map[string]bool{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = true
+	}
+	for _, run := range []string{"pip install ../shared", "pip install packages/widget"} {
+		if !found[run] {
+			t.Fatalf("missing %q in %+v", run, result.Findings)
+		}
+	}
+}
 
 func TestDetectSkipsRemoteGemInstalls(t *testing.T) {
 	t.Parallel()
