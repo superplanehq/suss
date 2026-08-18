@@ -277,6 +277,41 @@ func TestApplyFoldsCIMatrixIntoADeclaredEngineRange(t *testing.T) {
 	}
 }
 
+func TestApplyFoldsNewerCIToolchainIntoCargoMSRV(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "rust",
+		Version:    ">=1.74",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "Cargo.toml", Pointer: "/package/rust-version"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{plan.RequirementFinding{
+			ProjectPath: ".",
+			Requirement: plan.Requirement{
+				Kind:       plan.RequirementRuntime,
+				Name:       "rust",
+				Version:    "1.81.0",
+				Confidence: plan.ConfidenceHigh,
+				Evidence:   []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/test/steps/1/uses"}},
+			},
+		}},
+	})
+
+	if len(got[0].Requirements) != 1 || got[0].Requirements[0].Version != ">=1.74" {
+		t.Fatalf("requirements = %+v, want rust >=1.74", got[0].Requirements)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want MSRV plus CI toolchain", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a false MSRV conflict", got[0].Conflicts)
+	}
+}
+
 func TestApplyDoesNotAddMatrixVersionsAsExtraRequirementsOnAPin(t *testing.T) {
 	t.Parallel()
 

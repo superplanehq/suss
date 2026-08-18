@@ -124,7 +124,7 @@ func versionsDisagree(pins []runtimePin) bool {
 func cargoRustVersionPin(ctx provider.Context, manifest cargoManifest) (*runtimePin, error) {
 	if manifest.RustVersion != "" {
 		return &runtimePin{
-			version: manifest.RustVersion,
+			version: cargoMinimumVersion(manifest.RustVersion),
 			evidence: plan.Evidence{
 				Kind:    plan.EvidenceDeclaration,
 				Source:  ctx.SourcePath("Cargo.toml"),
@@ -134,7 +134,7 @@ func cargoRustVersionPin(ctx provider.Context, manifest cargoManifest) (*runtime
 	}
 	if manifest.WorkspaceRustVersion != "" {
 		return &runtimePin{
-			version: manifest.WorkspaceRustVersion,
+			version: cargoMinimumVersion(manifest.WorkspaceRustVersion),
 			evidence: plan.Evidence{
 				Kind:    plan.EvidenceDeclaration,
 				Source:  ctx.SourcePath("Cargo.toml"),
@@ -151,7 +151,7 @@ func cargoRustVersionPin(ctx provider.Context, manifest cargoManifest) (*runtime
 		return nil, err
 	}
 	return &runtimePin{
-		version: version,
+		version: cargoMinimumVersion(version),
 		evidence: plan.Evidence{
 			Kind:        plan.EvidenceDeclaration,
 			Source:      source,
@@ -159,6 +159,19 @@ func cargoRustVersionPin(ctx provider.Context, manifest cargoManifest) (*runtime
 			Description: "Cargo.toml inherits rust-version from the workspace.",
 		},
 	}, nil
+}
+
+func cargoMinimumVersion(version string) string {
+	version = strings.TrimSpace(version)
+	if version == "" {
+		return ""
+	}
+	switch {
+	case strings.HasPrefix(version, ">="), strings.HasPrefix(version, ">"), strings.HasPrefix(version, "<"), strings.HasPrefix(version, "^"), strings.HasPrefix(version, "~"):
+		return version
+	default:
+		return ">=" + version
+	}
 }
 
 func ancestorWorkspaceRustVersion(ctx provider.Context) (string, string, error) {

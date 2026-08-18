@@ -140,6 +140,9 @@ func expandStatementDirectories(repo string, currents []string, stmt knowledge.S
 		rel = stmt.WorkingDir
 	}
 	if rel == "" {
+		rel, _ = knowledge.StripDirectoryFlags(stmt.Invocation)
+	}
+	if rel == "" {
 		return append([]string{}, currents...)
 	}
 	var dirs []string
@@ -281,6 +284,17 @@ func expandMatrixValue(raw string, matrix map[string][]string) []string {
 		return nil
 	}
 	return []string{raw}
+}
+
+func applyStatementDirectory(repositoryRoot, current string, statement knowledge.Statement) string {
+	if statement.Chdir != "" {
+		return resolveDirectory(repositoryRoot, current, statement.Chdir)
+	}
+	dir, _ := knowledge.StripDirectoryFlags(statement.Invocation)
+	if dir == "" {
+		return current
+	}
+	return resolveDirectory(repositoryRoot, current, dir)
 }
 
 func observedCommand(source, directory, pointer string, statement knowledge.Statement) (plan.Command, error) {

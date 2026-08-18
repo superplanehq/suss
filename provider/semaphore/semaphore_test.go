@@ -82,6 +82,36 @@ after_pipeline:
 	}
 }
 
+func TestDetectAppliesCargoDirectoryFlags(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - cargo test --manifest-path crates/tool/Cargo.toml
+            - cargo -C crates/tool build
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["crates/tool"], "cargo test --manifest-path crates/tool/Cargo.toml") {
+		t.Fatalf("commands = %v, want cargo test attached to crates/tool", commands)
+	}
+	if !slices.Contains(commands["crates/tool"], "cargo -C crates/tool build") {
+		t.Fatalf("commands = %v, want cargo -C build attached to crates/tool", commands)
+	}
+	if slices.Contains(commands["."], "cargo test --manifest-path crates/tool/Cargo.toml") {
+		t.Fatalf("commands = %v, did not want manifest-path cargo test on the workspace root", commands)
+	}
+}
+
 func TestDetectLeavesComplexShellProgramsUninterpreted(t *testing.T) {
 	t.Parallel()
 

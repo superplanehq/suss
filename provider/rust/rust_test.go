@@ -50,8 +50,8 @@ func TestDetectReadsManifestAndInfersConventions(t *testing.T) {
 	if got := names(project.Frameworks); !slices.Equal(got, []string{"axum"}) {
 		t.Fatalf("frameworks = %v, want axum", got)
 	}
-	if len(project.Requirements) != 1 || project.Requirements[0].Name != "rust" || project.Requirements[0].Version != "1.81" {
-		t.Fatalf("requirements = %+v, want rust 1.81", project.Requirements)
+	if len(project.Requirements) != 1 || project.Requirements[0].Name != "rust" || project.Requirements[0].Version != ">=1.81" {
+		t.Fatalf("requirements = %+v, want rust >=1.81", project.Requirements)
 	}
 	if !slices.Equal(factValues(project.Facts, "tool.configured"), []string{"cargo-deny", "clippy", "rustfmt"}) {
 		t.Fatalf("facts = %+v, want configured rust tools", project.Facts)
@@ -154,8 +154,8 @@ func TestDetectReportsWorkspaceFactAndInheritsRustVersion(t *testing.T) {
 	if _, ok := commandRuns(rootProject.Commands)["test"]; ok {
 		t.Fatalf("workspace root inferred cargo test from a member crate: %+v", rootProject.Commands)
 	}
-	if len(rootProject.Requirements) != 1 || rootProject.Requirements[0].Version != "1.80" {
-		t.Fatalf("workspace requirements = %+v, want rust 1.80", rootProject.Requirements)
+	if len(rootProject.Requirements) != 1 || rootProject.Requirements[0].Version != ">=1.80" {
+		t.Fatalf("workspace requirements = %+v, want rust >=1.80", rootProject.Requirements)
 	}
 
 	memberResult, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "crates/tool"})
@@ -163,8 +163,8 @@ func TestDetectReportsWorkspaceFactAndInheritsRustVersion(t *testing.T) {
 		t.Fatalf("member Detect() error = %v", err)
 	}
 	member := assembleProject(t, "crates/tool", memberResult)
-	if len(member.Requirements) != 1 || member.Requirements[0].Version != "1.80" {
-		t.Fatalf("member requirements = %+v, want inherited rust 1.80", member.Requirements)
+	if len(member.Requirements) != 1 || member.Requirements[0].Version != ">=1.80" {
+		t.Fatalf("member requirements = %+v, want inherited rust >=1.80", member.Requirements)
 	}
 	if commandRuns(member.Commands)["test"] != "cargo test" {
 		t.Fatalf("member commands = %+v, want cargo test", member.Commands)
@@ -182,8 +182,8 @@ func TestDetectReadsToolchainAndToolVersions(t *testing.T) {
 	})
 	project := assembleProject(t, ".", result)
 	versions := requirementVersions(project, "rust")
-	if !slices.Equal(versions, []string{"1.81", "1.81.0"}) {
-		t.Fatalf("rust versions = %v, want both the MSRV and the toolchain pin", versions)
+	if !slices.Equal(versions, []string{"1.81.0", ">=1.81"}) {
+		t.Fatalf("rust versions = %v, want both the MSRV range and the toolchain pin", versions)
 	}
 }
 
@@ -314,11 +314,11 @@ func TestDetectConflictsDisagreeingExactPins(t *testing.T) {
 		t.Fatalf("conflicts = %+v, want runtime.rust.version", project.Conflicts)
 	}
 	versions := requirementVersions(project, "rust")
-	if !slices.Equal(versions, []string{"1.74", "1.80.0", "1.81.0"}) {
-		t.Fatalf("rust versions = %v, want MSRV plus both exact pins", versions)
+	if !slices.Equal(versions, []string{"1.80.0", "1.81.0", ">=1.74"}) {
+		t.Fatalf("rust versions = %v, want MSRV range plus both exact pins", versions)
 	}
 	for _, requirement := range project.Requirements {
-		if requirement.Version == "1.74" && requirement.Confidence != plan.ConfidenceHigh {
+		if requirement.Version == ">=1.74" && requirement.Confidence != plan.ConfidenceHigh {
 			t.Fatalf("MSRV confidence = %s, want high", requirement.Confidence)
 		}
 		if (requirement.Version == "1.80.0" || requirement.Version == "1.81.0") && requirement.Confidence != plan.ConfidenceMedium {
