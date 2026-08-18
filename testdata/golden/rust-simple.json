@@ -57,7 +57,7 @@
         {
           "kind": "runtime",
           "name": "rust",
-          "version": "1.81",
+          "version": ">=1.81",
           "confidence": "high",
           "evidence": [
             {

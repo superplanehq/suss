@@ -36,33 +36,6 @@
       "facts": [
         {
           "name": "ci.matrix.rust",
-          "value": "1.87",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/ci.yml",
-              "pointer": "/jobs/clippy/steps/1/with/toolchain"
-            },
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/ci.yml",
-              "pointer": "/jobs/docs/steps/1/with/toolchain"
-            },
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/ci.yml",
-              "pointer": "/jobs/rustfmt/steps/1/with/toolchain"
-            },
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/ci.yml",
-              "pointer": "/jobs/ui/steps/1/with/toolchain"
-            }
-          ]
-        },
-        {
-          "name": "ci.matrix.rust",
           "value": "beta",
           "confidence": "high",
           "evidence": [
@@ -209,7 +182,7 @@
         {
           "kind": "runtime",
           "name": "rust",
-          "version": "1.74",
+          "version": ">=1.74",
           "confidence": "high",
           "evidence": [
             {
@@ -222,6 +195,26 @@
               "source": ".github/workflows/ci.yml",
               "pointer": "/jobs/check/steps/1/with/toolchain",
               "description": "CI tests rust 1.74 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/clippy/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/docs/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/rustfmt/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/ui/steps/1/with/toolchain"
             }
           ]
         },
@@ -1120,7 +1113,7 @@
         {
           "kind": "runtime",
           "name": "rust",
-          "version": "1.74",
+          "version": ">=1.74",
           "confidence": "high",
           "evidence": [
             {
@@ -1242,7 +1235,7 @@
         {
           "kind": "runtime",
           "name": "rust",
-          "version": "1.74",
+          "version": ">=1.74",
           "confidence": "high",
           "evidence": [
             {
@@ -1403,7 +1396,7 @@
         {
           "kind": "runtime",
           "name": "rust",
-          "version": "1.74",
+          "version": ">=1.74",
           "confidence": "high",
           "evidence": [
             {
@@ -1564,7 +1557,7 @@
         {
           "kind": "runtime",
           "name": "rust",
-          "version": "1.74",
+          "version": ">=1.74",
           "confidence": "high",
           "evidence": [
             {
@@ -1725,7 +1718,7 @@
         {
           "kind": "runtime",
           "name": "rust",
-          "version": "1.74",
+          "version": ">=1.74",
           "confidence": "high",
           "evidence": [
             {
@@ -1847,7 +1840,7 @@
         {
           "kind": "runtime",
           "name": "rust",
-          "version": "1.74",
+          "version": ">=1.74",
           "confidence": "high",
           "evidence": [
             {
@@ -2008,7 +2001,7 @@
         {
           "kind": "runtime",
           "name": "rust",
-          "version": "1.74",
+          "version": ">=1.74",
           "confidence": "high",
           "evidence": [
             {
