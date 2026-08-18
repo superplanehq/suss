@@ -114,24 +114,11 @@ func gradleSpecs(ctx provider.Context, gradle *gradleProject) ([]commandSpec, er
 	build := conventionSpec(source, "build", tool+" build", "/#build", plan.ConfidenceMedium, "Gradle projects conventionally produce artifacts with gradle build.")
 	build.evidence = attachCommandEvidence(build.evidence, gradle.WrapperSource)
 	specs = append(specs, build)
-	entry, err := firstApplicationEntry(ctx.ProjectDir(), gradle.Members)
+	servers, err := gradleServerSpecs(ctx, gradle)
 	if err != nil {
 		return nil, err
 	}
-	if gradle.hasSpringBootPlugin() && entry != "" {
-		spec := conventionSpec(source, "server", tool+" bootRun", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with gradle bootRun.")
-		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, gradlePluginEvidence(ctx, gradle, "org.springframework.boot"), plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
-		specs = append(specs, spec)
-	} else if gradle.canRunApplication() {
-		spec := conventionSpec(source, "server", tool+" run", "/#server", plan.ConfidenceMedium, "Gradle application projects conventionally start with gradle run.")
-		extras := []plan.Evidence{gradleMainClassEvidence(ctx, gradle)}
-		if entry != "" {
-			extras = append(extras, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
-		}
-		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, extras...)
-		specs = append(specs, spec)
-	}
-	return specs, nil
+	return append(specs, servers...), nil
 }
 
 func competingManagerResult(ctx provider.Context, project javaProject) ([]commandSpec, []plan.Ambiguity, error) {
@@ -150,7 +137,7 @@ func competingManagerResult(ctx provider.Context, project javaProject) ([]comman
 	if err != nil {
 		return nil, nil, err
 	}
-	entry, err := firstApplicationEntry(ctx.ProjectDir(), members)
+	entry, err := firstApplicationEntry(ctx.ProjectDir(), nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -169,7 +156,10 @@ func competingManagerResult(ctx provider.Context, project javaProject) ([]comman
 	}))
 
 	var specs []commandSpec
-	serverSpecs, serverAmbiguity := competingServerResult(ctx, project, entry)
+	serverSpecs, serverAmbiguity, err := competingServerResult(ctx, project, entry)
+	if err != nil {
+		return nil, nil, err
+	}
 	specs = append(specs, serverSpecs...)
 	if serverAmbiguity != nil {
 		ambiguities = append(ambiguities, *serverAmbiguity)
@@ -177,7 +167,7 @@ func competingManagerResult(ctx provider.Context, project javaProject) ([]comman
 	return specs, ambiguities, nil
 }
 
-func competingServerResult(ctx provider.Context, project javaProject, entry string) ([]commandSpec, *plan.Ambiguity) {
+func competingServerResult(ctx provider.Context, project javaProject, entry string) ([]commandSpec, *plan.Ambiguity, error) {
 	var specs []commandSpec
 	if entry != "" && project.Maven != nil && project.Maven.hasSpringBootPlugin() {
 		source := ctx.SourcePath(project.Maven.Source)
@@ -189,42 +179,99 @@ func competingServerResult(ctx provider.Context, project javaProject, entry stri
 		spec.evidence = attachCommandEvidence(spec.evidence, project.Maven.WrapperSource, springBootPluginEvidence(project.Maven), plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
 	}
-	if project.Gradle != nil && project.Gradle.hasSpringBootPlugin() && entry != "" {
-		source := ctx.SourcePath(project.Gradle.Source)
-		tool := project.Gradle.Wrapper
-		if tool == "" {
-			tool = "gradle"
+	var gradleSpecs []commandSpec
+	if project.Gradle != nil {
+		var err error
+		gradleSpecs, err = gradleServerSpecs(ctx, project.Gradle)
+		if err != nil {
+			return nil, nil, err
 		}
-		spec := conventionSpec(source, "server", tool+" bootRun", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with gradle bootRun.")
-		spec.evidence = attachCommandEvidence(spec.evidence, project.Gradle.WrapperSource, gradlePluginEvidence(ctx, project.Gradle, "org.springframework.boot"), plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
-		specs = append(specs, spec)
-	} else if project.Gradle != nil && project.Gradle.canRunApplication() {
-		source := ctx.SourcePath(project.Gradle.Source)
-		tool := project.Gradle.Wrapper
-		if tool == "" {
-			tool = "gradle"
-		}
-		spec := conventionSpec(source, "server", tool+" run", "/#server", plan.ConfidenceMedium, "Gradle application projects conventionally start with gradle run.")
-		extras := []plan.Evidence{gradleMainClassEvidence(ctx, project.Gradle)}
-		if entry != "" {
-			extras = append(extras, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
-		}
-		spec.evidence = attachCommandEvidence(spec.evidence, project.Gradle.WrapperSource, extras...)
-		specs = append(specs, spec)
 	}
-	if len(specs) >= 2 {
+	if len(specs) > 0 && len(gradleSpecs) > 0 {
+		gradleRun := gradleSpecs[0].run
 		ambiguity := managerAmbiguity(ctx, project, "application.run", "server", func(tool, kind string) string {
 			if kind == "maven" {
 				return tool + " spring-boot:run"
 			}
-			if project.Gradle != nil && project.Gradle.hasSpringBootPlugin() {
-				return tool + " bootRun"
-			}
-			return tool + " run"
+			return gradleRun
 		})
-		return nil, &ambiguity
+		return nil, &ambiguity, nil
+	}
+	return append(specs, gradleSpecs...), nil, nil
+}
+
+func gradleServerSpecs(ctx provider.Context, gradle *gradleProject) ([]commandSpec, error) {
+	if gradle == nil {
+		return nil, nil
+	}
+	tool := gradle.Wrapper
+	if tool == "" {
+		tool = "gradle"
+	}
+	var specs []commandSpec
+	for _, build := range gradle.Builds {
+		spec, err := build.serverSpec(ctx, gradle, tool)
+		if err != nil {
+			return nil, err
+		}
+		if spec.name != "" {
+			specs = append(specs, spec)
+		}
 	}
 	return specs, nil
+}
+
+func (b gradleBuild) serverSpec(ctx provider.Context, gradle *gradleProject, tool string) (commandSpec, error) {
+	entry, err := b.applicationEntry(ctx)
+	if err != nil {
+		return commandSpec{}, err
+	}
+	pointer := serverPointer(b.Member)
+	source := b.Source
+	if source == "" {
+		source = ctx.SourcePath(gradle.Source)
+	}
+	if b.hasSpringBootPlugin() && entry != "" {
+		spec := conventionSpec(source, "server", tool+" "+gradleTaskPath(b.Member, "bootRun"), pointer, plan.ConfidenceMedium, "Spring Boot applications conventionally start with gradle bootRun.")
+		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, gradleBuildPluginEvidence(b, "org.springframework.boot"), plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		return spec, nil
+	}
+	if b.canRunApplication() {
+		spec := conventionSpec(source, "server", tool+" "+gradleTaskPath(b.Member, "run"), pointer, plan.ConfidenceMedium, "Gradle application projects conventionally start with gradle run.")
+		extras := []plan.Evidence{gradleBuildMainClassEvidence(b)}
+		if entry != "" {
+			extras = append(extras, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		}
+		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, extras...)
+		return spec, nil
+	}
+	return commandSpec{}, nil
+}
+
+func (b gradleBuild) applicationEntry(ctx provider.Context) (string, error) {
+	start := filepath.Join(ctx.ProjectDir(), "src", "main")
+	if b.Member != "" {
+		dir, ok := repoMemberDir(ctx, b.Member)
+		if !ok {
+			return "", nil
+		}
+		start = filepath.Join(dir, "src", "main")
+	}
+	return walkApplicationEntry(ctx.ProjectDir(), start)
+}
+
+func gradleTaskPath(member, task string) string {
+	if member == "" {
+		return task
+	}
+	return ":" + strings.ReplaceAll(filepath.ToSlash(member), "/", ":") + ":" + task
+}
+
+func serverPointer(member string) string {
+	if member == "" {
+		return "/#server"
+	}
+	return "/#server/" + member
 }
 
 func managerAmbiguity(ctx provider.Context, project javaProject, subject, name string, run func(tool, kind string) string) plan.Ambiguity {
@@ -424,27 +471,19 @@ func springBootPluginEvidence(maven *mavenProject) plan.Evidence {
 	}
 }
 
-func gradlePluginEvidence(ctx provider.Context, gradle *gradleProject, plugin string) plan.Evidence {
-	source := gradle.pluginSource(plugin)
-	if source == "" {
-		source = ctx.SourcePath(gradle.Source)
-	}
+func gradleBuildPluginEvidence(build gradleBuild, plugin string) plan.Evidence {
 	return plan.Evidence{
 		Kind:    plan.EvidenceDeclaration,
-		Source:  source,
+		Source:  build.Source,
 		Pointer: "/plugins/" + pointerToken(plugin),
 	}
 }
 
-func gradleMainClassEvidence(ctx provider.Context, gradle *gradleProject) plan.Evidence {
-	source := gradle.MainClassSource
-	if source == "" {
-		source = ctx.SourcePath(gradle.Source)
-	}
+func gradleBuildMainClassEvidence(build gradleBuild) plan.Evidence {
 	return plan.Evidence{
 		Kind:    plan.EvidenceDeclaration,
-		Source:  source,
-		Pointer: gradle.MainClassPointer,
+		Source:  build.Source,
+		Pointer: build.MainClassPointer,
 	}
 }
 

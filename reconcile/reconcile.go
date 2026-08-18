@@ -7,8 +7,9 @@
 // already assembled for the project that owns its working directory:
 //
 //  1. Directory. The observed command is assigned to the project whose path is
-//     the longest prefix of its working directory. `cd DIR &&` and package
-//     manager flags (`yarn --cwd`, `pnpm --dir`, `npm --prefix`) are applied
+//     the longest prefix of its working directory. `cd DIR &&` and target-
+//     directory flags (`yarn --cwd`, `pnpm --dir`, `npm --prefix`, Gradle
+//     `--project-dir`/`-p`/`--build-file`, Maven `-f`/`--file`) are applied
 //     before matching. A command is never copied onto workspace members; that
 //     would be fan-out.
 //
@@ -155,6 +156,7 @@ func Apply(projects []plan.ProjectPlan, repo provider.Result) []plan.ProjectPlan
 }
 
 func applyCommand(projects []plan.ProjectPlan, observed plan.Command) []plan.ProjectPlan {
+	observed = applyTargetDirectory(observed)
 	projects, index := ensureProject(projects, observed.Directory)
 	project := &projects[index]
 
@@ -172,6 +174,39 @@ func applyCommand(projects []plan.ProjectPlan, observed plan.Command) []plan.Pro
 		}
 	}
 	return projects
+}
+
+func applyTargetDirectory(command plan.Command) plan.Command {
+	if command.Directory != "" && command.Directory != "." {
+		return command
+	}
+	dir := invocationTargetDirectory(command)
+	if dir == "" || dir == "." {
+		return command
+	}
+	cleaned := path.Clean(dir)
+	if cleaned == ".." || strings.HasPrefix(cleaned, "../") {
+		return command
+	}
+	command.Directory = dir
+	return command
+}
+
+func invocationTargetDirectory(command plan.Command) string {
+	if command.Run == nil {
+		return ""
+	}
+	statements := knowledge.ParseStatements(*command.Run)
+	for i := len(statements) - 1; i >= 0; i-- {
+		if statements[i].Invocation.Executable == "" {
+			continue
+		}
+		dir, _ := knowledge.StripDirectoryFlags(statements[i].Invocation)
+		if dir != "" {
+			return dir
+		}
+	}
+	return ""
 }
 
 func applyRequirement(projects []plan.ProjectPlan, dir string, requirement plan.Requirement) []plan.ProjectPlan {

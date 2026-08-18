@@ -29,15 +29,21 @@ type gradleProject struct {
 	SpringBoot        bool
 	SpringPointer     string
 	SpringSource      string
-	ApplicationPlugin bool
-	MainClass         string
-	MainClassPointer  string
-	MainClassSource   string
 	Plugins           map[string]string
 	Wrapper           string
 	WrapperSource     string
 	WrapperVersion    string
 	WrapperProperties string
+	Builds            []gradleBuild
+}
+
+type gradleBuild struct {
+	Member            string
+	Source            string
+	Plugins           map[string]struct{}
+	ApplicationPlugin bool
+	MainClass         string
+	MainClassPointer  string
 }
 
 func readGradle(ctx provider.Context) (*gradleProject, error) {
@@ -69,7 +75,7 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 		}
 	}
 
-	members := SettingsIncludes(settingsContents)
+	members := repoMembers(ctx, SettingsIncludes(settingsContents))
 	project := &gradleProject{
 		Source:       source,
 		SettingsFile: settings,
@@ -77,7 +83,7 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 		MultiProject: hasSettings && len(members) > 0,
 		Plugins:      map[string]string{},
 	}
-	absorbGradleBuild(project, ctx.SourcePath(source), stripGradleComments(buildContents))
+	absorbGradleBuild(project, "", ctx.SourcePath(source), stripGradleComments(buildContents))
 	if err := absorbMemberBuilds(ctx, project); err != nil {
 		return nil, err
 	}
@@ -90,21 +96,51 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 
 func absorbMemberBuilds(ctx provider.Context, project *gradleProject) error {
 	for _, member := range project.Members {
-		dir := filepath.Join(ctx.ProjectDir(), filepath.FromSlash(member))
-		name, contents, ok, err := readFirstFile(dir, []string{"build.gradle.kts", "build.gradle"})
-		if err != nil {
-			return err
-		}
+		dir, ok := repoMemberDir(ctx, member)
 		if !ok {
 			continue
 		}
-		absorbGradleBuild(project, ctx.SourcePath(filepath.ToSlash(filepath.Join(member, name))), stripGradleComments(contents))
+		name, contents, found, err := readFirstFile(dir, []string{"build.gradle.kts", "build.gradle"})
+		if err != nil {
+			return err
+		}
+		if !found {
+			continue
+		}
+		absorbGradleBuild(project, member, ctx.SourcePath(filepath.ToSlash(filepath.Join(member, name))), stripGradleComments(contents))
 	}
 	return nil
 }
 
-func absorbGradleBuild(project *gradleProject, source, contents string) {
+func repoMembers(ctx provider.Context, members []string) []string {
+	kept := make([]string, 0, len(members))
+	for _, member := range members {
+		if _, ok := repoMemberDir(ctx, member); ok {
+			kept = append(kept, member)
+		}
+	}
+	return kept
+}
+
+func repoMemberDir(ctx provider.Context, member string) (string, bool) {
+	member = strings.TrimSpace(member)
+	if member == "" || filepath.IsAbs(filepath.FromSlash(member)) {
+		return "", false
+	}
+	cleaned := filepath.Clean(filepath.FromSlash(member))
+	if cleaned == "." || cleaned == string(filepath.Separator) {
+		return "", false
+	}
+	memberDir := filepath.Join(ctx.ProjectDir(), cleaned)
+	if !insideRepository(ctx.RepositoryRoot, memberDir) {
+		return "", false
+	}
+	return memberDir, true
+}
+
+func absorbGradleBuild(project *gradleProject, member, source, contents string) {
 	plugins := gradlePlugins(contents)
+	build := gradleBuild{Member: member, Source: source, Plugins: plugins}
 	for id := range plugins {
 		if project.Plugins[id] == "" {
 			project.Plugins[id] = source
@@ -125,18 +161,14 @@ func absorbGradleBuild(project *gradleProject, source, contents string) {
 			project.SpringSource = source
 		}
 	}
-	if !project.ApplicationPlugin {
-		if _, ok := plugins["application"]; ok {
-			project.ApplicationPlugin = true
-		}
+	if _, ok := plugins["application"]; ok {
+		build.ApplicationPlugin = true
 	}
-	if project.MainClass == "" {
-		if class, pointer := gradleMainClass(contents); class != "" {
-			project.MainClass = class
-			project.MainClassPointer = pointer
-			project.MainClassSource = source
-		}
+	if class, pointer := gradleMainClass(contents); class != "" {
+		build.MainClass = class
+		build.MainClassPointer = pointer
 	}
+	project.Builds = append(project.Builds, build)
 }
 
 func readFirstFile(dir string, names []string) (string, string, bool, error) {
@@ -481,8 +513,13 @@ func (g *gradleProject) hasSpringBootPlugin() bool {
 	return g.hasPlugin("org.springframework.boot")
 }
 
-func (g *gradleProject) canRunApplication() bool {
-	return g != nil && g.ApplicationPlugin && g.MainClass != ""
+func (b gradleBuild) hasSpringBootPlugin() bool {
+	_, ok := b.Plugins["org.springframework.boot"]
+	return ok
+}
+
+func (b gradleBuild) canRunApplication() bool {
+	return b.ApplicationPlugin && b.MainClass != ""
 }
 
 func gradleMainClass(contents string) (string, string) {

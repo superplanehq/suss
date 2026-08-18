@@ -218,23 +218,9 @@ Canonical corpus:
 
 Status: in progress.
 
-## Milestone 8 — Polish and v0 release
+## Milestone 8 — Java (Maven and Gradle)
 
-Scope:
-
-- `suss explain <capability>`: show the chosen command for a capability with its full evidence chain and alternatives.
-- `suss list`: enumerate all discovered commands across projects.
-- `grafana/grafana` added to the corpus as the stress test; fix what it breaks or record limitations.
-- Schema review and freeze for v0; document the compatibility policy.
-- README, distribution (release binaries), library API (`detect(path) → []ProjectPlan`) documented.
-
-Acceptance:
-
-- Full corpus green in CI. Tagged v0 release with binaries.
-
-## Milestone 9 — Java (Maven and Gradle)
-
-The JVM analog of milestone 7's Ruby work: two dominant build systems, plus Spring Boot as the application framework.
+The JVM analog of milestone 7's Ruby work: two dominant build systems, plus Spring Boot as the application framework. Java is required initial-version support in idea.md, so this milestone lands before the tagged v0 release.
 
 Scope:
 
@@ -248,6 +234,20 @@ Acceptance:
 - Golden plans for `google/gson` (Maven library), `mockito/mockito` (Gradle library), and `spring-projects/spring-petclinic` (Spring Boot application with both build systems) are correct at pinned commits.
 
 Status: implementation complete; awaiting review.
+
+## Milestone 9 — Polish and v0 release
+
+Scope:
+
+- `suss explain <capability>`: show the chosen command for a capability with its full evidence chain and alternatives.
+- `suss list`: enumerate all discovered commands across projects.
+- `grafana/grafana` added to the corpus as the stress test; fix what it breaks or record limitations.
+- Schema review and freeze for v0; document the compatibility policy.
+- README, distribution (release binaries), library API (`detect(path) → []ProjectPlan`) documented.
+
+Acceptance:
+
+- Full corpus green in CI. Tagged v0 release with binaries.
 
 ## Out of scope for v0
 

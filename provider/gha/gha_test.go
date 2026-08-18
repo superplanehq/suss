@@ -158,6 +158,40 @@ jobs:
 	}
 }
 
+func TestDetectAppliesJavaTargetFlagsToCommandDirectory(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		run  string
+		dir  string
+		cmd  string
+	}{
+		{name: "gradle-project-dir", run: "./gradlew --project-dir app build", dir: "app", cmd: "gradle build"},
+		{name: "maven-file", run: "mvn -f app/pom.xml test", dir: "app", cmd: "mvn test"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			result := detectFiles(t, map[string]string{
+				".github/workflows/ci.yml": `
+jobs:
+  build:
+    steps:
+      - run: ` + tt.run + `
+`,
+			})
+			got := commandByName(result)[tt.cmd]
+			if got.Directory != tt.dir {
+				t.Fatalf("directory = %q, want %s", got.Directory, tt.dir)
+			}
+			if deref(got.Run) != tt.run {
+				t.Fatalf("run = %q, want the original invocation", deref(got.Run))
+			}
+		})
+	}
+}
+
 func TestDetectReadsNodeVersionFile(t *testing.T) {
 	t.Parallel()
 

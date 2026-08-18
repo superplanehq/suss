@@ -279,6 +279,50 @@ func TestApplyAssignsNestedWorkingDirectoryToTheNestedProject(t *testing.T) {
 	}
 }
 
+func TestApplyAssignsMavenFileFlagToTheNestedProject(t *testing.T) {
+	t.Parallel()
+
+	rootCmd := command(t, "java", ".", "/#test", "test", "mvn test", plan.CommandInferred, plan.CapabilityTestRun)
+	pkgCmd := command(t, "java", "app", "/#test", "test", "mvn test", plan.CommandInferred, plan.CapabilityTestRun)
+	observed := command(t, "github-actions", ".", "/jobs/test/steps/0/run", "test", "mvn -f app/pom.xml test", plan.CommandObserved, plan.CapabilityTestRun)
+
+	root := plan.NewProjectPlan(".")
+	root.Commands = []plan.Command{rootCmd}
+	pkg := plan.NewProjectPlan("app")
+	pkg.Commands = []plan.Command{pkgCmd}
+
+	got := Apply([]plan.ProjectPlan{root, pkg}, provider.Result{
+		Findings: []plan.Finding{plan.CommandFinding{Command: observed}},
+	})
+
+	if len(got[0].Commands[0].Variants) != 0 {
+		t.Fatalf("root variants = %+v, want none (Maven -f targets the nested project)", got[0].Commands[0].Variants)
+	}
+	if len(got[1].Commands[0].Variants) != 1 || got[1].Commands[0].Variants[0].Run != "mvn -f app/pom.xml test" {
+		t.Fatalf("package variants = %+v, want mvn -f app/pom.xml test", got[1].Commands[0].Variants)
+	}
+}
+
+func TestApplyDoesNotConfirmRootGradleFromProjectDirFlag(t *testing.T) {
+	t.Parallel()
+
+	rootCmd := command(t, "java", ".", "/#build", "build", "gradle build", plan.CommandInferred, plan.CapabilityArtifactBuild)
+	observed := command(t, "github-actions", ".", "/jobs/build/steps/0/run", "build", "gradle --project-dir app build", plan.CommandObserved, plan.CapabilityArtifactBuild)
+
+	root := plan.NewProjectPlan(".")
+	root.Commands = []plan.Command{rootCmd}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{plan.CommandFinding{Command: observed}},
+	})
+
+	if len(got[0].Commands[0].Variants) != 0 {
+		t.Fatalf("root variants = %+v, want none (Gradle --project-dir is not the root build)", got[0].Commands[0].Variants)
+	}
+	if len(got[0].Commands) != 2 {
+		t.Fatalf("commands = %+v, want inferred root build plus the retargeted observation", got[0].Commands)
+	}
+}
+
 func TestApplyMergesMatchingCIRuntimeEvidence(t *testing.T) {
 	t.Parallel()
 

@@ -91,6 +91,9 @@ func Interpret(inv Invocation) []Match {
 	if executable == "mvn" || executable == "gradle" {
 		args = MavenGradleArgs(executable, args)
 	}
+	if executable == "gradle" {
+		args = gradleQualifiedTaskArgs(args)
+	}
 
 	bestLen := -1
 	var matches []Match
@@ -738,6 +741,22 @@ func MavenGradleArgs(executable string, args []string) []string {
 		args = dropLeadingToolFlags(args[1:], flags)
 	}
 	return args
+}
+
+func gradleQualifiedTaskArgs(args []string) []string {
+	if len(args) == 0 {
+		return args
+	}
+	out := append([]string{}, args...)
+	for i, arg := range out {
+		if !strings.HasPrefix(arg, ":") {
+			continue
+		}
+		if idx := strings.LastIndex(arg, ":"); idx >= 0 && idx < len(arg)-1 {
+			out[i] = arg[idx+1:]
+		}
+	}
+	return out
 }
 
 func mavenGradleValueFlags(executable string) map[string]bool {

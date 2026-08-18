@@ -453,6 +453,8 @@ func TestInterpretMatchesJavaInvocations(t *testing.T) {
 		{invocation: Invocation{Executable: "mvn", Args: []string{"verify"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
 		{invocation: Invocation{Executable: "gradlew", Args: []string{"-Pfoo=1", "build"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
 		{invocation: Invocation{Executable: "./gradlew", Args: []string{"bootRun"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
+		{invocation: Invocation{Executable: "./gradlew", Args: []string{":app:bootRun"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
+		{invocation: Invocation{Executable: "gradle", Args: []string{":services:api:run"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
 		{invocation: Invocation{Executable: "gradlew.bat", Args: []string{"test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
 		{invocation: Invocation{Executable: "gradle", Args: []string{"spotlessCheck"}}, capabilities: []plan.Capability{plan.CapabilityCodeLint}},
 		{invocation: Invocation{Executable: "mvn", Args: []string{"verify", "-Dmaven.test.skip"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
@@ -563,6 +565,56 @@ func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	want := Invocation{Executable: "yarn", Args: []string{"test", "--watch=false"}}
 	if !invocationsEqual(got, want) {
 		t.Fatalf("canonical = %+v, want %+v", got, want)
+	}
+}
+
+func TestStripDirectoryFlagsRemovesJavaTargetDirectories(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		inv  Invocation
+		dir  string
+		want Invocation
+	}{
+		{
+			inv:  Invocation{Executable: "./gradlew", Args: []string{"--project-dir", "app", "build"}},
+			dir:  "app",
+			want: Invocation{Executable: "./gradlew", Args: []string{"build"}},
+		},
+		{
+			inv:  Invocation{Executable: "gradle", Args: []string{"-p", "app", "test"}},
+			dir:  "app",
+			want: Invocation{Executable: "gradle", Args: []string{"test"}},
+		},
+		{
+			inv:  Invocation{Executable: "mvn", Args: []string{"-f", "app/pom.xml", "test"}},
+			dir:  "app",
+			want: Invocation{Executable: "mvn", Args: []string{"test"}},
+		},
+		{
+			inv:  Invocation{Executable: "./mvnw", Args: []string{"--file=services/api/pom.xml", "package"}},
+			dir:  "services/api",
+			want: Invocation{Executable: "./mvnw", Args: []string{"package"}},
+		},
+		{
+			inv:  Invocation{Executable: "gradle", Args: []string{"--build-file", "app/build.gradle", "build"}},
+			dir:  "app",
+			want: Invocation{Executable: "gradle", Args: []string{"build"}},
+		},
+		{
+			inv:  Invocation{Executable: "mvn", Args: []string{"-pl", "app", "test"}},
+			dir:  "",
+			want: Invocation{Executable: "mvn", Args: []string{"-pl", "app", "test"}},
+		},
+	}
+	for _, tt := range tests {
+		dir, got := StripDirectoryFlags(tt.inv)
+		if dir != tt.dir {
+			t.Fatalf("StripDirectoryFlags(%+v) dir = %q, want %q", tt.inv, dir, tt.dir)
+		}
+		if !invocationsEqual(got, tt.want) {
+			t.Fatalf("StripDirectoryFlags(%+v) = %+v, want %+v", tt.inv, got, tt.want)
+		}
 	}
 }
 

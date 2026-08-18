@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/superplanehq/suss/plan"
@@ -533,7 +534,7 @@ java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
 	if !slices.Contains(factValues(result, "tool.configured"), "checkstyle") {
 		t.Fatalf("missing member checkstyle in %+v", result.Findings)
 	}
-	assertCommand(t, commandsByName(result)["server"], "gradle bootRun", plan.CapabilityApplicationRun)
+	assertCommand(t, commandsByName(result)["server"], "gradle :app:bootRun", plan.CapabilityApplicationRun)
 
 	for _, finding := range result.Findings {
 		switch item := finding.(type) {
@@ -561,6 +562,89 @@ java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
 				}
 			}
 		}
+	}
+}
+
+func TestDetectIgnoresGradleIncludesOutsideTheRepository(t *testing.T) {
+	t.Parallel()
+
+	base := t.TempDir()
+	repo := filepath.Join(base, "repo")
+	outside := filepath.Join(base, "other")
+	writeTree(t, repo, map[string]string{
+		"settings.gradle": "rootProject.name = \"demo\"\ninclude(\"../other\")\n",
+		"build.gradle":    "plugins { id 'java' }\n",
+	})
+	writeTree(t, outside, map[string]string{
+		"build.gradle": `plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.0'
+}
+`,
+		"src/main/java/com/example/Outside.java": "public class Outside { public static void main(String[] args) {} }\n",
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: repo, ProjectPath: "."})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if hasProperty(result, plan.PropertyFramework, "spring-boot") {
+		t.Fatal("escaped Gradle include was read as Spring Boot")
+	}
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("inferred a server from a Gradle include outside the repository")
+	}
+	for _, finding := range result.Findings {
+		for _, source := range findingSources(finding) {
+			if strings.Contains(source, "other") || strings.HasPrefix(source, "..") {
+				t.Fatalf("finding cited a path outside the repository: %s", source)
+			}
+		}
+	}
+}
+
+func TestDetectDoesNotClassifyEscapedGradleIncludeAsJava(t *testing.T) {
+	t.Parallel()
+
+	base := t.TempDir()
+	repo := filepath.Join(base, "repo")
+	outside := filepath.Join(base, "other")
+	writeTree(t, repo, map[string]string{
+		"settings.gradle": "rootProject.name = \"demo\"\ninclude(\"../other\")\n",
+	})
+	writeTree(t, outside, map[string]string{
+		"build.gradle": "plugins { id 'java' }\n",
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: repo, ProjectPath: "."})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if hasProperty(result, plan.PropertyLanguage, "java") {
+		t.Fatal("escaped Gradle include was classified as a Java project")
+	}
+}
+
+func TestDetectDoesNotMixGradleMemberServerSignals(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"settings.gradle": "rootProject.name = \"demo\"\ninclude(\"boot\", \"app\")\n",
+		"build.gradle":    "plugins { id 'java' }\n",
+		"boot/build.gradle": `plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.0'
+}
+`,
+		"app/build.gradle":                       "plugins { id 'java' }\n",
+		"app/src/main/java/com/example/App.java": "public class App { public static void main(String[] args) {} }\n",
+	})
+
+	if !hasProperty(result, plan.PropertyFramework, "spring-boot") {
+		t.Fatalf("missing member Spring Boot in %+v", result.Findings)
+	}
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("inferred gradle bootRun by mixing one member's plugin with another's entry point")
 	}
 }
 
@@ -1274,6 +1358,13 @@ func writeFiles(t *testing.T, files map[string]string) string {
 	t.Helper()
 
 	root := t.TempDir()
+	writeTree(t, root, files)
+	return root
+}
+
+func writeTree(t *testing.T, root string, files map[string]string) {
+	t.Helper()
+
 	for name, contents := range files {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -1283,7 +1374,19 @@ func writeFiles(t *testing.T, files map[string]string) string {
 			t.Fatalf("os.WriteFile() error = %v", err)
 		}
 	}
-	return root
+}
+
+func findingSources(finding plan.Finding) []string {
+	switch item := finding.(type) {
+	case plan.PropertyFinding:
+		return evidenceSources(item.Property.Evidence)
+	case plan.RequirementFinding:
+		return evidenceSources(item.Requirement.Evidence)
+	case plan.CommandFinding:
+		return evidenceSources(item.Command.Evidence)
+	default:
+		return nil
+	}
 }
 
 func hasProperty(result provider.Result, kind plan.PropertyKind, name string) bool {
