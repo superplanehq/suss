@@ -592,6 +592,11 @@ func TestStripDirectoryFlagsRemovesJavaTargetDirectories(t *testing.T) {
 			want: Invocation{Executable: "mvn", Args: []string{"test"}},
 		},
 		{
+			inv:  Invocation{Executable: "mvn", Args: []string{"-f", "app", "test"}},
+			dir:  "app",
+			want: Invocation{Executable: "mvn", Args: []string{"test"}},
+		},
+		{
 			inv:  Invocation{Executable: "./mvnw", Args: []string{"--file=services/api/pom.xml", "package"}},
 			dir:  "services/api",
 			want: Invocation{Executable: "./mvnw", Args: []string{"package"}},
@@ -615,6 +620,23 @@ func TestStripDirectoryFlagsRemovesJavaTargetDirectories(t *testing.T) {
 		if !invocationsEqual(got, tt.want) {
 			t.Fatalf("StripDirectoryFlags(%+v) = %+v, want %+v", tt.inv, got, tt.want)
 		}
+	}
+}
+
+func TestIsBareUnixTestKeepsWindowsExecutables(t *testing.T) {
+	t.Parallel()
+
+	if !IsBareUnixTest(Statement{Raw: "test -f README.md"}) {
+		t.Fatal("IsBareUnixTest(test -f) = false, want true")
+	}
+	if IsBareUnixTest(Statement{Raw: "./test"}) {
+		t.Fatal("IsBareUnixTest(./test) = true, want false")
+	}
+	if IsBareUnixTest(Statement{Raw: "test.cmd"}) {
+		t.Fatal("IsBareUnixTest(test.cmd) = true, want false")
+	}
+	if IsBareUnixTest(Statement{Raw: "test.exe"}) {
+		t.Fatal("IsBareUnixTest(test.exe) = true, want false")
 	}
 }
 

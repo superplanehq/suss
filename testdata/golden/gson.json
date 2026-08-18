@@ -381,7 +381,7 @@
             },
             {
               "kind": "file",
-              "source": "extras/src/test/java/com/google/gson/interceptors/InterceptorTest.java"
+              "source": "gson/src/test/java/com/google/gson/CommentsTest.java"
             },
             {
               "kind": "file",

@@ -277,6 +277,37 @@ blocks:
 	}
 }
 
+func TestDetectKeepsWindowsTestExecutables(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - test.cmd
+            - test.exe
+`,
+	})
+
+	var runs []string
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok {
+			continue
+		}
+		runs = append(runs, *item.Command.Run)
+	}
+	slices.Sort(runs)
+	if !slices.Equal(runs, []string{"test.cmd", "test.exe"}) {
+		t.Fatalf("runs = %v, want test.cmd and test.exe", runs)
+	}
+}
+
 func detectFiles(t *testing.T, files map[string]string) provider.Result {
 	t.Helper()
 

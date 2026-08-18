@@ -484,7 +484,8 @@ func HasUnclosedGHAExpression(s string) bool {
 }
 
 // IsBareUnixTest reports whether the statement invokes the shell `test`
-// builtin rather than a path-qualified repository script such as ./test.
+// builtin rather than a path-qualified or Windows repository executable
+// such as ./test or test.cmd.
 func IsBareUnixTest(stmt Statement) bool {
 	tokens := splitShell(stmt.Raw)
 	_, tokens = takeLeadingAssignments(tokens)
@@ -494,12 +495,10 @@ func IsBareUnixTest(stmt Statement) bool {
 	}
 	original := strings.Trim(tokens[0], `"'`)
 	original = strings.ReplaceAll(original, "\\", "/")
-	base := path.Base(original)
-	base = strings.TrimSuffix(strings.TrimSuffix(base, ".exe"), ".cmd")
-	if base != "test" {
+	if strings.Contains(original, "/") {
 		return false
 	}
-	return !strings.Contains(original, "/")
+	return original == "test"
 }
 
 func ghaExprClose(s string, i int) int {

@@ -37,7 +37,21 @@ func stripMavenDirectoryFlags(args []string) ([]string, string) {
 	file := ""
 	args, file = stripFlag(args, "--file", file)
 	args, file = stripFlag(args, "-f", file)
-	return args, fileDirectory(file)
+	return args, mavenFileDirectory(file)
+}
+
+func mavenFileDirectory(file string) string {
+	file = strings.TrimSpace(file)
+	if file == "" {
+		return ""
+	}
+	cleaned := path.Clean(file)
+	switch strings.ToLower(path.Ext(cleaned)) {
+	case ".xml", ".pom":
+		return path.Dir(cleaned)
+	default:
+		return cleaned
+	}
 }
 
 func stripGradleDirectoryFlags(args []string) ([]string, string) {

@@ -565,6 +565,44 @@ java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
 	}
 }
 
+func TestDetectResolvesGradleProjectDirRemapping(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"settings.gradle.kts": `rootProject.name = "demo"
+include("app")
+project(":app").projectDir = file("modules/app")
+`,
+		"build.gradle.kts": "plugins { id(\"java\") }\n",
+		"modules/app/build.gradle.kts": `plugins {
+    id("java")
+    id("org.springframework.boot") version "3.4.0"
+}
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+`,
+		"modules/app/src/main/java/com/example/DemoApplication.java":     "public class DemoApplication { public static void main(String[] args) {} }\n",
+		"modules/app/src/test/java/com/example/DemoApplicationTest.java": "class DemoApplicationTest {}\n",
+	})
+
+	if !hasProperty(result, plan.PropertyFramework, "spring-boot") {
+		t.Fatalf("missing remapped member Spring Boot in %+v", result.Findings)
+	}
+	if !hasRuntime(result, "21") {
+		t.Fatalf("missing remapped member Java 21 toolchain in %+v", result.Findings)
+	}
+	assertCommand(t, commandsByName(result)["server"], "gradle :app:bootRun", plan.CapabilityApplicationRun)
+	assertCommand(t, commandsByName(result)["test"], "gradle test", plan.CapabilityTestRun)
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Name != "server" {
+			continue
+		}
+		if !slices.Contains(evidenceSources(item.Command.Evidence), "modules/app/build.gradle.kts") {
+			t.Fatalf("server evidence = %v, want modules/app/build.gradle.kts", evidenceSources(item.Command.Evidence))
+		}
+	}
+}
+
 func TestDetectIgnoresGradleIncludesOutsideTheRepository(t *testing.T) {
 	t.Parallel()
 
@@ -872,6 +910,47 @@ func TestDetectGradleInfersTestFromNonSurefireName(t *testing.T) {
 	})
 
 	assertCommand(t, commandsByName(result)["test"], "gradle test", plan.CapabilityTestRun)
+}
+
+func TestDetectDoesNotInferTestFromUndeclaredSourceTree(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		files map[string]string
+	}{
+		{
+			name: "maven",
+			files: map[string]string{
+				"pom.xml":                         `<project><modelVersion>4.0.0</modelVersion><artifactId>lib</artifactId></project>`,
+				"docs/src/test/java/DocTest.java": "class DocTest {}\n",
+			},
+		},
+		{
+			name: "gradle",
+			files: map[string]string{
+				"build.gradle":                    "plugins { id 'java' }\n",
+				"docs/src/test/java/DocTest.java": "class DocTest {}\n",
+			},
+		},
+		{
+			name: "gradle-with-member",
+			files: map[string]string{
+				"settings.gradle.kts":             "rootProject.name = \"demo\"\ninclude(\"lib\")\n",
+				"build.gradle.kts":                "plugins { id(\"java\") }\n",
+				"lib/build.gradle.kts":            "plugins { id(\"java\") }\n",
+				"docs/src/test/java/DocTest.java": "class DocTest {}\n",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if _, ok := commandsByName(detectFiles(t, tt.files))["test"]; ok {
+				t.Fatal("inferred a test command from an undeclared source tree")
+			}
+		})
+	}
 }
 
 func TestDetectGradleDoesNotUseUnlistedNestedGradleTests(t *testing.T) {
@@ -1236,6 +1315,28 @@ func TestDetectSkipsGradleOnIncludedMemberDirectory(t *testing.T) {
 	}
 	if _, ok := commandsByName(result)["build"]; ok {
 		t.Fatal("included member emitted a Gradle build command")
+	}
+}
+
+func TestDetectSkipsGradleOnRemappedMemberDirectory(t *testing.T) {
+	t.Parallel()
+
+	root := writeFiles(t, map[string]string{
+		"settings.gradle.kts": `rootProject.name = "demo"
+include("app")
+project(":app").projectDir = file("modules/app")
+`,
+		"build.gradle.kts":                       "plugins { id(\"java\") }\n",
+		"modules/app/build.gradle.kts":           "plugins { id(\"java\") }\n",
+		"modules/app/src/test/java/AppTest.java": "class AppTest {}\n",
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "modules/app"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if hasPackageManager(result, "gradle", "") {
+		t.Fatalf("remapped Gradle member was treated as a standalone Gradle project: %+v", result.Findings)
 	}
 }
 

@@ -169,6 +169,7 @@ func TestDetectAppliesJavaTargetFlagsToCommandDirectory(t *testing.T) {
 	}{
 		{name: "gradle-project-dir", run: "./gradlew --project-dir app build", dir: "app", cmd: "gradle build"},
 		{name: "maven-file", run: "mvn -f app/pom.xml test", dir: "app", cmd: "mvn test"},
+		{name: "maven-directory", run: "mvn -f app test", dir: "app", cmd: "mvn test"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -398,6 +399,50 @@ jobs:
 	}
 }
 
+func TestDetectNormalizesLegacySetupJavaVersion(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 1.8
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "java", "8") {
+		t.Fatalf("setup-java 1.8 was not normalized to 8: %+v", result.Findings)
+	}
+	if hasRequirement(result, plan.RequirementRuntime, "java", "1.8") {
+		t.Fatal("setup-java emitted legacy Java 1.8 without normalization")
+	}
+}
+
+func TestDetectNormalizesLegacySetupJavaVersionFile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".java-version": "1.8\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version-file: .java-version
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "java", "8") {
+		t.Fatalf("java-version-file 1.8 was not normalized to 8: %+v", result.Findings)
+	}
+}
+
 func TestDetectSkipsUdevadmAfterSudo(t *testing.T) {
 	t.Parallel()
 
@@ -456,6 +501,33 @@ jobs:
 	slices.Sort(runs)
 	if !slices.Equal(runs, []string{"./test", "bin/test"}) {
 		t.Fatalf("runs = %v, want ./test and bin/test", runs)
+	}
+}
+
+func TestDetectKeepsWindowsTestExecutables(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: test.cmd
+      - run: test.exe
+`,
+	})
+
+	var runs []string
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok {
+			continue
+		}
+		runs = append(runs, deref(item.Command.Run))
+	}
+	slices.Sort(runs)
+	if !slices.Equal(runs, []string{"test.cmd", "test.exe"}) {
+		t.Fatalf("runs = %v, want test.cmd and test.exe", runs)
 	}
 }
 

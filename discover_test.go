@@ -143,6 +143,25 @@ func TestFindProjectRootsKeepsUnrelatedManifestsUnderGradleSettings(t *testing.T
 	}
 }
 
+func TestFindProjectRootsSkipsRemappedGradleMembers(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "settings.gradle.kts"), "rootProject.name = \"demo\"\ninclude(\"app\")\nproject(\":app\").projectDir = file(\"modules/app\")\n")
+	writeFile(t, filepath.Join(root, "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "modules", "app", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "app", "README.md"), "logical name only\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{"."}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
 func TestFindProjectRootsIgnoresCommentedGradleIncludes(t *testing.T) {
 	t.Parallel()
 
@@ -159,6 +178,41 @@ func TestFindProjectRootsIgnoresCommentedGradleIncludes(t *testing.T) {
 	want := []string{".", "legacy"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestDetectMergesLegacySetupJavaWithManifestPin(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "pom.xml"), `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <properties><maven.compiler.release>8</maven.compiler.release></properties>
+</project>
+`)
+	writeFile(t, filepath.Join(root, ".github", "workflows", "ci.yml"), `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 1.8
+`)
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if len(document.Projects) != 1 {
+		t.Fatalf("len(projects) = %d, want 1", len(document.Projects))
+	}
+	project := document.Projects[0]
+	if !hasRequirement(project, plan.RequirementRuntime, "java", "8") {
+		t.Fatalf("requirements = %+v, want java 8", project.Requirements)
+	}
+	if len(project.Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none between setup-java 1.8 and Maven 8", project.Conflicts)
 	}
 }
 

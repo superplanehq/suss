@@ -12,6 +12,7 @@ import (
 	"github.com/superplanehq/suss/knowledge"
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
+	"github.com/superplanehq/suss/provider/java"
 )
 
 func extract(ctx provider.Context, source string, workflow workflowFile) (provider.Result, error) {
@@ -204,6 +205,7 @@ func setupRuntimeFindings(ctx provider.Context, source, dir, stepPointer, runtim
 
 	findings := make([]plan.Finding, 0, len(versions))
 	for _, version := range versions {
+		version = normalizeSetupVersion(runtime, version)
 		description := ""
 		if len(versions) > 1 {
 			description = fmt.Sprintf("CI tests %s %s as part of a job matrix.", runtime, version)
@@ -234,7 +236,7 @@ func versionFileFindings(ctx provider.Context, source, dir, stepPointer, runtime
 			return []plan.Finding{requirementFinding(dir, plan.Requirement{
 				Kind:       plan.RequirementRuntime,
 				Name:       runtime,
-				Version:    version,
+				Version:    normalizeSetupVersion(runtime, version),
 				Confidence: plan.ConfidenceHigh,
 				Evidence:   evidence,
 			})}
@@ -247,6 +249,13 @@ func versionFileFindings(ctx provider.Context, source, dir, stepPointer, runtime
 		Confidence: plan.ConfidenceMedium,
 		Evidence:   evidence,
 	})}
+}
+
+func normalizeSetupVersion(runtime, version string) string {
+	if runtime == "java" {
+		return java.NormalizeJavaVersion(version)
+	}
+	return version
 }
 
 func firstVersionLine(contents string) string {

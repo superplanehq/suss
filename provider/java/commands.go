@@ -250,14 +250,21 @@ func (b gradleBuild) serverSpec(ctx provider.Context, gradle *gradleProject, too
 
 func (b gradleBuild) applicationEntry(ctx provider.Context) (string, error) {
 	start := filepath.Join(ctx.ProjectDir(), "src", "main")
-	if b.Member != "" {
-		dir, ok := repoMemberDir(ctx, b.Member)
+	if location := b.location(); location != "" {
+		dir, ok := repoMemberDir(ctx, location)
 		if !ok {
 			return "", nil
 		}
 		start = filepath.Join(dir, "src", "main")
 	}
 	return walkApplicationEntry(ctx.ProjectDir(), start)
+}
+
+func (b gradleBuild) location() string {
+	if b.Dir != "" {
+		return b.Dir
+	}
+	return b.Member
 }
 
 func gradleTaskPath(member, task string) string {
@@ -376,10 +383,24 @@ func hasApplicationEntry(contents string) bool {
 }
 
 func firstJavaTest(root string, search testSearch) (string, error) {
-	if found, err := walkJavaTests(root, filepath.Join(root, "src", "test"), search); err != nil || found != "" {
-		return found, err
+	starts := []string{filepath.Join(root, "src", "test")}
+	for _, member := range search.mavenModules {
+		starts = append(starts, filepath.Join(root, filepath.FromSlash(member), "src", "test"))
 	}
-	return walkJavaTests(root, root, search)
+	for _, member := range search.gradleMembers {
+		starts = append(starts, filepath.Join(root, filepath.FromSlash(member), "src", "test"))
+	}
+	seen := make(map[string]struct{}, len(starts))
+	for _, start := range starts {
+		if _, ok := seen[start]; ok {
+			continue
+		}
+		seen[start] = struct{}{}
+		if found, err := walkJavaTests(root, start, search); err != nil || found != "" {
+			return found, err
+		}
+	}
+	return "", nil
 }
 
 type testSearch struct {

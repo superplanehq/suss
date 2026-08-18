@@ -284,7 +284,7 @@ func TestApplyAssignsMavenFileFlagToTheNestedProject(t *testing.T) {
 
 	rootCmd := command(t, "java", ".", "/#test", "test", "mvn test", plan.CommandInferred, plan.CapabilityTestRun)
 	pkgCmd := command(t, "java", "app", "/#test", "test", "mvn test", plan.CommandInferred, plan.CapabilityTestRun)
-	observed := command(t, "github-actions", ".", "/jobs/test/steps/0/run", "test", "mvn -f app/pom.xml test", plan.CommandObserved, plan.CapabilityTestRun)
+	observed := command(t, "github-actions", ".", "/jobs/test/steps/0/run", "test", "mvn -f app test", plan.CommandObserved, plan.CapabilityTestRun)
 
 	root := plan.NewProjectPlan(".")
 	root.Commands = []plan.Command{rootCmd}
@@ -298,8 +298,8 @@ func TestApplyAssignsMavenFileFlagToTheNestedProject(t *testing.T) {
 	if len(got[0].Commands[0].Variants) != 0 {
 		t.Fatalf("root variants = %+v, want none (Maven -f targets the nested project)", got[0].Commands[0].Variants)
 	}
-	if len(got[1].Commands[0].Variants) != 1 || got[1].Commands[0].Variants[0].Run != "mvn -f app/pom.xml test" {
-		t.Fatalf("package variants = %+v, want mvn -f app/pom.xml test", got[1].Commands[0].Variants)
+	if len(got[1].Commands[0].Variants) != 1 || got[1].Commands[0].Variants[0].Run != "mvn -f app test" {
+		t.Fatalf("package variants = %+v, want mvn -f app test", got[1].Commands[0].Variants)
 	}
 }
 

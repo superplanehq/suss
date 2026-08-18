@@ -2,6 +2,7 @@ package java
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -35,10 +36,17 @@ type gradleProject struct {
 	WrapperVersion    string
 	WrapperProperties string
 	Builds            []gradleBuild
+	memberSpecs       []gradleSettingsMember
+}
+
+type gradleSettingsMember struct {
+	Name string
+	Dir  string
 }
 
 type gradleBuild struct {
 	Member            string
+	Dir               string
 	Source            string
 	Plugins           map[string]struct{}
 	ApplicationPlugin bool
@@ -75,15 +83,16 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 		}
 	}
 
-	members := repoMembers(ctx, SettingsIncludes(settingsContents))
+	members := repoMembers(ctx, settingsMembers(settingsContents))
 	project := &gradleProject{
 		Source:       source,
 		SettingsFile: settings,
-		Members:      members,
+		Members:      memberDirs(members),
 		MultiProject: hasSettings && len(members) > 0,
 		Plugins:      map[string]string{},
+		memberSpecs:  members,
 	}
-	absorbGradleBuild(project, "", ctx.SourcePath(source), stripGradleComments(buildContents))
+	absorbGradleBuild(project, "", "", ctx.SourcePath(source), stripGradleComments(buildContents))
 	if err := absorbMemberBuilds(ctx, project); err != nil {
 		return nil, err
 	}
@@ -95,8 +104,8 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 }
 
 func absorbMemberBuilds(ctx provider.Context, project *gradleProject) error {
-	for _, member := range project.Members {
-		dir, ok := repoMemberDir(ctx, member)
+	for _, member := range project.memberSpecs {
+		dir, ok := repoMemberDir(ctx, member.Dir)
 		if !ok {
 			continue
 		}
@@ -107,19 +116,27 @@ func absorbMemberBuilds(ctx provider.Context, project *gradleProject) error {
 		if !found {
 			continue
 		}
-		absorbGradleBuild(project, member, ctx.SourcePath(filepath.ToSlash(filepath.Join(member, name))), stripGradleComments(contents))
+		absorbGradleBuild(project, member.Name, member.Dir, ctx.SourcePath(filepath.ToSlash(filepath.Join(member.Dir, name))), stripGradleComments(contents))
 	}
 	return nil
 }
 
-func repoMembers(ctx provider.Context, members []string) []string {
-	kept := make([]string, 0, len(members))
+func repoMembers(ctx provider.Context, members []gradleSettingsMember) []gradleSettingsMember {
+	kept := make([]gradleSettingsMember, 0, len(members))
 	for _, member := range members {
-		if _, ok := repoMemberDir(ctx, member); ok {
+		if _, ok := repoMemberDir(ctx, member.Dir); ok {
 			kept = append(kept, member)
 		}
 	}
 	return kept
+}
+
+func memberDirs(members []gradleSettingsMember) []string {
+	dirs := make([]string, 0, len(members))
+	for _, member := range members {
+		dirs = append(dirs, member.Dir)
+	}
+	return dirs
 }
 
 func repoMemberDir(ctx provider.Context, member string) (string, bool) {
@@ -138,9 +155,9 @@ func repoMemberDir(ctx provider.Context, member string) (string, bool) {
 	return memberDir, true
 }
 
-func absorbGradleBuild(project *gradleProject, member, source, contents string) {
+func absorbGradleBuild(project *gradleProject, member, dir, source, contents string) {
 	plugins := gradlePlugins(contents)
-	build := gradleBuild{Member: member, Source: source, Plugins: plugins}
+	build := gradleBuild{Member: member, Dir: dir, Source: source, Plugins: plugins}
 	for id := range plugins {
 		if project.Plugins[id] == "" {
 			project.Plugins[id] = source
@@ -229,29 +246,53 @@ func settingsIncludeContains(listed []string, relative string) bool {
 }
 
 var (
-	gradleIncludeCall = regexp.MustCompile(`(?m)(?:^|[^\w])include\s*\(([^)]*)\)`)
-	gradleIncludeBare = regexp.MustCompile(`(?m)(?:^|[^\w])include\s+([^;\n]+)`)
-	gradleQuoted      = regexp.MustCompile(`["']([^"']+)["']`)
+	gradleIncludeCall      = regexp.MustCompile(`(?m)(?:^|[^\w])include\s*\(([^)]*)\)`)
+	gradleIncludeBare      = regexp.MustCompile(`(?m)(?:^|[^\w])include\s+([^;\n]+)`)
+	gradleQuoted           = regexp.MustCompile(`["']([^"']+)["']`)
+	gradleProjectDirAssign = regexp.MustCompile(`(?m)project\s*\(\s*["']([^"']+)["']\s*\)\s*\.\s*projectDir\s*=\s*(?:(?:new\s+)?File|file)\s*\(\s*["']([^"']+)["']`)
+	gradleProjectDirSet    = regexp.MustCompile(`(?m)project\s*\(\s*["']([^"']+)["']\s*\)\s*\.\s*projectDir\s*\.\s*set\s*\(\s*(?:file\s*\(\s*)?["']([^"']+)["']`)
 )
 
-// SettingsIncludes returns member paths declared by include(...) in a Gradle
-// settings file. Line and block comments are ignored.
+// SettingsIncludes returns physical member directories declared by include(...)
+// in a Gradle settings file, after applying projectDir remappings. Line and
+// block comments are ignored.
 func SettingsIncludes(contents string) []string {
+	return memberDirs(settingsMembers(contents))
+}
+
+func settingsMembers(contents string) []gradleSettingsMember {
 	contents = stripGradleComments(contents)
-	var paths []string
+	names := settingsIncludeNames(contents)
+	remaps := settingsProjectDirs(contents)
+	members := make([]gradleSettingsMember, 0, len(names))
+	seen := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		dir := name
+		if mapped, ok := remaps[name]; ok {
+			dir = mapped
+		}
+		if _, ok := seen[dir]; ok {
+			continue
+		}
+		seen[dir] = struct{}{}
+		members = append(members, gradleSettingsMember{Name: name, Dir: dir})
+	}
+	return members
+}
+
+func settingsIncludeNames(contents string) []string {
+	var names []string
 	seen := make(map[string]struct{})
 	add := func(raw string) {
-		raw = strings.TrimSpace(raw)
-		raw = strings.Trim(raw, ":")
-		raw = strings.ReplaceAll(raw, ":", "/")
-		if raw == "" {
+		name := normalizeGradleSettingsPath(raw)
+		if name == "" {
 			return
 		}
-		if _, ok := seen[raw]; ok {
+		if _, ok := seen[name]; ok {
 			return
 		}
-		seen[raw] = struct{}{}
-		paths = append(paths, raw)
+		seen[name] = struct{}{}
+		names = append(names, name)
 	}
 	for _, match := range gradleIncludeCall.FindAllStringSubmatch(contents, -1) {
 		for _, quoted := range gradleQuoted.FindAllStringSubmatch(match[1], -1) {
@@ -263,7 +304,43 @@ func SettingsIncludes(contents string) []string {
 			add(quoted[1])
 		}
 	}
-	return paths
+	return names
+}
+
+func settingsProjectDirs(contents string) map[string]string {
+	out := make(map[string]string)
+	add := func(name, dir string) {
+		name = normalizeGradleSettingsPath(name)
+		dir = normalizeGradleSettingsPath(dir)
+		if name == "" || dir == "" {
+			return
+		}
+		out[name] = dir
+	}
+	for _, match := range gradleProjectDirAssign.FindAllStringSubmatch(contents, -1) {
+		if len(match) == 3 {
+			add(match[1], match[2])
+		}
+	}
+	for _, match := range gradleProjectDirSet.FindAllStringSubmatch(contents, -1) {
+		if len(match) == 3 {
+			add(match[1], match[2])
+		}
+	}
+	return out
+}
+
+func normalizeGradleSettingsPath(raw string) string {
+	raw = strings.TrimSpace(raw)
+	raw = strings.Trim(raw, ":")
+	raw = strings.ReplaceAll(raw, ":", "/")
+	for _, prefix := range []string{"$rootDir/", "${rootDir}/", "./"} {
+		raw = strings.TrimPrefix(raw, prefix)
+	}
+	if raw == "" {
+		return ""
+	}
+	return path.Clean(raw)
 }
 
 func gradlePlugins(contents string) map[string]struct{} {
@@ -431,6 +508,12 @@ func gradleToolchainVersion(contents string) (string, string) {
 		return normalizeJavaVersion(match[1]), "/java/toolchain"
 	}
 	return "", ""
+}
+
+// NormalizeJavaVersion maps legacy Java 1.8-style pins to 8 so providers and
+// CI observations compare the same version identity.
+func NormalizeJavaVersion(raw string) string {
+	return normalizeJavaVersion(raw)
 }
 
 func normalizeJavaVersion(raw string) string {
