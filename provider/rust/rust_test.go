@@ -182,7 +182,7 @@ func TestDetectReadsToolchainAndToolVersions(t *testing.T) {
 		".tool-versions":      "rust 1.81.0\n",
 	})
 	project := assembleProject(t, ".", result)
-	versions := requirementVersions(project, "rust")
+	versions := rustRequirementVersions(project)
 	if !slices.Equal(versions, []string{"1.81.0", ">=1.81"}) {
 		t.Fatalf("rust versions = %v, want both the MSRV range and the toolchain pin", versions)
 	}
@@ -359,7 +359,7 @@ func TestDetectConflictsToolchainOlderThanMSRV(t *testing.T) {
 	if !strings.Contains(project.Conflicts[0].Message, "rust-version") {
 		t.Fatalf("conflict message = %q, want rust-version incompatibility", project.Conflicts[0].Message)
 	}
-	versions := requirementVersions(project, "rust")
+	versions := rustRequirementVersions(project)
 	if !slices.Equal(versions, []string{"1.80.0", ">=1.81"}) {
 		t.Fatalf("rust versions = %v, want pinned 1.80.0 and MSRV >=1.81", versions)
 	}
@@ -385,8 +385,8 @@ func TestDetectDoesNotConflictCompatibleToolchainAndMSRV(t *testing.T) {
 	if len(project.Conflicts) != 0 {
 		t.Fatalf("conflicts = %+v, did not want a conflict when the pin satisfies the MSRV", project.Conflicts)
 	}
-	if !slices.Equal(requirementVersions(project, "rust"), []string{"1.82.0", ">=1.81"}) {
-		t.Fatalf("rust versions = %v, want pin plus MSRV", requirementVersions(project, "rust"))
+	if !slices.Equal(rustRequirementVersions(project), []string{"1.82.0", ">=1.81"}) {
+		t.Fatalf("rust versions = %v, want pin plus MSRV", rustRequirementVersions(project))
 	}
 }
 
@@ -418,7 +418,7 @@ func TestDetectConflictsDisagreeingExactPins(t *testing.T) {
 	if len(project.Conflicts) != 1 || project.Conflicts[0].Subject != "runtime.rust.version" {
 		t.Fatalf("conflicts = %+v, want runtime.rust.version", project.Conflicts)
 	}
-	versions := requirementVersions(project, "rust")
+	versions := rustRequirementVersions(project)
 	if !slices.Equal(versions, []string{"1.80.0", "1.81.0", ">=1.74"}) {
 		t.Fatalf("rust versions = %v, want MSRV range plus both exact pins", versions)
 	}
@@ -655,10 +655,10 @@ func hasConvention(evidence []plan.Evidence, pointer string) bool {
 	return false
 }
 
-func requirementVersions(project plan.ProjectPlan, name string) []string {
+func rustRequirementVersions(project plan.ProjectPlan) []string {
 	var versions []string
 	for _, requirement := range project.Requirements {
-		if requirement.Name == name {
+		if requirement.Name == "rust" {
 			versions = append(versions, requirement.Version)
 		}
 	}
