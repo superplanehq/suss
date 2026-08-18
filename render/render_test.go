@@ -127,7 +127,7 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		"Package managers: npm",
 		"npm ci",
 		"npm test",
-		"ci  npm test --coverage",
+		"CI variant          npm test --coverage",
 		"environment API_TOKEN (required, default present)",
 		"eslint is configured. No command interpreted as code.lint was found.",
 		"package.json",
@@ -205,8 +205,8 @@ func TestWriteListsInterpretedCommandsFirst(t *testing.T) {
 	if lintAt < 0 || testAt < 0 || unknownAt < 0 {
 		t.Fatalf("output %q, want lint, test, and e2e:harness:coverage", got)
 	}
-	if lintAt >= testAt || testAt >= unknownAt {
-		t.Fatalf("output %q, want interpreted commands before uninterpreted", got)
+	if testAt >= lintAt || lintAt >= unknownAt {
+		t.Fatalf("output %q, want lifecycle-ordered interpreted commands before uninterpreted commands", got)
 	}
 }
 
@@ -269,6 +269,147 @@ func TestWriteShowsDirectoryWhenItDiffersFromTheProject(t *testing.T) {
 	}
 	if !strings.Contains(got, "(in dev)") {
 		t.Fatalf("output %q, want the compose directory when it differs from the project", got)
+	}
+}
+
+func TestWriteOmitsVariantsThatRenderLikeThePrimaryCommand(t *testing.T) {
+	t.Parallel()
+
+	testRun := "npm test"
+	project := plan.NewProjectPlan(".")
+	project.Commands = []plan.Command{{
+		ID:        plan.CommandID("cmd_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
+		Name:      "test",
+		Run:       &testRun,
+		Directory: ".",
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityTestRun,
+		}},
+		Variants: []plan.CommandVariant{
+			{Context: "ci", Run: "npm test", Directory: "."},
+			{Context: "ci", Run: "npm test --coverage", Directory: "."},
+			{Context: "ci", Run: "npm test", Directory: "integration"},
+		},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
+	if strings.Contains(got, "CI variant  npm test\n") {
+		t.Fatalf("output %q, want an identical CI invocation omitted", got)
+	}
+	if !strings.Contains(got, "CI variant  npm test --coverage\n") {
+		t.Fatalf("output %q, want a CI invocation with different arguments", got)
+	}
+	if !strings.Contains(got, "CI variant  npm test  (in integration)\n") {
+		t.Fatalf("output %q, want an invocation from a different directory", got)
+	}
+}
+
+func TestWritePrioritizesInterpretedCommandsWithinDistinctProjectBlocks(t *testing.T) {
+	t.Parallel()
+
+	install := "pnpm install --frozen-lockfile"
+	startServices := "docker compose up -d"
+	testRun := "pnpm run test"
+	unknownRun := "pnpm run generate:icons"
+	frontend := plan.NewProjectPlan("frontend")
+	frontend.Languages = []plan.DetectedValue{{Name: "typescript"}}
+	frontend.PackageManagers = []plan.DetectedTool{{Name: "pnpm", Version: "9"}}
+	frontend.Requirements = []plan.Requirement{{Kind: plan.RequirementRuntime, Name: "node", Version: "22"}}
+	frontend.Preparation = []plan.Command{
+		{
+			ID:   plan.CommandID("cmd_11111111111111111111111111111111"),
+			Name: "install dependencies",
+			Run:  &install,
+			Interpretations: []plan.Interpretation{{
+				Capability: plan.CapabilityDependenciesInstall,
+			}},
+		},
+		{
+			ID:   plan.CommandID("cmd_55555555555555555555555555555555"),
+			Name: "start services",
+			Run:  &startServices,
+		},
+	}
+	frontend.Commands = []plan.Command{
+		{
+			ID:   plan.CommandID("cmd_22222222222222222222222222222222"),
+			Name: "test",
+			Run:  &testRun,
+			Interpretations: []plan.Interpretation{{
+				Capability: plan.CapabilityTestRun,
+			}},
+			Variants: []plan.CommandVariant{{Context: "ci", Run: "pnpm run test --run"}},
+		},
+		{
+			ID:   plan.CommandID("cmd_33333333333333333333333333333333"),
+			Name: "generate:icons",
+			Run:  &unknownRun,
+		},
+	}
+	testID := frontend.Commands[0].ID
+	frontend.Ambiguities = []plan.Ambiguity{{
+		Subject:   "command.test.run",
+		CommandID: &testID,
+		Message:   "More than one test invocation is plausible.",
+		Candidates: []plan.Candidate{
+			{Value: "pnpm run test"},
+			{Value: "npm test"},
+		},
+	}}
+	frontend.Conflicts = []plan.Conflict{{
+		Subject:    "runtime.node.version",
+		Message:    "Runtime declarations disagree.",
+		Assertions: []plan.Candidate{{Value: "20"}, {Value: "22"}},
+		Resolution: &plan.Resolution{
+			SelectedValue: "22",
+			Reason:        "The version file is more specific.",
+		},
+	}}
+
+	backend := plan.NewProjectPlan("backend")
+	backend.Languages = []plan.DetectedValue{{Name: "go"}}
+	goTest := "go test ./..."
+	backend.Commands = []plan.Command{{
+		ID:   plan.CommandID("cmd_44444444444444444444444444444444"),
+		Name: "test",
+		Run:  &goTest,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityTestRun,
+		}},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{backend, frontend}), []string{"golang", "node"})
+	for _, want := range []string{
+		"Projects: 2",
+		"Project: backend\n================",
+		"Project: frontend\n=================",
+		"  How to work with this project:\n    Purpose               Command",
+		"    Install dependencies  pnpm install --frozen-lockfile",
+		"    Prepare               docker compose up -d",
+		"    Test                  pnpm run test",
+		"      CI variant          pnpm run test --run",
+		"  Needs attention:\n    Ambiguity: command.test.run",
+		"      More than one test invocation is plausible.\n      - pnpm run test\n      - npm test",
+		"    Conflict: runtime.node.version\n      Runtime declarations disagree.",
+		"      Selected: 22 (The version file is more specific.)",
+		"  Uninterpreted commands:\n    Name            Command\n    generate:icons  pnpm run generate:icons",
+		"  Project details:\n    Languages: typescript\n    Package managers: pnpm 9",
+		"    Requirements:\n      runtime node 22",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("output %q, want %q", got, want)
+		}
+	}
+	if strings.Contains(got, "Path:") {
+		t.Fatalf("output %q, want the project path only in its heading", got)
+	}
+	frontendOutput := got[strings.Index(got, "Project: frontend"):]
+	interpretedAt := strings.Index(frontendOutput, "How to work with this project:")
+	attentionAt := strings.Index(frontendOutput, "Needs attention:")
+	uninterpretedAt := strings.Index(frontendOutput, "Uninterpreted commands:")
+	detailsAt := strings.Index(frontendOutput, "Project details:")
+	if interpretedAt < 0 || attentionAt < 0 || uninterpretedAt < 0 || detailsAt < 0 || interpretedAt >= attentionAt || attentionAt >= uninterpretedAt || uninterpretedAt >= detailsAt {
+		t.Fatalf("output %q, want interpreted commands, attention items, uninterpreted commands, then project details", got)
 	}
 }
 
