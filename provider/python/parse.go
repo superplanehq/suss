@@ -117,6 +117,7 @@ func parsePyproject(contents string) pythonProject {
 				parsed.HasUVDefaultGroups = true
 				parsed.UVDefaultGroups = append([]string(nil), section.arrays["default-groups"]...)
 			}
+			addDependencies(&parsed, "pyproject.toml", "/tool/uv/dev-dependencies", section.arrays["dev-dependencies"], depOrigin{Kind: depKindGroup, Group: "dev"})
 			recordToolTable(&parsed, "uv")
 		case strings.HasPrefix(name, "tool."):
 			recordToolTable(&parsed, strings.TrimPrefix(name, "tool."))
@@ -127,10 +128,18 @@ func parsePyproject(contents string) pythonProject {
 		setRequiresPython(&parsed, poetryScalar(poetry, "python"), "pyproject.toml", "/tool/poetry/dependencies/python")
 		for _, name := range poetry.keys {
 			if name != "python" {
-				addDependency(&parsed, "pyproject.toml", "/tool/poetry/dependencies", name, depOrigin{Kind: depKindMain})
+				addPoetryDependency(&parsed, doc, name)
 			}
 		}
 	}
+	for _, name := range sortedTOMLNames(doc) {
+		rest, ok := strings.CutPrefix(name, "tool.poetry.dependencies.")
+		if !ok || rest == "" || rest == "python" || strings.Contains(rest, ".") {
+			continue
+		}
+		addPoetryDependency(&parsed, doc, rest)
+	}
+	applyPoetryExtras(&parsed, doc)
 	if dev, ok := doc["tool.poetry.dev-dependencies"]; ok {
 		for _, name := range dev.keys {
 			if name != "python" {
@@ -205,8 +214,11 @@ func parseSetupPy(contents string) pythonProject {
 	}
 	for _, match := range setupDependencyEntries(contents) {
 		origin := depOrigin{Kind: depKindMain}
-		if match.key == "extras_require" {
-			origin.Kind = depKindExtra
+		switch match.key {
+		case "extras_require":
+			origin = depOrigin{Kind: depKindExtra, Group: match.extra}
+		case "tests_require":
+			origin = depOrigin{Kind: depKindExtra}
 		}
 		addKnownDependency(&parsed, "setup.py", "/setup", match.value, origin)
 	}
@@ -408,6 +420,31 @@ func poetryScalar(section *tomlSection, key string) string {
 	return section.scalars[key]
 }
 
+func addPoetryDependency(parsed *pythonProject, doc map[string]*tomlSection, name string) {
+	origin := depOrigin{Kind: depKindMain}
+	if nested, ok := doc["tool.poetry.dependencies."+name]; ok && isTOMLTrue(nested.scalars["optional"]) {
+		origin = depOrigin{Kind: depKindExtra}
+	}
+	addDependency(parsed, "pyproject.toml", "/tool/poetry/dependencies", name, origin)
+}
+
+func applyPoetryExtras(parsed *pythonProject, doc map[string]*tomlSection) {
+	if extras, ok := doc["tool.poetry.extras"]; ok {
+		for _, extra := range extras.keys {
+			addDependencies(parsed, "pyproject.toml", "/tool/poetry/extras", extras.arrays[extra], depOrigin{Kind: depKindExtra, Group: extra})
+		}
+	}
+	for _, name := range sortedTOMLNames(doc) {
+		extra, ok := strings.CutPrefix(name, "tool.poetry.extras.")
+		if !ok || extra == "" {
+			continue
+		}
+		for _, values := range doc[name].arrays {
+			addDependencies(parsed, "pyproject.toml", "/tool/poetry/extras", values, depOrigin{Kind: depKindExtra, Group: extra})
+		}
+	}
+}
+
 func parseTOML(contents string) map[string]*tomlSection {
 	contents = stripTOMLComments(contents)
 	doc := map[string]*tomlSection{}
@@ -472,6 +509,36 @@ func assignTOML(doc map[string]*tomlSection, section, key, value, kind string, q
 		}
 	case "array":
 		current.arrays[key] = splitTOMLArray(value)
+	case "table":
+		nested := key
+		if section != "" {
+			nested = section + "." + key
+		}
+		assignInlineTable(doc, nested, value)
+	}
+}
+
+func assignInlineTable(doc map[string]*tomlSection, section, body string) {
+	i := 0
+	for i < len(body) {
+		for i < len(body) && (body[i] == ' ' || body[i] == '\t' || body[i] == '\n' || body[i] == '\r' || body[i] == ',') {
+			i++
+		}
+		if i >= len(body) {
+			break
+		}
+		key, next, quoted, ok := readTOMLKey(body, i)
+		if !ok {
+			break
+		}
+		i = skipTOMLSpace(body, next)
+		if i >= len(body) || body[i] != '=' {
+			break
+		}
+		i = skipTOMLSpace(body, i+1)
+		value, kind, next := readTOMLValue(body, i)
+		i = next
+		assignTOML(doc, section, key, value, kind, quoted)
 	}
 }
 
@@ -552,8 +619,8 @@ func readTOMLValue(contents string, i int) (string, string, int) {
 		body, next := readBalanced(contents, i, '[', ']')
 		return body, "array", next
 	case '{':
-		_, next := readBalanced(contents, i, '{', '}')
-		return "", "table", next
+		body, next := readBalanced(contents, i, '{', '}')
+		return body, "table", next
 	default:
 		start := i
 		for i < len(contents) && contents[i] != '\n' && contents[i] != ',' {
@@ -715,7 +782,7 @@ var setupDependencyKeys = []string{
 }
 
 type setupDep struct {
-	key, value string
+	key, extra, value string
 }
 
 func setupDependencyEntries(contents string) []setupDep {
@@ -758,13 +825,12 @@ func setupDependencyEntries(contents string) []setupDep {
 				closer = ')'
 			}
 			body, after := readBalanced(contents, i, open, closer)
-			var found []string
 			if key == "extras_require" {
-				found = quotedStringsInBracketLists(body)
-			} else {
-				found = quotedStrings(body)
+				values = append(values, setupExtrasRequireEntries(body)...)
+				i = after
+				continue
 			}
-			for _, value := range found {
+			for _, value := range quotedStrings(body) {
 				values = append(values, setupDep{key: key, value: value})
 			}
 			i = after
@@ -815,21 +881,50 @@ func quotedStrings(contents string) []string {
 	return values
 }
 
-func quotedStringsInBracketLists(contents string) []string {
-	var values []string
-	for i := 0; i < len(contents); {
-		if contents[i] != '[' {
+func setupExtrasRequireEntries(body string) []setupDep {
+	var values []setupDep
+	i := 0
+	for i < len(body) {
+		for i < len(body) && body[i] != '"' && body[i] != '\'' && !isBareKey(body[i]) {
+			i++
+		}
+		if i >= len(body) {
+			break
+		}
+		extra, next, ok := readSetupExtraKey(body, i)
+		if !ok {
 			i++
 			continue
 		}
-		end := strings.IndexByte(contents[i:], ']')
-		if end < 0 {
-			break
+		i = skipTOMLSpace(body, next)
+		if i >= len(body) || (body[i] != ':' && body[i] != '=') {
+			continue
 		}
-		values = append(values, quotedStrings(contents[i:i+end+1])...)
-		i += end + 1
+		i = skipTOMLSpace(body, i+1)
+		if i >= len(body) || body[i] != '[' {
+			continue
+		}
+		list, after := readBalanced(body, i, '[', ']')
+		for _, value := range quotedStrings(list) {
+			values = append(values, setupDep{key: "extras_require", extra: extra, value: value})
+		}
+		i = after
 	}
 	return values
+}
+
+func readSetupExtraKey(contents string, i int) (string, int, bool) {
+	if contents[i] == '"' || contents[i] == '\'' {
+		return readQuoted(contents, i)
+	}
+	start := i
+	for i < len(contents) && isBareKey(contents[i]) {
+		i++
+	}
+	if i == start {
+		return "", start, false
+	}
+	return contents[start:i], i, true
 }
 
 func skipTOMLSpace(contents string, i int) int {

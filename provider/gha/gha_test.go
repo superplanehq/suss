@@ -332,6 +332,46 @@ jobs:
 	}
 }
 
+func TestDetectAppliesUvProjectToCommandDirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: uv --project backend sync
+      - run: uv run --project frontend pytest
+`,
+	})
+
+	found := map[string]string{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = item.Command.Directory
+	}
+	if got := found["uv --project backend sync"]; got != "backend" {
+		t.Fatalf("uv --project directory = %q, want backend in %+v", got, found)
+	}
+	if got := found["uv run --project frontend pytest"]; got != "frontend" {
+		t.Fatalf("uv run --project directory = %q, want frontend in %+v", got, found)
+	}
+	interpreted := false
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil || *item.Command.Run != "uv run --project frontend pytest" {
+			continue
+		}
+		interpreted = commandHasCapability(item.Command, plan.CapabilityTestRun)
+	}
+	if !interpreted {
+		t.Fatal("uv run --project frontend pytest was not interpreted as a test command")
+	}
+}
+
 func TestDetectAppliesPoetryDirectoryToCommandDirectory(t *testing.T) {
 	t.Parallel()
 

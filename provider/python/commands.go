@@ -28,7 +28,7 @@ func commandFindings(ctx provider.Context, project pythonProject, choice manager
 			return nil, err
 		}
 		var needed []string
-		if testFile != "" && len(pytestEvidence(ctx, project)) > 0 {
+		if testFile != "" && len(pytestEvidence(ctx, project, choice.selected)) > 0 {
 			needed = pytestSignalNames(project)
 		}
 		specs = append(specs, installSpec(ctx, project, choice, needed))
@@ -99,7 +99,7 @@ func testCommandSpec(ctx provider.Context, project pythonProject, choice manager
 	source := ctx.SourcePath(project.Manifest)
 	testEvidence := plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)}
 
-	if pytestEvidence := pytestEvidence(ctx, project); len(pytestEvidence) > 0 {
+	if pytestEvidence := pytestEvidence(ctx, project, choice.selected); len(pytestEvidence) > 0 {
 		run := managerRun(choice.selected, "pytest")
 		spec := conventionSpec(source, "test", run, "/#test", plan.ConfidenceHigh, fmt.Sprintf("Python projects with pytest conventionally run tests with %s.", run))
 		spec.evidence = addEvidenceAfterManifest(spec.evidence, append([]plan.Evidence{testEvidence}, pytestEvidence...)...)
@@ -158,7 +158,7 @@ func managerRun(manager, command string) string {
 	}
 }
 
-func pytestEvidence(ctx provider.Context, project pythonProject) []plan.Evidence {
+func pytestEvidence(ctx provider.Context, project pythonProject, manager string) []plan.Evidence {
 	var evidence []plan.Evidence
 	for _, name := range []string{"pytest.ini", "pytest.toml", ".pytest.ini", "conftest.py"} {
 		if fileExists(ctx.ProjectDir(), name) {
@@ -173,14 +173,14 @@ func pytestEvidence(ctx provider.Context, project pythonProject) []plan.Evidence
 			Pointer: "/tool/pytest",
 		})
 	}
-	if dep, ok := project.Dependencies["pytest"]; ok {
+	if dep, ok := project.Dependencies["pytest"]; ok && depInstallable(project, manager, dep) {
 		evidence = append(evidence, plan.Evidence{
 			Kind:    plan.EvidenceDeclaration,
 			Source:  ctx.SourcePath(depSourceFile(dep, project.Manifest)),
 			Pointer: depPointer("pytest"),
 		})
 	}
-	if dep, ok := project.Dependencies["pytest-django"]; ok {
+	if dep, ok := project.Dependencies["pytest-django"]; ok && depInstallable(project, manager, dep) {
 		evidence = append(evidence, plan.Evidence{
 			Kind:    plan.EvidenceDeclaration,
 			Source:  ctx.SourcePath(depSourceFile(dep, project.Manifest)),
@@ -188,7 +188,7 @@ func pytestEvidence(ctx provider.Context, project pythonProject) []plan.Evidence
 		})
 	}
 	if _, ok := project.Dependencies["pytest"]; !ok {
-		if dep, ok := prefixedDependency(project, "pytest"); ok && dep.Name != "pytest-django" {
+		if dep, ok := prefixedDependency(project, "pytest"); ok && dep.Name != "pytest-django" && depInstallable(project, manager, dep) {
 			evidence = append(evidence, plan.Evidence{
 				Kind:    plan.EvidenceDeclaration,
 				Source:  ctx.SourcePath(depSourceFile(dep, project.Manifest)),

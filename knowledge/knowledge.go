@@ -614,6 +614,10 @@ func unwrapOnce(tokens []string) ([]string, string) {
 	return tokens, ""
 }
 
+var uvDirectoryFlags = map[string]struct{}{
+	"--directory": {}, "-C": {}, "--project": {},
+}
+
 var uvGlobalValueFlags = map[string]struct{}{
 	"--directory": {}, "-C": {}, "--project": {},
 	"--config-file": {}, "--cache-dir": {},
@@ -670,18 +674,11 @@ func skipUVGlobals(tokens []string) ([]string, string) {
 		if name == "--" {
 			return tokens[i+1:], dir
 		}
-		if name == "--directory" || name == "-C" {
-			if hasValue {
-				dir = value
-				i++
-				continue
+		if captured, next, ok := takeNamedDirectory(name, value, hasValue, tokens, i, uvDirectoryFlags); ok {
+			if captured != "" {
+				dir = captured
 			}
-			if i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
-				dir = tokens[i+1]
-				i += 2
-				continue
-			}
-			i++
+			i = next
 			continue
 		}
 		if _, ok := uvGlobalValueFlags[name]; ok && !hasValue && i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
@@ -702,18 +699,11 @@ func takeUVDirectory(tokens []string) ([]string, string) {
 		if name == "--" {
 			return append(out, tokens[i:]...), dir
 		}
-		if name == "--directory" || name == "-C" {
-			if hasValue {
-				dir = value
-				i++
-				continue
+		if captured, next, ok := takeNamedDirectory(name, value, hasValue, tokens, i, uvDirectoryFlags); ok {
+			if captured != "" {
+				dir = captured
 			}
-			if i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
-				dir = tokens[i+1]
-				i += 2
-				continue
-			}
-			i++
+			i = next
 			continue
 		}
 		out = append(out, tokens[i])
@@ -725,6 +715,19 @@ func takeUVDirectory(tokens []string) ([]string, string) {
 		i++
 	}
 	return append(out, tokens[i:]...), dir
+}
+
+func takeNamedDirectory(name, value string, hasValue bool, tokens []string, i int, flags map[string]struct{}) (string, int, bool) {
+	if _, ok := flags[name]; !ok {
+		return "", i, false
+	}
+	if hasValue {
+		return value, i + 1, true
+	}
+	if i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
+		return tokens[i+1], i + 2, true
+	}
+	return "", i + 1, true
 }
 
 func isVendorBinPath(value string) bool {

@@ -122,3 +122,16 @@ func TestVersionSatisfiesPEP440PythonConstraints(t *testing.T) {
 		}
 	}
 }
+
+func TestVersionSatisfiesPrereleaseBoundsAreUnevaluable(t *testing.T) {
+	t.Parallel()
+
+	got, known := versionSatisfies(">=3.13rc1", "3.12")
+	if known {
+		t.Fatalf("versionSatisfies(>=3.13rc1, 3.12) = (%t, %t), want unevaluable", got, known)
+	}
+	got, known = versionSatisfies(">=3.13.0rc1", "3.13")
+	if known {
+		t.Fatalf("versionSatisfies(>=3.13.0rc1, 3.13) = (%t, %t), want unevaluable", got, known)
+	}
+}

@@ -883,6 +883,35 @@ func TestDetectSkipsTemporaryDependencyCaches(t *testing.T) {
 	}
 }
 
+func TestDetectFindsComposeUnderEnvDirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"env/compose.yaml":           "services:\n  api:\n    image: example/api:1\n",
+		"site-packages/compose.yaml": "services:\n  leaked:\n    image: redis:7\n",
+	})
+
+	if !hasRequirement(result, plan.RequirementService, "api", "1") {
+		t.Fatalf("compose under env/ was omitted: %+v", result.Findings)
+	}
+	if hasRequirement(result, plan.RequirementService, "leaked", "7") {
+		t.Fatalf("site-packages compose file was read: %+v", result.Findings)
+	}
+}
+
+func TestDetectSkipsVirtualEnvComposeFiles(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"sandbox/pyvenv.cfg":   "home = /usr/bin\n",
+		"sandbox/compose.yaml": "services:\n  leaked:\n    image: redis:7\n",
+	})
+
+	if hasRequirement(result, plan.RequirementService, "leaked", "7") {
+		t.Fatalf("virtualenv compose file was read: %+v", result.Findings)
+	}
+}
+
 func TestDetectFindsNestedComposeFiles(t *testing.T) {
 	t.Parallel()
 

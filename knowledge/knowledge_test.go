@@ -494,6 +494,20 @@ func TestInterpretToxAndNoxOnlyMatchUnqualifiedRuns(t *testing.T) {
 	}
 }
 
+func TestParseScriptCapturesUvProjectDirectory(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript(`uv --project backend sync && uv run --project frontend pytest && uv --project=services/api run pytest`)
+	want := []Invocation{
+		{Executable: "uv", Args: []string{"--project", "backend", "sync"}, Directory: "backend"},
+		{Executable: "pytest", Directory: "frontend"},
+		{Executable: "pytest", Directory: "services/api"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
 func TestParseScriptCapturesUvRunDirectory(t *testing.T) {
 	t.Parallel()
 
@@ -815,6 +829,28 @@ func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	want := Invocation{Executable: "yarn", Args: []string{"test", "--watch=false"}, Directory: "./packages/app"}
 	if !invocationsEqual(got, want) {
 		t.Fatalf("canonical = %+v, want %+v", got, want)
+	}
+}
+
+func TestStripDirectoryFlagsRemovesUvProject(t *testing.T) {
+	t.Parallel()
+
+	dir, got := StripDirectoryFlags(Invocation{Executable: "uv", Args: []string{"--project", "backend", "sync"}})
+	if dir != "backend" {
+		t.Fatalf("dir = %q, want backend", dir)
+	}
+	want := Invocation{Executable: "uv", Args: []string{"sync"}, Directory: "backend"}
+	if !invocationsEqual(got, want) {
+		t.Fatalf("canonical = %+v, want %+v", got, want)
+	}
+
+	dir, got = StripDirectoryFlags(Invocation{Executable: "uv", Args: []string{"run", "--project", "frontend", "pytest"}})
+	if dir != "frontend" {
+		t.Fatalf("run --project dir = %q, want frontend", dir)
+	}
+	want = Invocation{Executable: "uv", Args: []string{"run", "pytest"}, Directory: "frontend"}
+	if !invocationsEqual(got, want) {
+		t.Fatalf("run canonical = %+v, want %+v", got, want)
 	}
 }
 

@@ -223,6 +223,20 @@ python_version = "3.12"
 	assertCommand(t, commandsByName(result)["test"], "pipenv run pytest", plan.CapabilityTestRun)
 }
 
+func TestDetectIgnoresVirtualEnvMarkerTests(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml":     "[project]\nname = \"widget\"\n",
+		"env/pyvenv.cfg":     "home = /usr/bin\n",
+		"env/test_leaked.py": "def test_leaked():\n    assert True\n",
+	})
+
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("virtualenv tests unexpectedly produced a test command")
+	}
+}
+
 func TestDetectIgnoresVirtualenvNamedEnv(t *testing.T) {
 	t.Parallel()
 
@@ -454,6 +468,74 @@ func TestDetectSetupPyDescriptionIsNotDjango(t *testing.T) {
 	if commands := commandsByName(result); commands["test"].Run != nil && *commands["test"].Run == "python manage.py test" {
 		t.Fatal("setup.py description unexpectedly inferred Django tests")
 	}
+}
+
+func TestParseSetupPyPreservesExtrasRequireGroup(t *testing.T) {
+	t.Parallel()
+
+	parsed := parseSetupPy(`
+from setuptools import setup
+setup(
+    name="widget",
+    extras_require={"test": ["pytest"]},
+)
+`)
+	dep, ok := parsed.Dependencies["pytest"]
+	if !ok {
+		t.Fatalf("dependencies = %+v, want pytest from extras_require", parsed.Dependencies)
+	}
+	if len(dep.Origins) != 1 || dep.Origins[0] != (depOrigin{Kind: depKindExtra, Group: "test"}) {
+		t.Fatalf("origins = %+v, want extra test", dep.Origins)
+	}
+}
+
+func TestParseSetupPyDoesNotTreatTestsRequireAsMain(t *testing.T) {
+	t.Parallel()
+
+	parsed := parseSetupPy(`
+from setuptools import setup
+setup(
+    name="widget",
+    tests_require=["pytest"],
+)
+`)
+	dep, ok := parsed.Dependencies["pytest"]
+	if !ok {
+		t.Fatalf("dependencies = %+v, want pytest from tests_require", parsed.Dependencies)
+	}
+	for _, origin := range dep.Origins {
+		if origin.Kind == depKindMain {
+			t.Fatalf("origins = %+v, did not want tests_require as main", dep.Origins)
+		}
+	}
+}
+
+func TestDetectSetupPyExtrasRequireInstallsExtra(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"setup.py": `from setuptools import setup
+setup(name="widget", extras_require={"test": ["pytest"]})
+`,
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -e '.[test]'", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+}
+
+func TestDetectSetupPyTestsRequireDoesNotClaimPytest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"setup.py": `from setuptools import setup
+setup(name="widget", tests_require=["pytest"])
+`,
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -e .", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "python -m unittest", plan.CapabilityTestRun)
 }
 
 func TestParseSetupPyIgnoresNonDependencyLiterals(t *testing.T) {
@@ -705,6 +787,79 @@ pytest = "^8.0"
 
 	assertCommand(t, commandsByName(result)["install dependencies"], "poetry install --with test", plan.CapabilityDependenciesInstall)
 	assertCommand(t, commandsByName(result)["test"], "poetry run pytest", plan.CapabilityTestRun)
+}
+
+func TestDetectPoetryOptionalExtraUsesExtrasFlag(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[tool.poetry]
+name = "widget"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pytest = {version = "^8", optional = true}
+
+[tool.poetry.extras]
+test = ["pytest"]
+`,
+		"poetry.lock":          "[[package]]\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "poetry install --extras test", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "poetry run pytest", plan.CapabilityTestRun)
+}
+
+func TestParsePoetryOptionalExtraMembership(t *testing.T) {
+	t.Parallel()
+
+	parsed := parsePyproject(`
+[tool.poetry.dependencies]
+python = "^3.11"
+pytest = {version = "^8", optional = true}
+
+[tool.poetry.extras]
+test = ["pytest"]
+`)
+	dep, ok := parsed.Dependencies["pytest"]
+	if !ok {
+		t.Fatalf("dependencies = %+v, want pytest", parsed.Dependencies)
+	}
+	for _, origin := range dep.Origins {
+		if origin.Kind == depKindMain {
+			t.Fatalf("origins = %+v, did not want optional pytest as main", dep.Origins)
+		}
+	}
+	found := false
+	for _, origin := range dep.Origins {
+		if origin.Kind == depKindExtra && origin.Group == "test" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("origins = %+v, want extra test", dep.Origins)
+	}
+}
+
+func TestDetectUvLegacyDevDependenciesSelectPytest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+
+[tool.uv]
+dev-dependencies = ["pytest"]
+`,
+		"uv.lock":              "version = 1\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "uv sync", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "uv run pytest", plan.CapabilityTestRun)
 }
 
 func TestDetectLegacyPoetryDevDependenciesSelectPytest(t *testing.T) {

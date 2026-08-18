@@ -879,6 +879,32 @@ func TestApplyFoldsPythonCompatibleRelease(t *testing.T) {
 	}
 }
 
+func TestApplyDoesNotFoldPrereleasePythonBound(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "python",
+		Version:    ">=3.13rc1",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "pyproject.toml", Pointer: "/requires-python"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPython("3.12")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 3.12 attached to >=3.13rc1", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a conflict for an unevaluable prerelease bound", got[0].Conflicts)
+	}
+	if values := matrixPythonValues(got[0].Facts); len(values) != 1 || values[0] != "3.12" {
+		t.Fatalf("facts = %+v, want ci.matrix.python=3.12 for an unevaluable prerelease bound", got[0].Facts)
+	}
+}
+
 func TestApplyRecordsUnevaluableRangesAsMatrixFacts(t *testing.T) {
 	t.Parallel()
 
@@ -1105,6 +1131,10 @@ func matrixNodeValues(facts []plan.ProjectFact) []string {
 
 func matrixPHPValues(facts []plan.ProjectFact) []string {
 	return matrixRuntimeValues(facts, "php")
+}
+
+func matrixPythonValues(facts []plan.ProjectFact) []string {
+	return matrixRuntimeValues(facts, "python")
 }
 
 func matrixRuntimeValues(facts []plan.ProjectFact, runtime string) []string {

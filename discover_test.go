@@ -21,6 +21,7 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	writeFile(t, filepath.Join(root, "admin", "Gemfile"), "source \"https://rubygems.org\"\n")
 	writeFile(t, filepath.Join(root, "api", "composer.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "py", "pyproject.toml"), "[project]\nname = \"api\"\n")
+	writeFile(t, filepath.Join(root, "env", "pyproject.toml"), "[project]\nname = \"env-app\"\n")
 	writeFile(t, filepath.Join(root, "vendor-bin", "phpstan", "composer.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "worker", "Cargo.toml"), "[package]\nname = \"worker\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
 	writeFile(t, filepath.Join(root, "venv", "lib", "pyproject.toml"), "[project]\nname = \"venv\"\n")
@@ -36,7 +37,7 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	if err != nil {
 		t.Fatalf("findProjectRoots() error = %v", err)
 	}
-	want := []string{".", "admin", "api", "apps/web", "backend", "frontend", "py", "worker"}
+	want := []string{".", "admin", "api", "apps/web", "backend", "env", "frontend", "py", "worker"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
 	}
@@ -85,6 +86,24 @@ func TestDetectRunsMakeAndEnvfileWithoutLanguageManifests(t *testing.T) {
 	}
 	if !sawMakeTest {
 		t.Fatalf("commands = %+v, want make test from a Makefile-only root", project.Commands)
+	}
+}
+
+func TestFindProjectRootsSkipsVirtualEnvMarkerNotEnvName(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "env", "pyproject.toml"), "[project]\nname = \"env-app\"\n")
+	writeFile(t, filepath.Join(root, "sandbox", "pyvenv.cfg"), "home = /usr/bin\n")
+	writeFile(t, filepath.Join(root, "sandbox", "pyproject.toml"), "[project]\nname = \"sandbox\"\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{"env"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
 	}
 }
 

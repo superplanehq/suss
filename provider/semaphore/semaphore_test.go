@@ -244,6 +244,8 @@ func TestDetectAppliesUvDirectoryToCommandDirectory(t *testing.T) {
 	result := detectFiles(t, map[string]string{
 		"packages/api/.keep": "",
 		"packages/web/.keep": "",
+		"backend/.keep":      "",
+		"frontend/.keep":     "",
 		".semaphore/semaphore.yml": `version: v1.0
 name: CI
 blocks:
@@ -254,6 +256,8 @@ blocks:
           commands:
             - uv run --directory packages/api pytest
             - uv --directory packages/web run pytest
+            - uv --project backend sync
+            - uv run --project frontend pytest
 `,
 	})
 
@@ -263,6 +267,12 @@ blocks:
 	}
 	if !slices.Contains(commands["packages/web"], "uv --directory packages/web run pytest") {
 		t.Fatalf("commands = %v, want uv global --directory under packages/web", commands)
+	}
+	if !slices.Contains(commands["backend"], "uv --project backend sync") {
+		t.Fatalf("commands = %v, want uv --project under backend", commands)
+	}
+	if !slices.Contains(commands["frontend"], "uv run --project frontend pytest") {
+		t.Fatalf("commands = %v, want uv run --project under frontend", commands)
 	}
 }
 

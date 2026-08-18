@@ -205,16 +205,23 @@ func fileExists(dir, name string) bool {
 	return err == nil && !info.IsDir()
 }
 
-func walkSkipDir(name string) bool {
+func walkSkipDir(path, name string) bool {
 	if strings.HasPrefix(name, ".") {
 		return true
 	}
 	switch name {
-	case "venv", "virtualenv", "env", "site-packages", "__pycache__", "node_modules", "vendor", "_build", "deps", "dist", "build", "target", "tmp", "htmlcov", ".eggs":
+	case "venv", "virtualenv", "site-packages", "__pycache__", "node_modules", "vendor", "_build", "deps", "dist", "build", "target", "tmp", "htmlcov", ".eggs":
 		return true
-	default:
-		return strings.HasSuffix(name, ".egg-info")
 	}
+	if strings.HasSuffix(name, ".egg-info") {
+		return true
+	}
+	return isVirtualEnvDir(path)
+}
+
+func isVirtualEnvDir(path string) bool {
+	info, err := os.Stat(filepath.Join(path, "pyvenv.cfg"))
+	return err == nil && !info.IsDir()
 }
 
 func firstFile(root string, match func(name string) bool) (string, error) {
@@ -227,7 +234,7 @@ func firstFile(root string, match func(name string) bool) (string, error) {
 			if path == root {
 				return nil
 			}
-			if walkSkipDir(entry.Name()) || entry.Type()&os.ModeSymlink != 0 {
+			if walkSkipDir(path, entry.Name()) || entry.Type()&os.ModeSymlink != 0 {
 				return filepath.SkipDir
 			}
 			if path != root && pythonIdentity(path) {

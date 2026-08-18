@@ -250,6 +250,14 @@ func pytestSignalNames(project pythonProject) []string {
 	return nil
 }
 
+func depInstallable(project pythonProject, manager string, dep depDeclaration) bool {
+	if depInstalledByDefault(project, manager, dep) {
+		return true
+	}
+	kind, name := preferredSelector(dep)
+	return kind != "" && name != ""
+}
+
 func depInstalledByDefault(project pythonProject, manager string, dep depDeclaration) bool {
 	if len(dep.Origins) == 0 {
 		return true

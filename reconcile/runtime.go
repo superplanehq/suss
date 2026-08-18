@@ -525,10 +525,11 @@ func pessimisticSatisfies(raw, version string) (ok, known bool) {
 }
 
 func caretSatisfies(base, version string) (ok, known bool) {
-	base = normalizeVersion(base)
-	if base == "" {
+	bound, comparable := numericBound(base)
+	if !comparable {
 		return false, false
 	}
+	base = bound
 	if compareVersions(version, base) < 0 {
 		return false, true
 	}
@@ -548,8 +549,8 @@ func caretSatisfies(base, version string) (ok, known bool) {
 
 func tildeSatisfies(raw, version string, composer bool) (ok, known bool) {
 	raw = strings.TrimPrefix(strings.TrimSpace(raw), "v")
-	base := normalizeVersion(raw)
-	if base == "" {
+	base, ok := numericBound(raw)
+	if !ok {
 		return false, false
 	}
 	if compareVersions(version, base) < 0 {
@@ -615,6 +616,14 @@ func comparableVersion(version string) bool {
 		}
 	}
 	return true
+}
+
+func numericBound(raw string) (string, bool) {
+	bound := normalizeVersion(raw)
+	if bound == "" || !comparableVersion(bound) {
+		return "", false
+	}
+	return bound, true
 }
 
 func versionPart(parts []string, i int) int {
