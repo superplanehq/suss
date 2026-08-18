@@ -207,7 +207,7 @@ func TestDetectSymfonyFrameworkWithoutInferredServer(t *testing.T) {
 	})
 	command := commandsByName(bridge)["test"]
 	assertCommand(t, command, "vendor/bin/simple-phpunit", plan.CommandInferred, plan.CapabilityTestRun)
-	if !hasEvidencePointer(command.Evidence, "composer.json", "/require-dev/symfony~1phpunit-bridge") {
+	if !hasEvidencePointer(command.Evidence, "/require-dev/symfony~1phpunit-bridge") {
 		t.Fatalf("evidence = %+v, want phpunit-bridge declaration", command.Evidence)
 	}
 }
@@ -254,7 +254,7 @@ func TestDetectHonorsComposerBinDirForInferredPHPUnit(t *testing.T) {
 	})
 	command := commandsByName(result)["test"]
 	assertCommand(t, command, "bin/phpunit", plan.CommandInferred, plan.CapabilityTestRun)
-	if !hasEvidencePointer(command.Evidence, "composer.json", "/config/bin-dir") {
+	if !hasEvidencePointer(command.Evidence, "/config/bin-dir") {
 		t.Fatalf("evidence = %+v, want /config/bin-dir", command.Evidence)
 	}
 }
@@ -272,7 +272,7 @@ func TestDetectHonorsComposerVendorDirForInferredPest(t *testing.T) {
 	})
 	command := commandsByName(result)["test"]
 	assertCommand(t, command, "libs/bin/pest", plan.CommandInferred, plan.CapabilityTestRun)
-	if !hasEvidencePointer(command.Evidence, "composer.json", "/config/vendor-dir") {
+	if !hasEvidencePointer(command.Evidence, "/config/vendor-dir") {
 		t.Fatalf("evidence = %+v, want /config/vendor-dir", command.Evidence)
 	}
 }
@@ -350,10 +350,10 @@ func TestDetectMergesEqualPlatformPHPEvidenceIntoRequire(t *testing.T) {
 			continue
 		}
 		found = true
-		if !hasEvidencePointer(item.Requirement.Evidence, "composer.json", "/require/php") {
+		if !hasEvidencePointer(item.Requirement.Evidence, "/require/php") {
 			t.Fatalf("evidence = %+v, want /require/php", item.Requirement.Evidence)
 		}
-		if !hasEvidencePointer(item.Requirement.Evidence, "composer.json", "/config/platform/php") {
+		if !hasEvidencePointer(item.Requirement.Evidence, "/config/platform/php") {
 			t.Fatalf("evidence = %+v, want /config/platform/php merged into the same requirement", item.Requirement.Evidence)
 		}
 	}
@@ -626,9 +626,9 @@ func assertCommand(t *testing.T, command plan.Command, run string, origin plan.C
 	t.Fatalf("command interpretations = %+v, want %s", command.Interpretations, capability)
 }
 
-func hasEvidencePointer(evidence []plan.Evidence, source, pointer string) bool {
+func hasEvidencePointer(evidence []plan.Evidence, pointer string) bool {
 	for _, item := range evidence {
-		if item.Source == source && item.Pointer == pointer {
+		if item.Source == "composer.json" && item.Pointer == pointer {
 			return true
 		}
 	}
