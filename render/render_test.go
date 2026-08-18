@@ -277,9 +277,6 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		"CI variant          npm test --coverage",
 		"environment API_TOKEN (required, default present)",
 		"eslint is configured. No command interpreted as code.lint was found.",
-		"package.json",
-		"eslint.config.js",
-		".github/workflows/ci.yml",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("output %q, want %q", got, want)
@@ -290,6 +287,25 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 	}
 	if strings.Contains(got, "Project: .") {
 		t.Fatalf("output %q, want no JSON-path project heading", got)
+	}
+	if strings.Contains(got, "Evidence:") {
+		t.Fatalf("output %q, want evidence omitted by default", got)
+	}
+}
+
+func TestWriteIncludesEvidenceWhenRequested(t *testing.T) {
+	t.Parallel()
+
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{
+		Name:       "javascript",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json"}},
+	}}
+
+	got := renderDocumentWith(plan.NewDocument([]plan.ProjectPlan{project}), Options{ShowEvidence: true})
+	if !strings.Contains(got, "Evidence:\n    package.json") {
+		t.Fatalf("output %q, want evidence when requested", got)
 	}
 }
 
@@ -352,11 +368,24 @@ func TestWriteListsInterpretedCommandsFirst(t *testing.T) {
 	}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
-	lintAt := strings.Index(got, "lint")
-	testAt := strings.Index(got, "test")
+	lintAt := strings.Index(got, "Lint")
+	testAt := strings.Index(got, "Test")
+	if lintAt < 0 || testAt < 0 {
+		t.Fatalf("output %q, want lint and test", got)
+	}
+	if testAt >= lintAt {
+		t.Fatalf("output %q, want lifecycle-ordered interpreted commands", got)
+	}
+	if strings.Contains(got, "e2e:harness:coverage") || strings.Contains(got, "Uninterpreted commands:") {
+		t.Fatalf("output %q, want uninterpreted commands omitted by default", got)
+	}
+
+	got = renderDocumentWith(plan.NewDocument([]plan.ProjectPlan{project}), Options{Providers: []string{"node"}, ShowUninterpreted: true})
 	unknownAt := strings.Index(got, "e2e:harness:coverage")
-	if lintAt < 0 || testAt < 0 || unknownAt < 0 {
-		t.Fatalf("output %q, want lint, test, and e2e:harness:coverage", got)
+	lintAt = strings.Index(got, "Lint")
+	testAt = strings.Index(got, "Test")
+	if unknownAt < 0 {
+		t.Fatalf("output %q, want uninterpreted commands when requested", got)
 	}
 	if testAt >= lintAt || lintAt >= unknownAt {
 		t.Fatalf("output %q, want lifecycle-ordered interpreted commands before uninterpreted commands", got)
@@ -385,7 +414,7 @@ func TestWriteKeepsMultilineCommandRunsOnOneLine(t *testing.T) {
 		Variants:   []plan.CommandVariant{},
 	}}
 
-	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
+	got := renderDocumentWith(plan.NewDocument([]plan.ProjectPlan{project}), Options{Providers: []string{"node"}, ShowUninterpreted: true})
 	if strings.Contains(got, "\n# suite leftover") {
 		t.Fatalf("output %q, want the run collapsed onto one line", got)
 	}
@@ -465,7 +494,10 @@ func TestWritePrioritizesInterpretedCommandsWithinDistinctProjectBlocks(t *testi
 	testRun := "pnpm run test"
 	unknownRun := "pnpm run generate:icons"
 	frontend := plan.NewProjectPlan("frontend")
-	frontend.Languages = []plan.DetectedValue{{Name: "typescript"}}
+	frontend.Languages = []plan.DetectedValue{{
+		Name:     "typescript",
+		Evidence: []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "frontend/package.json"}},
+	}}
 	frontend.PackageManagers = []plan.DetectedTool{{Name: "pnpm", Version: "9"}}
 	frontend.Requirements = []plan.Requirement{{Kind: plan.RequirementRuntime, Name: "node", Version: "22"}}
 	frontend.Preparation = []plan.Command{
@@ -536,7 +568,7 @@ func TestWritePrioritizesInterpretedCommandsWithinDistinctProjectBlocks(t *testi
 		"Projects: 2",
 		"Project: backend\n================",
 		"Project: frontend\n=================",
-		"  How to work with this project:\n    Purpose               Command",
+		"  How to work with this project:\n    Purpose               Command\n    --------------------  -------",
 		"    Install dependencies  pnpm install --frozen-lockfile",
 		"    Prepare               docker compose up -d",
 		"    Test                  pnpm run test",
@@ -545,7 +577,6 @@ func TestWritePrioritizesInterpretedCommandsWithinDistinctProjectBlocks(t *testi
 		"      More than one test invocation is plausible.\n      - pnpm run test\n      - npm test",
 		"    Conflict: runtime.node.version\n      Runtime declarations disagree.",
 		"      Selected: 22 (The version file is more specific.)",
-		"  Uninterpreted commands:\n    Name            Command\n    generate:icons  pnpm run generate:icons",
 		"  Project details:\n    Languages: typescript\n    Package managers: pnpm 9",
 		"    Requirements:\n      runtime node 22",
 	} {
@@ -556,18 +587,45 @@ func TestWritePrioritizesInterpretedCommandsWithinDistinctProjectBlocks(t *testi
 	if strings.Contains(got, "Path:") {
 		t.Fatalf("output %q, want the project path only in its heading", got)
 	}
+	if strings.Contains(got, "Uninterpreted commands:") || strings.Contains(got, "generate:icons") {
+		t.Fatalf("output %q, want uninterpreted commands omitted by default", got)
+	}
+	if strings.Contains(got, "Evidence:") {
+		t.Fatalf("output %q, want evidence omitted by default", got)
+	}
 	frontendOutput := got[strings.Index(got, "Project: frontend"):]
 	interpretedAt := strings.Index(frontendOutput, "How to work with this project:")
 	attentionAt := strings.Index(frontendOutput, "Needs attention:")
-	uninterpretedAt := strings.Index(frontendOutput, "Uninterpreted commands:")
 	detailsAt := strings.Index(frontendOutput, "Project details:")
-	if interpretedAt < 0 || attentionAt < 0 || uninterpretedAt < 0 || detailsAt < 0 || interpretedAt >= attentionAt || attentionAt >= uninterpretedAt || uninterpretedAt >= detailsAt {
-		t.Fatalf("output %q, want interpreted commands, attention items, uninterpreted commands, then project details", got)
+	if interpretedAt < 0 || attentionAt < 0 || detailsAt < 0 || interpretedAt >= attentionAt || attentionAt >= detailsAt {
+		t.Fatalf("output %q, want interpreted commands, attention items, then project details", got)
+	}
+
+	got = renderDocumentWith(plan.NewDocument([]plan.ProjectPlan{backend, frontend}), Options{
+		Providers:         []string{"golang", "node"},
+		ShowUninterpreted: true,
+		ShowEvidence:      true,
+	})
+	if !strings.Contains(got, "  Uninterpreted commands:\n    Name            Command\n    --------------  -------\n    generate:icons  pnpm run generate:icons") {
+		t.Fatalf("output %q, want uninterpreted commands when requested", got)
+	}
+	frontendOutput = got[strings.Index(got, "Project: frontend"):]
+	interpretedAt = strings.Index(frontendOutput, "How to work with this project:")
+	attentionAt = strings.Index(frontendOutput, "Needs attention:")
+	uninterpretedAt := strings.Index(frontendOutput, "Uninterpreted commands:")
+	detailsAt = strings.Index(frontendOutput, "Project details:")
+	evidenceAt := strings.Index(frontendOutput, "Evidence:")
+	if interpretedAt < 0 || attentionAt < 0 || uninterpretedAt < 0 || detailsAt < 0 || evidenceAt < 0 || interpretedAt >= attentionAt || attentionAt >= uninterpretedAt || uninterpretedAt >= detailsAt || detailsAt >= evidenceAt {
+		t.Fatalf("output %q, want interpreted commands, attention items, uninterpreted commands, project details, then evidence", got)
 	}
 }
 
 func renderDocument(document plan.Document, providers []string) string {
+	return renderDocumentWith(document, Options{Providers: providers})
+}
+
+func renderDocumentWith(document plan.Document, opts Options) string {
 	var buf bytes.Buffer
-	Write(&buf, document, Options{Providers: providers})
+	Write(&buf, document, opts)
 	return buf.String()
 }

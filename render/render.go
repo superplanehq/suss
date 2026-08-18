@@ -14,8 +14,10 @@ import (
 
 // Options control labels that are not stored in the document itself.
 type Options struct {
-	Providers      []string
-	RepositoryName string
+	Providers         []string
+	RepositoryName    string
+	ShowUninterpreted bool
+	ShowEvidence      bool
 }
 
 // toolCapabilities maps configured-tool fact values to the capabilities that
@@ -128,15 +130,21 @@ func writeProject(w io.Writer, project plan.ProjectPlan, opts Options) {
 		fmt.Fprintln(w)
 		fmt.Fprintf(w, "  No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json; a Go project requires go.mod.\n", joinProviders(opts.Providers))
 		writeProjectDetails(w, project)
-		writeEvidence(w, project)
+		if opts.ShowEvidence {
+			writeEvidence(w, project)
+		}
 		return
 	}
 
 	writeActionableCommands(w, project)
 	writeAttentionItems(w, project.Ambiguities, project.Conflicts)
-	writeUninterpretedCommands(w, project.Path, project.Commands)
+	if opts.ShowUninterpreted {
+		writeUninterpretedCommands(w, project.Path, project.Commands)
+	}
 	writeProjectDetails(w, project)
-	writeEvidence(w, project)
+	if opts.ShowEvidence {
+		writeEvidence(w, project)
+	}
 }
 
 func projectHeading(project plan.ProjectPlan, opts Options) string {

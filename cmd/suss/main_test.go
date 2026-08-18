@@ -99,6 +99,66 @@ func TestRunHelpExitsZero(t *testing.T) {
 	if !strings.Contains(stdout.String(), "Usage: suss") {
 		t.Fatalf("stdout = %q, want usage text", stdout.String())
 	}
+	got := stdout.String()
+	for _, flag := range []string{"--json", "--uninterpreted", "--evidence"} {
+		if !strings.Contains(got, flag) {
+			t.Fatalf("stdout = %q, want %s", got, flag)
+		}
+	}
+}
+
+func TestParseArgsAcceptsDetailFlags(t *testing.T) {
+	t.Parallel()
+
+	opts, err := parseArgs([]string{"--uninterpreted", "--evidence", "repo"})
+	if err != nil {
+		t.Fatalf("parseArgs() error = %v", err)
+	}
+	if opts.path != "repo" {
+		t.Fatalf("path = %q, want repo", opts.path)
+	}
+	if !opts.uninterpreted || !opts.evidence {
+		t.Fatalf("flags = %+v, want uninterpreted and evidence set", opts)
+	}
+}
+
+func TestRunOmitsSupportingDetailByDefault(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "package.json"), `{"scripts": {"test": "vitest", "e2e": "playwright"}}`+"\n")
+	writeFile(t, filepath.Join(root, "package-lock.json"), "{}\n")
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("run() = %d, stderr = %s", code, stderr.String())
+	}
+	got := stdout.String()
+	if strings.Contains(got, "Uninterpreted commands:") || strings.Contains(got, "Evidence:") {
+		t.Fatalf("stdout = %q, want supporting detail omitted by default", got)
+	}
+}
+
+func TestRunIncludesSupportingDetailWhenRequested(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "package.json"), `{"scripts": {"test": "vitest", "e2e": "playwright"}}`+"\n")
+	writeFile(t, filepath.Join(root, "package-lock.json"), "{}\n")
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"--uninterpreted", "--evidence", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("run() = %d, stderr = %s", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "Uninterpreted commands:") || !strings.Contains(got, "e2e") {
+		t.Fatalf("stdout = %q, want uninterpreted commands", got)
+	}
+	if !strings.Contains(got, "Evidence:") || !strings.Contains(got, "package.json") {
+		t.Fatalf("stdout = %q, want evidence", got)
+	}
 }
 
 func TestRunUnknownFlagExitsTwo(t *testing.T) {
