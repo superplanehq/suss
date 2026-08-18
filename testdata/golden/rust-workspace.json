@@ -174,7 +174,12 @@
             {
               "kind": "declaration",
               "source": "Cargo.toml",
-              "pointer": "/workspace/package/rust-version",
+              "pointer": "/workspace/package/rust-version"
+            },
+            {
+              "kind": "declaration",
+              "source": "crates/tool/Cargo.toml",
+              "pointer": "/package/rust-version",
               "description": "Cargo.toml inherits rust-version from the workspace."
             }
           ]

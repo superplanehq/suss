@@ -1119,7 +1119,12 @@
             {
               "kind": "declaration",
               "source": "Cargo.toml",
-              "pointer": "/workspace/package/rust-version",
+              "pointer": "/workspace/package/rust-version"
+            },
+            {
+              "kind": "declaration",
+              "source": "clap_bench/Cargo.toml",
+              "pointer": "/package/rust-version",
               "description": "Cargo.toml inherits rust-version from the workspace."
             }
           ]
@@ -1241,7 +1246,12 @@
             {
               "kind": "declaration",
               "source": "Cargo.toml",
-              "pointer": "/workspace/package/rust-version",
+              "pointer": "/workspace/package/rust-version"
+            },
+            {
+              "kind": "declaration",
+              "source": "clap_builder/Cargo.toml",
+              "pointer": "/package/rust-version",
               "description": "Cargo.toml inherits rust-version from the workspace."
             }
           ]
@@ -1402,7 +1412,12 @@
             {
               "kind": "declaration",
               "source": "Cargo.toml",
-              "pointer": "/workspace/package/rust-version",
+              "pointer": "/workspace/package/rust-version"
+            },
+            {
+              "kind": "declaration",
+              "source": "clap_complete/Cargo.toml",
+              "pointer": "/package/rust-version",
               "description": "Cargo.toml inherits rust-version from the workspace."
             }
           ]
@@ -1563,7 +1578,12 @@
             {
               "kind": "declaration",
               "source": "Cargo.toml",
-              "pointer": "/workspace/package/rust-version",
+              "pointer": "/workspace/package/rust-version"
+            },
+            {
+              "kind": "declaration",
+              "source": "clap_complete_nushell/Cargo.toml",
+              "pointer": "/package/rust-version",
               "description": "Cargo.toml inherits rust-version from the workspace."
             }
           ]
@@ -1724,7 +1744,12 @@
             {
               "kind": "declaration",
               "source": "Cargo.toml",
-              "pointer": "/workspace/package/rust-version",
+              "pointer": "/workspace/package/rust-version"
+            },
+            {
+              "kind": "declaration",
+              "source": "clap_derive/Cargo.toml",
+              "pointer": "/package/rust-version",
               "description": "Cargo.toml inherits rust-version from the workspace."
             }
           ]
@@ -1846,7 +1871,12 @@
             {
               "kind": "declaration",
               "source": "Cargo.toml",
-              "pointer": "/workspace/package/rust-version",
+              "pointer": "/workspace/package/rust-version"
+            },
+            {
+              "kind": "declaration",
+              "source": "clap_lex/Cargo.toml",
+              "pointer": "/package/rust-version",
               "description": "Cargo.toml inherits rust-version from the workspace."
             }
           ]
@@ -2007,7 +2037,12 @@
             {
               "kind": "declaration",
               "source": "Cargo.toml",
-              "pointer": "/workspace/package/rust-version",
+              "pointer": "/workspace/package/rust-version"
+            },
+            {
+              "kind": "declaration",
+              "source": "clap_mangen/Cargo.toml",
+              "pointer": "/package/rust-version",
               "description": "Cargo.toml inherits rust-version from the workspace."
             }
           ]
