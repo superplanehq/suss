@@ -484,10 +484,10 @@ func TestDetectLeavesUnresolvedComposerWorkingDirOnTheParent(t *testing.T) {
 jobs:
   test:
     steps:
-      - run: composer --working-dir=${{ inputs.dir }} test
+      - run: composer --working-dir=${{ inputs.dir }} exec phpunit
 `,
 	})
-	dirs := commandDirectories(result, "test")
+	dirs := commandDirectories(result, "phpunit")
 	if !slices.Equal(dirs, []string{"."}) {
 		t.Fatalf("directories = %v, want the parent project", dirs)
 	}
