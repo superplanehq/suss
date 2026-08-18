@@ -332,5 +332,5 @@ func rustTokenStart(b []byte, i int) bool {
 		return true
 	}
 	c := b[i-1]
-	return !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')
+	return (c < 'A' || c > 'Z') && (c < 'a' || c > 'z') && (c < '0' || c > '9') && c != '_'
 }
