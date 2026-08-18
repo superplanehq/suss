@@ -108,11 +108,21 @@ func ParseToolchainFile(contents string) string {
 }
 
 func parseToolchainFile(contents string) toolchainFile {
-	trimmed := strings.TrimSpace(contents)
-	if strings.HasPrefix(trimmed, "[") {
+	if toolchainFileLooksLikeTOML(contents) {
 		return toolchainFile{Channel: tomlValueAt(contents, "toolchain.channel")}
 	}
 	return toolchainFile{Channel: firstVersionLine(contents)}
+}
+
+func toolchainFileLooksLikeTOML(contents string) bool {
+	for _, raw := range strings.Split(contents, "\n") {
+		line := stripTOMLComment(raw)
+		if line == "" {
+			continue
+		}
+		return strings.HasPrefix(line, "[")
+	}
+	return false
 }
 
 func tomlValueAt(contents, path string) string {

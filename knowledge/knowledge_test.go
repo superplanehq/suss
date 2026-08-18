@@ -560,6 +560,20 @@ func TestRewriteDirectoryFlagsStripsCargoPaths(t *testing.T) {
 		t.Fatalf("RewriteDirectoryFlags(-C) = %q, want cargo +nightly test", got)
 	}
 	got = RewriteDirectoryFlags(
+		`cargo test --manifest-path crates/tool/Cargo.toml --features "foo bar"`,
+		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml", "--features", "foo bar"}},
+	)
+	if got != `cargo test --features "foo bar"` {
+		t.Fatalf("RewriteDirectoryFlags(quoted features) = %q, want quotes preserved", got)
+	}
+	got = RewriteDirectoryFlags(
+		`cargo -C crates/tool test --features 'foo bar'`,
+		Invocation{Executable: "cargo", Args: []string{"-C", "crates/tool", "test", "--features", "foo bar"}},
+	)
+	if got != `cargo test --features 'foo bar'` {
+		t.Fatalf("RewriteDirectoryFlags(quoted -C) = %q, want quotes preserved", got)
+	}
+	got = RewriteDirectoryFlags(
 		"yarn --cwd ./packages/app test",
 		Invocation{Executable: "yarn", Args: []string{"--cwd", "./packages/app", "test"}},
 	)

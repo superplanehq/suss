@@ -312,6 +312,118 @@ func TestApplyFoldsNewerCIToolchainIntoCargoMSRV(t *testing.T) {
 	}
 }
 
+func TestApplyConflictsCIPinAgainstExactRustWhenMSRVWouldAccept(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{
+		{
+			Kind:       plan.RequirementRuntime,
+			Name:       "rust",
+			Version:    "1.81.0",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "rust-toolchain.toml"}},
+		},
+		{
+			Kind:       plan.RequirementRuntime,
+			Name:       "rust",
+			Version:    ">=1.74",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "Cargo.toml", Pointer: "/package/rust-version"}},
+		},
+	}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{plan.RequirementFinding{
+			ProjectPath: ".",
+			Requirement: plan.Requirement{
+				Kind:       plan.RequirementRuntime,
+				Name:       "rust",
+				Version:    "1.82.0",
+				Confidence: plan.ConfidenceHigh,
+				Evidence:   []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/test/steps/1/uses"}},
+			},
+		}},
+	})
+
+	if len(got[0].Conflicts) != 1 || got[0].Conflicts[0].Subject != "runtime.rust.version" {
+		t.Fatalf("conflicts = %+v, want CI 1.82.0 to contradict the exact 1.81.0 pin", got[0].Conflicts)
+	}
+	if got[0].Conflicts[0].Assertions[0].Value != "1.81.0" || got[0].Conflicts[0].Assertions[1].Value != "1.82.0" {
+		t.Fatalf("assertions = %+v, want 1.81.0 vs 1.82.0", got[0].Conflicts[0].Assertions)
+	}
+	if len(got[0].Requirements) != 2 {
+		t.Fatalf("requirements = %+v, want the exact pin and the MSRV", got[0].Requirements)
+	}
+}
+
+func TestApplyRecordsMatrixExtraAgainstExactRustInsteadOfFoldingIntoMSRV(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{
+		{
+			Kind:       plan.RequirementRuntime,
+			Name:       "rust",
+			Version:    "1.81.0",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "rust-toolchain.toml"}},
+		},
+		{
+			Kind:       plan.RequirementRuntime,
+			Name:       "rust",
+			Version:    ">=1.74",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "Cargo.toml", Pointer: "/package/rust-version"}},
+		},
+	}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{
+			plan.RequirementFinding{
+				ProjectPath: ".",
+				Requirement: plan.Requirement{
+					Kind:       plan.RequirementRuntime,
+					Name:       "rust",
+					Version:    "1.81.0",
+					Confidence: plan.ConfidenceHigh,
+					Evidence:   []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/test/steps/1/with/toolchain"}},
+				},
+			},
+			plan.RequirementFinding{
+				ProjectPath: ".",
+				Requirement: plan.Requirement{
+					Kind:       plan.RequirementRuntime,
+					Name:       "rust",
+					Version:    "1.82.0",
+					Confidence: plan.ConfidenceHigh,
+					Evidence:   []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/test/steps/1/with/toolchain"}},
+				},
+			},
+		},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want matrix extras recorded as facts", got[0].Conflicts)
+	}
+	var rustVersions []string
+	for _, requirement := range got[0].Requirements {
+		if requirement.Name == "rust" {
+			rustVersions = append(rustVersions, requirement.Version)
+		}
+	}
+	if !slices.Equal(rustVersions, []string{"1.81.0", ">=1.74"}) {
+		t.Fatalf("rust versions = %v, want exact pin plus MSRV", rustVersions)
+	}
+	var extras []string
+	for _, fact := range got[0].Facts {
+		if fact.Name == "ci.matrix.rust" {
+			extras = append(extras, fact.Value)
+		}
+	}
+	if !slices.Equal(extras, []string{"1.82.0"}) {
+		t.Fatalf("facts = %+v, want ci.matrix.rust=1.82.0", got[0].Facts)
+	}
+}
+
 func TestApplyDoesNotAddMatrixVersionsAsExtraRequirementsOnAPin(t *testing.T) {
 	t.Parallel()
 

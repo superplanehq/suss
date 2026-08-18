@@ -532,6 +532,23 @@ func TestParseToolchainFile(t *testing.T) {
 	if got := ParseToolchainFile("# comment\nstable\n"); got != "stable" {
 		t.Fatalf("ParseToolchainFile(channel) = %q, want stable", got)
 	}
+	if got := ParseToolchainFile("# SPDX-License-Identifier: MIT\n\n[toolchain]\nchannel = \"1.81.0\"\n"); got != "1.81.0" {
+		t.Fatalf("ParseToolchainFile(commented toml) = %q, want 1.81.0", got)
+	}
+}
+
+func TestDetectReadsToolchainFileWithLeadingComments(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml":          "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		"src/lib.rs":          "pub fn ok() {}\n",
+		"rust-toolchain.toml": "# SPDX-License-Identifier: MIT\n\n[toolchain]\nchannel = \"1.81.0\"\n",
+	})
+	project := assembleProject(t, ".", result)
+	if len(project.Requirements) != 1 || project.Requirements[0].Version != "1.81.0" {
+		t.Fatalf("requirements = %+v, want rust 1.81.0 from commented toolchain file", project.Requirements)
+	}
 }
 
 func detectFiles(t *testing.T, files map[string]string) provider.Result {

@@ -87,7 +87,36 @@ func matchExistingRuntime(project plan.ProjectPlan, indexes []int, version strin
 			return index, runtimeEqual
 		}
 	}
+
+	exact, ranges := partitionRuntimeIndexes(project, indexes)
+	if kind, index, ok := matchRuntimeGroup(project, exact, version); ok {
+		if kind != runtimeUnevaluable || len(ranges) == 0 {
+			return index, kind
+		}
+	}
+	if kind, index, ok := matchRuntimeGroup(project, ranges, version); ok {
+		return index, kind
+	}
+	return indexes[0], runtimeMatrixExtra
+}
+
+func partitionRuntimeIndexes(project plan.ProjectPlan, indexes []int) (exact, ranges []int) {
+	for _, index := range indexes {
+		if isVersionConstraint(project.Requirements[index].Version) {
+			ranges = append(ranges, index)
+			continue
+		}
+		exact = append(exact, index)
+	}
+	return exact, ranges
+}
+
+func matchRuntimeGroup(project plan.ProjectPlan, indexes []int, version string) (runtimeMatchKind, int, bool) {
+	if len(indexes) == 0 {
+		return 0, 0, false
+	}
 	unevaluable := -1
+	failed := -1
 	for _, index := range indexes {
 		ok, known := versionSatisfies(project.Requirements[index].Name, project.Requirements[index].Version, version)
 		if !known {
@@ -97,13 +126,36 @@ func matchExistingRuntime(project plan.ProjectPlan, indexes []int, version strin
 			continue
 		}
 		if ok {
-			return index, runtimeSatisfies
+			return runtimeSatisfies, index, true
+		}
+		if failed < 0 {
+			failed = index
 		}
 	}
-	if unevaluable >= 0 {
-		return unevaluable, runtimeUnevaluable
+	if failed >= 0 {
+		return runtimeMatrixExtra, failed, true
 	}
-	return indexes[0], runtimeMatrixExtra
+	if unevaluable >= 0 {
+		return runtimeUnevaluable, unevaluable, true
+	}
+	return runtimeMatrixExtra, indexes[0], true
+}
+
+func isVersionConstraint(version string) bool {
+	version = strings.TrimSpace(version)
+	if version == "" {
+		return false
+	}
+	switch {
+	case strings.HasPrefix(version, ">="), strings.HasPrefix(version, "<="),
+		strings.HasPrefix(version, ">"), strings.HasPrefix(version, "<"),
+		strings.HasPrefix(version, "^"), strings.HasPrefix(version, "~"):
+		return true
+	case strings.Contains(version, "||"), strings.ContainsAny(version, "xX*"):
+		return true
+	default:
+		return false
+	}
 }
 
 func runtimeIndexes(project plan.ProjectPlan, name string) []int {

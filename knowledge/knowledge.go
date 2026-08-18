@@ -328,6 +328,14 @@ func parseInvocation(part string) (Invocation, bool) {
 }
 
 func splitShell(part string) []string {
+	return splitShellTokens(part, false)
+}
+
+func splitShellQuoted(part string) []string {
+	return splitShellTokens(part, true)
+}
+
+func splitShellTokens(part string, keepQuotes bool) []string {
 	var tokens []string
 	var current strings.Builder
 	inSingle, inDouble := false, false
@@ -363,8 +371,14 @@ func splitShell(part string) []string {
 		switch {
 		case r == '\'' && !inDouble:
 			inSingle = !inSingle
+			if keepQuotes {
+				current.WriteRune(r)
+			}
 		case r == '"' && !inSingle:
 			inDouble = !inDouble
+			if keepQuotes {
+				current.WriteRune(r)
+			}
 		case startsComment(inSingle, inDouble, current.String()) && r == '#':
 			flush()
 			return tokens

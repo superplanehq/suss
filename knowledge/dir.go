@@ -53,11 +53,11 @@ func RewriteDirectoryFlags(raw string, inv Invocation) string {
 }
 
 func stripCargoDirectoryFlagsFromRun(redacted string) string {
-	tokens := splitShell(redacted)
+	tokens := splitShellQuoted(redacted)
 	var prefix []string
 	i := 0
 	for i < len(tokens) {
-		name, _, ok := strings.Cut(tokens[i], "=")
+		name, _, ok := strings.Cut(unquoteShellToken(tokens[i]), "=")
 		if !ok || name == "" || strings.ContainsAny(name, "/\\") {
 			break
 		}
@@ -65,15 +65,52 @@ func stripCargoDirectoryFlagsFromRun(redacted string) string {
 		i++
 	}
 	rest := tokens[i:]
-	if len(rest) == 0 || canonicalizeExecutable(rest[0]) != "cargo" {
+	if len(rest) == 0 || canonicalizeExecutable(unquoteShellToken(rest[0])) != "cargo" {
 		return redacted
 	}
 	args := rest[1:]
-	args, _ = stripFlag(args, "-C", "")
-	args, _ = stripManifestPath(args, "")
-	out := append(append([]string{}, prefix...), "cargo")
+	args, _ = stripFlagQuoted(args, "-C", "")
+	args, _ = stripFlagQuoted(args, "--manifest-path", "")
+	out := append(append([]string{}, prefix...), rest[0])
 	out = append(out, args...)
 	return strings.Join(out, " ")
+}
+
+func stripFlagQuoted(args []string, name, current string) ([]string, string) {
+	out := make([]string, 0, len(args))
+	dir := current
+	for i := 0; i < len(args); i++ {
+		arg := unquoteShellToken(args[i])
+		if arg == "--" {
+			out = append(out, args[i:]...)
+			return out, dir
+		}
+		if arg == name {
+			if i+1 < len(args) {
+				dir = unquoteShellToken(args[i+1])
+				i++
+			}
+			continue
+		}
+		prefix := name + "="
+		if strings.HasPrefix(arg, prefix) {
+			dir = strings.TrimPrefix(arg, prefix)
+			continue
+		}
+		out = append(out, args[i])
+	}
+	return out, dir
+}
+
+func unquoteShellToken(token string) string {
+	if len(token) < 2 {
+		return token
+	}
+	quote := token[0]
+	if (quote == '"' || quote == '\'') && token[len(token)-1] == quote {
+		return token[1 : len(token)-1]
+	}
+	return token
 }
 
 func stripFlag(args []string, name, current string) ([]string, string) {
