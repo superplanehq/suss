@@ -137,9 +137,6 @@ func extractCommands(ctx provider.Context, source, base, pointer string, command
 func expandStatementDirectories(repo string, currents []string, stmt knowledge.Statement, matrix map[string][]string) []string {
 	rel := stmt.Chdir
 	if rel == "" {
-		rel = stmt.WorkingDir
-	}
-	if rel == "" {
 		rel = knowledge.WorkingDirectory(stmt.Raw, stmt.Invocation)
 	}
 	if rel == "" {

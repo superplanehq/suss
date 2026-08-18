@@ -61,12 +61,29 @@ func RewriteDirectoryFlags(raw string, inv Invocation) string {
 func WorkingDirectory(raw string, inv Invocation) string {
 	dir, _ := StripDirectoryFlags(inv)
 	if dir == "" {
+		tokens := splitShell(raw)
+		_, rest := takeLeadingAssignments(tokens)
+		dir = workingDirectoryFlag(rest)
+	}
+	if dir == "" {
 		return ""
 	}
-	if canonicalizeExecutable(inv.Executable) == "cargo" && statementHasShellRelativePaths(raw) {
+	if cargoCommand(raw, inv) && statementHasShellRelativePaths(raw) {
 		return ""
 	}
 	return dir
+}
+
+func cargoCommand(raw string, inv Invocation) bool {
+	if canonicalizeExecutable(inv.Executable) == "cargo" {
+		return true
+	}
+	tokens := splitShell(raw)
+	_, rest := takeLeadingAssignments(tokens)
+	if len(rest) == 0 {
+		return false
+	}
+	return canonicalizeExecutable(rest[0]) == "cargo"
 }
 
 func statementHasShellRelativePaths(raw string) bool {

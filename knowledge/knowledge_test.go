@@ -633,6 +633,11 @@ func TestWorkingDirectoryKeepsShellCwdForCargoRedirects(t *testing.T) {
 	if got := WorkingDirectory("cargo -C crate test | tee result.log", inv); got != "" {
 		t.Fatalf("WorkingDirectory(pipe) = %q, want empty", got)
 	}
+
+	phpunit := Invocation{Executable: "phpunit"}
+	if got := WorkingDirectory("composer -d tools exec phpunit", phpunit); got != "tools" {
+		t.Fatalf("WorkingDirectory(composer exec) = %q, want tools after unwrap", got)
+	}
 }
 
 func TestStripDirectoryFlagsLeavesDynamicCargoPaths(t *testing.T) {

@@ -149,9 +149,13 @@ func isVersionConstraint(version string) bool {
 	switch {
 	case strings.HasPrefix(version, ">="), strings.HasPrefix(version, "<="),
 		strings.HasPrefix(version, ">"), strings.HasPrefix(version, "<"),
-		strings.HasPrefix(version, "^"), strings.HasPrefix(version, "~"):
+		strings.HasPrefix(version, "^"), strings.HasPrefix(version, "~"),
+		strings.HasPrefix(version, "!="), strings.HasPrefix(version, "<>"),
+		strings.HasPrefix(version, "=="), strings.HasPrefix(version, "="):
 		return true
-	case strings.Contains(version, "||"), strings.ContainsAny(version, "xX*"):
+	case strings.Contains(version, "||"), strings.Contains(version, "|"),
+		strings.Contains(version, ","), strings.Contains(version, " - "),
+		strings.ContainsAny(version, "xX*"):
 		return true
 	default:
 		return false

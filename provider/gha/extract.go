@@ -498,10 +498,7 @@ func statementDirectories(repo, current string, stmt knowledge.Statement, matrix
 	if stmt.Chdir != "" {
 		return expandDirectories(repo, current, stmt.Chdir, matrix)
 	}
-	rel := stmt.WorkingDir
-	if rel == "" {
-		rel = knowledge.WorkingDirectory(stmt.Raw, stmt.Invocation)
-	}
+	rel := knowledge.WorkingDirectory(stmt.Raw, stmt.Invocation)
 	if rel == "" {
 		return []string{current}
 	}
