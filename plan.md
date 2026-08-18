@@ -165,6 +165,7 @@ Scope:
 - Preserve commands without interpretations in a separate, secondary section without guessing what they do.
 - Move requirements, detected properties, facts, configured-tool notices, and evidence into supporting sections after the commands.
 - Omit high-confidence fixture projects from the main human listing, report how many were omitted, and keep them available in JSON. Medium-confidence `examples` projects remain visible.
+- Prune conventional generated and dependency trees consistently during discovery and repository-scoped scans. Review dogfooding exposed a repository-local Go module cache under `tmp/` that otherwise appeared as projects and Compose evidence.
 - Make the hierarchy work in plain text. Terminal styling is optional enhancement only and must never be the sole means of conveying structure.
 
 Acceptance:
@@ -173,9 +174,9 @@ Acceptance:
 - Interpreted setup/build/test/lint/format/type-check/run commands are the first substantive content in each covered project, with human-readable purpose labels.
 - A contextual variant is omitted from human output when its command and displayed directory are identical to the primary row; it remains in the JSON document as provenance.
 - Uninterpreted commands remain visible, and ambiguities, conflicts, project details, and evidence retain their existing information.
-- The versioned JSON document and provider behavior are unchanged.
+- The JSON schema is unchanged. Fixture filtering is presentation-only; generated and dependency trees are excluded before providers emit findings.
 
-Status: implementation revised after review exposed fixture projects receiving misleading first-class prominence; awaiting follow-up review.
+Status: implementation revised after review exposed fixture projects receiving misleading first-class prominence and a repository-local Go module cache leaking into project and Compose discovery; awaiting follow-up review.
 
 ## Milestone 7 — Elixir provider, Semaphore provider, dogfood
 

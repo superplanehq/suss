@@ -30,6 +30,7 @@ var skippedDirectories = map[string]struct{}{
 	"deps":         {},
 	"dist":         {},
 	"target":       {},
+	"tmp":          {},
 }
 
 func findProjectRoots(root string) ([]string, error) {
@@ -82,8 +83,9 @@ func shouldSkipDirectory(entry fs.DirEntry) bool {
 	return entry.Type()&os.ModeSymlink != 0
 }
 
-// Fixture-like roots are reported, not hidden. Path evidence is attached as
-// project.role=fixture so consumers can filter without losing visibility.
+// Fixture-like roots remain in the versioned document. Path evidence is
+// attached as project.role=fixture so renderers and other consumers can filter
+// them without losing visibility in the underlying plan.
 // testdata, fixtures, and __fixtures__ are high-confidence; examples is
 // medium because real packages sometimes live there.
 var fixtureSegments = map[string]plan.Confidence{

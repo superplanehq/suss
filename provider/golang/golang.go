@@ -204,7 +204,7 @@ func walkSkipDir(name string) bool {
 		return true
 	}
 	switch name {
-	case "vendor", "testdata", "node_modules", "_build", "deps", "dist", "target":
+	case "vendor", "testdata", "node_modules", "_build", "deps", "dist", "target", "tmp":
 		return true
 	default:
 		return false

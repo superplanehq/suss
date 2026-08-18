@@ -60,6 +60,7 @@ var skippedDirectories = map[string]struct{}{
 	"deps":         {},
 	"dist":         {},
 	"target":       {},
+	"tmp":          {},
 }
 
 // Provider detects Docker Compose files at the repository root and below.

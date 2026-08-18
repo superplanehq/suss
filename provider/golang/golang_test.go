@@ -132,6 +132,20 @@ func TestDetectIgnoresNestedModuleTestFiles(t *testing.T) {
 	}
 }
 
+func TestDetectIgnoresTestFilesInTemporaryDependencyCaches(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"go.mod": "module example.com/root\n\ngo 1.22\n",
+		"tmp/go/pkg/mod/example.com/module/module_test.go": "package module\n",
+	})
+	project := assembleProject(t, ".", result)
+
+	if _, ok := commandRuns(project.Commands)["test"]; ok {
+		t.Fatalf("commands = %+v, did not want a test inferred from a temporary dependency cache", project.Commands)
+	}
+}
+
 func TestDetectUsesNestedProjectPathsInEvidence(t *testing.T) {
 	t.Parallel()
 

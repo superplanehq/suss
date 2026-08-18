@@ -21,6 +21,7 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	writeFile(t, filepath.Join(root, "node_modules", "left-pad", "package.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "vendor", "module", "go.mod"), "module example.com/vendored\n\ngo 1.26\n")
 	writeFile(t, filepath.Join(root, "deps", "plug", "mix.exs"), "defmodule Plug.MixProject do\nend\n")
+	writeFile(t, filepath.Join(root, "tmp", "go", "pkg", "mod", "modernc.org", "sqlite@v1.20.3", "vfs", "Makefile"), "build:\n")
 	writeFile(t, filepath.Join(root, ".hidden", "go.mod"), "module example.com/hidden\n\ngo 1.26\n")
 
 	got, err := findProjectRoots(root)

@@ -867,6 +867,22 @@ func TestDetectRecordsIncludeLimitationAndSkipsDotDirectories(t *testing.T) {
 	}
 }
 
+func TestDetectSkipsTemporaryDependencyCaches(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"compose.yaml": "services:\n  app:\n    image: example/app:1\n",
+		"tmp/go/pkg/mod/example.com/dependency@v1.0.0/docker-compose.yml": "services:\n  dependency:\n    image: redis:7\n",
+	})
+
+	if hasRequirement(result, plan.RequirementService, "dependency", "7") {
+		t.Fatalf("temporary dependency cache was inspected: %+v", result.Findings)
+	}
+	if !hasRequirement(result, plan.RequirementService, "app", "1") {
+		t.Fatalf("root Compose file was not inspected: %+v", result.Findings)
+	}
+}
+
 func TestDetectFindsNestedComposeFiles(t *testing.T) {
 	t.Parallel()
 
