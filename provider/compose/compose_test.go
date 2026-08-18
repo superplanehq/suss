@@ -64,6 +64,12 @@ services:
 	if !hasEnv(result, "EMPTY_VAR", false) {
 		t.Fatalf("missing EMPTY_VAR without default in %+v", result.Findings)
 	}
+	if src, ptr := envEvidence(result, "REDIS_URL"); src != "compose.yaml" || ptr != "/services/redis/environment/0" {
+		t.Fatalf("REDIS_URL evidence = %s#%s, want compose.yaml#/services/redis/environment/0", src, ptr)
+	}
+	if src, ptr := envEvidence(result, "DATABASE_URL"); src != "compose.yaml" || ptr != "/services/postgres/environment/DATABASE_URL" {
+		t.Fatalf("DATABASE_URL evidence = %s#%s, want compose.yaml#/services/postgres/environment/DATABASE_URL", src, ptr)
+	}
 	if envValueExposed(result) {
 		t.Fatalf("environment values were exposed in %+v", result.Findings)
 	}
@@ -240,8 +246,11 @@ services:
 	if !hasRequirement(result, plan.RequirementService, "cache", "7") {
 		t.Fatalf("missing override-only cache service in %+v", result.Findings)
 	}
-	if hasEnvName(result, "BASE_VERSION") {
-		t.Fatalf("interpolation from the overridden image was kept: %+v", result.Findings)
+	if !hasEnv(result, "BASE_VERSION", true) {
+		t.Fatalf("missing BASE_VERSION from the base image interpolation: %+v", result.Findings)
+	}
+	if src, ptr := envEvidence(result, "BASE_VERSION"); src != "compose.yaml" || ptr != "/services/db/image" {
+		t.Fatalf("BASE_VERSION evidence = %s#%s, want compose.yaml#/services/db/image", src, ptr)
 	}
 	if !hasEnv(result, "HOST_PORT", false) {
 		t.Fatalf("missing HOST_PORT from the surviving base ports in %+v", result.Findings)
@@ -309,8 +318,8 @@ services:
 	if !hasEnv(result, "HOST_PORT", false) {
 		t.Fatalf("missing HOST_PORT after override appended a different port: %+v", result.Findings)
 	}
-	if hasEnvName(result, "DATA_DIR") {
-		t.Fatalf("DATA_DIR survived replacement of the same volume target: %+v", result.Findings)
+	if !hasEnv(result, "DATA_DIR", false) {
+		t.Fatalf("missing DATA_DIR from the base volume interpolation: %+v", result.Findings)
 	}
 	if !hasEnv(result, "BACKUP_DIR", false) {
 		t.Fatalf("missing BACKUP_DIR from the unmerged volume: %+v", result.Findings)
@@ -318,8 +327,8 @@ services:
 	if !hasEnv(result, "LOG_DIR", false) {
 		t.Fatalf("missing LOG_DIR from the override volume: %+v", result.Findings)
 	}
-	if hasEnvName(result, "OLD_CMD") {
-		t.Fatalf("command interpolation from the replaced sequence was kept: %+v", result.Findings)
+	if !hasEnv(result, "OLD_CMD", false) {
+		t.Fatalf("missing OLD_CMD from the base command interpolation: %+v", result.Findings)
 	}
 	if !hasEnv(result, "DNS_A", false) || !hasEnv(result, "DNS_B", false) {
 		t.Fatalf("dns sequences were not appended: %+v", result.Findings)
@@ -433,8 +442,8 @@ services:
 `,
 	})
 
-	if hasEnvName(result, "HOST_PORT") {
-		t.Fatalf("!reset ports kept the base interpolation: %+v", result.Findings)
+	if !hasEnv(result, "HOST_PORT", false) {
+		t.Fatalf("missing HOST_PORT from the base ports interpolation: %+v", result.Findings)
 	}
 	if hasEnvName(result, "FOO") {
 		t.Fatalf("!reset environment key was retained: %+v", result.Findings)
@@ -540,14 +549,144 @@ services:
 `,
 	})
 
-	if hasEnvName(result, "BUILD_TOKEN") {
-		t.Fatalf("BUILD_TOKEN survived after override replaced the same build arg: %+v", result.Findings)
+	if !hasEnv(result, "BUILD_TOKEN", false) {
+		t.Fatalf("missing BUILD_TOKEN from the base build arg interpolation: %+v", result.Findings)
 	}
 	if !hasEnv(result, "KEEP_ARG", false) {
 		t.Fatalf("missing KEEP_ARG from the unmerged build arg in %+v", result.Findings)
 	}
-	if hasEnvName(result, "DB_IP") {
-		t.Fatalf("DB_IP survived after override replaced extra_hosts db: %+v", result.Findings)
+	if !hasEnv(result, "DB_IP", false) {
+		t.Fatalf("missing DB_IP from the base extra_hosts interpolation: %+v", result.Findings)
+	}
+}
+
+func TestDetectKeepsInterpolationsFromEachComposeFile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"compose.yaml": `
+services:
+  web:
+    image: web:${BASE_TAG}
+`,
+		"compose.override.yaml": `
+services:
+  web:
+    image: web:latest
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementService, "web", "latest") {
+		t.Fatalf("missing overridden web:latest in %+v", result.Findings)
+	}
+	if !hasEnv(result, "BASE_TAG", false) {
+		t.Fatalf("missing BASE_TAG from the base image interpolation: %+v", result.Findings)
+	}
+	if src, ptr := envEvidence(result, "BASE_TAG"); src != "compose.yaml" || ptr != "/services/web/image" {
+		t.Fatalf("BASE_TAG evidence = %s#%s, want compose.yaml#/services/web/image", src, ptr)
+	}
+}
+
+func TestDetectAcceptsResetNullOnExtractedFields(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"compose.yaml": `
+services:
+  web:
+    image: nginx:latest
+    environment:
+      TOKEN: value
+      KEEP: yes
+`,
+		"compose.override.yaml": `
+services:
+  web:
+    environment: !reset null
+`,
+	})
+
+	if hasEnvName(result, "TOKEN") || hasEnvName(result, "KEEP") {
+		t.Fatalf("!reset null kept the base environment: %+v", result.Findings)
+	}
+}
+
+func TestDetectPointsNormalizedListEnvironmentAtSequenceIndex(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"compose.yaml": `
+services:
+  web:
+    image: nginx:latest
+    environment:
+      - TOKEN=value
+      - KEEP=
+`,
+		"compose.override.yaml": `
+services:
+  web:
+    environment:
+      OTHER: x
+`,
+	})
+
+	if src, ptr := envEvidence(result, "TOKEN"); src != "compose.yaml" || ptr != "/services/web/environment/0" {
+		t.Fatalf("TOKEN evidence = %s#%s, want compose.yaml#/services/web/environment/0", src, ptr)
+	}
+	if src, ptr := envEvidence(result, "KEEP"); src != "compose.yaml" || ptr != "/services/web/environment/1" {
+		t.Fatalf("KEEP evidence = %s#%s, want compose.yaml#/services/web/environment/1", src, ptr)
+	}
+	if src, ptr := envEvidence(result, "OTHER"); src != "compose.override.yaml" || ptr != "/services/web/environment/OTHER" {
+		t.Fatalf("OTHER evidence = %s#%s, want compose.override.yaml#/services/web/environment/OTHER", src, ptr)
+	}
+}
+
+func TestDetectPointsReplacedEnvironmentAtWinningValue(t *testing.T) {
+	t.Parallel()
+
+	replaced := detectFiles(t, map[string]string{
+		"compose.yaml": `
+services:
+  web:
+    image: nginx:latest
+    environment:
+      TOKEN: base
+`,
+		"compose.override.yaml": `
+services:
+  web:
+    environment:
+      - TOKEN=override
+`,
+	})
+
+	if src, ptr := envEvidence(replaced, "TOKEN"); src != "compose.override.yaml" || ptr != "/services/web/environment/0" {
+		t.Fatalf("TOKEN evidence = %s#%s, want compose.override.yaml#/services/web/environment/0", src, ptr)
+	}
+
+	reindexed := detectFiles(t, map[string]string{
+		"compose.yaml": `
+services:
+  web:
+    image: nginx:latest
+    environment:
+      - OTHER=x
+      - TOKEN=base
+`,
+		"compose.override.yaml": `
+services:
+  web:
+    environment:
+      - TOKEN=override
+`,
+	})
+
+	if src, ptr := envEvidence(reindexed, "TOKEN"); src != "compose.override.yaml" || ptr != "/services/web/environment/0" {
+		t.Fatalf("reindexed TOKEN evidence = %s#%s, want compose.override.yaml#/services/web/environment/0", src, ptr)
+	}
+	if src, ptr := envEvidence(reindexed, "OTHER"); src != "compose.yaml" || ptr != "/services/web/environment/0" {
+		t.Fatalf("OTHER evidence = %s#%s, want compose.yaml#/services/web/environment/0", src, ptr)
 	}
 }
 

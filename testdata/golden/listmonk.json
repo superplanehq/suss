@@ -270,7 +270,7 @@
             {
               "kind": "declaration",
               "source": "dev/docker-compose.yml",
-              "pointer": "/services/front/environment/LISTMONK_API_URL"
+              "pointer": "/services/front/environment/0"
             }
           ]
         },
@@ -424,7 +424,7 @@
             {
               "kind": "declaration",
               "source": "dev/docker-compose.yml",
-              "pointer": "/services/db/environment/POSTGRES_DB"
+              "pointer": "/services/db/environment/2"
             },
             {
               "kind": "declaration",
@@ -443,7 +443,7 @@
             {
               "kind": "declaration",
               "source": "dev/docker-compose.yml",
-              "pointer": "/services/db/environment/POSTGRES_PASSWORD"
+              "pointer": "/services/db/environment/0"
             },
             {
               "kind": "declaration",
@@ -462,7 +462,7 @@
             {
               "kind": "declaration",
               "source": "dev/docker-compose.yml",
-              "pointer": "/services/db/environment/POSTGRES_USER"
+              "pointer": "/services/db/environment/1"
             },
             {
               "kind": "declaration",

@@ -26,6 +26,7 @@ type envVar struct {
 	Name       string
 	HasDefault bool
 	Source     string
+	Pointer    string
 }
 
 type locatedVar struct {
@@ -40,7 +41,12 @@ func parseCompose(contents []byte, source string) (composeFile, error) {
 	if err := yaml.Unmarshal(contents, &root); err != nil {
 		return composeFile{}, err
 	}
-	return extractCompose(resolveMergeKeys(yamlToSourced(root, source, "")))
+	file, err := extractCompose(resolveMergeKeys(yamlToSourced(root, source, "")))
+	if err != nil {
+		return composeFile{}, err
+	}
+	file.Interpolations = interpolationsFromSourced(file.Root, "")
+	return file, nil
 }
 
 func mergeCompose(base, override composeFile) (composeFile, error) {
@@ -49,6 +55,7 @@ func mergeCompose(base, override composeFile) (composeFile, error) {
 		return composeFile{}, err
 	}
 	merged.HasInclude = base.HasInclude || override.HasInclude
+	merged.Interpolations = append(append([]locatedVar{}, base.Interpolations...), override.Interpolations...)
 	return merged, nil
 }
 
@@ -66,10 +73,9 @@ func extractCompose(root sourcedNode) (composeFile, error) {
 		services[name] = serviceFromNode(pair.value)
 	}
 	return composeFile{
-		HasInclude:     !isZeroSourced(mappingValue(doc, "include")),
-		Services:       services,
-		Interpolations: interpolationsFromSourced(root, ""),
-		Root:           root,
+		HasInclude: !isZeroSourced(mappingValue(doc, "include")),
+		Services:   services,
+		Root:       root,
 	}, nil
 }
 
@@ -103,18 +109,34 @@ func validateCompose(doc sourcedNode) error {
 }
 
 func validateServiceFields(name string, service sourcedNode) error {
-	image := mappingValue(service, "image")
-	if !isZeroSourced(image) && image.Kind != yaml.ScalarNode {
+	if err := validateImageField(name, mappingValue(service, "image")); err != nil {
+		return err
+	}
+	return validateEnvironmentField(name, mappingValue(service, "environment"))
+}
+
+func validateImageField(name string, image sourcedNode) error {
+	if isAbsentOrReset(image) {
+		return nil
+	}
+	if image.Kind != yaml.ScalarNode {
 		return fmt.Errorf("service %s image must be a string", name)
 	}
-	environment := mappingValue(service, "environment")
-	if isZeroSourced(environment) {
+	return nil
+}
+
+func validateEnvironmentField(name string, environment sourcedNode) error {
+	if isAbsentOrReset(environment) {
 		return nil
 	}
 	if environment.Kind != yaml.MappingNode && environment.Kind != yaml.SequenceNode {
 		return fmt.Errorf("service %s environment must be a mapping or sequence", name)
 	}
 	return nil
+}
+
+func isAbsentOrReset(node sourcedNode) bool {
+	return isZeroSourced(node) || isReset(node)
 }
 
 func serviceFromNode(node sourcedNode) composeService {
@@ -323,6 +345,7 @@ func environmentFromMap(node sourcedNode) []envVar {
 			Name:       name,
 			HasDefault: sourcedScalar(pair.value) != "",
 			Source:     firstNonEmpty(pair.value.Source, pair.key.Source),
+			Pointer:    firstNonEmpty(pair.value.Pointer, pair.key.Pointer),
 		})
 	}
 	return out
@@ -340,7 +363,7 @@ func environmentFromList(node sourcedNode) []envVar {
 			continue
 		}
 		hasDefault := found && strings.TrimSpace(value) != ""
-		out = append(out, envVar{Name: name, HasDefault: hasDefault, Source: item.Source})
+		out = append(out, envVar{Name: name, HasDefault: hasDefault, Source: item.Source, Pointer: item.Pointer})
 	}
 	return out
 }

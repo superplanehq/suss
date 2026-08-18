@@ -306,7 +306,7 @@
             {
               "kind": "declaration",
               "source": "docker-compose.yml",
-              "pointer": "/services/cypress/environment/DISPLAY"
+              "pointer": "/services/cypress/environment/0"
             }
           ]
         },

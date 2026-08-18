@@ -164,7 +164,7 @@ func extractProject(ctx provider.Context, dir string, rels []string) ([]plan.Fin
 	for _, name := range sortedKeys(file.Services) {
 		svc := file.Services[name]
 		findings = append(findings, serviceFinding(dir, name, svc))
-		findings = append(findings, environmentFindings(dir, name, svc.Environment)...)
+		findings = append(findings, environmentFindings(dir, svc.Environment)...)
 	}
 	for _, item := range file.Interpolations {
 		findings = append(findings, interpolationFinding(dir, item))
@@ -229,7 +229,7 @@ func interpolationFinding(dir string, item locatedVar) plan.Finding {
 	}
 }
 
-func environmentFindings(dir, service string, env []envVar) []plan.Finding {
+func environmentFindings(dir string, env []envVar) []plan.Finding {
 	findings := make([]plan.Finding, 0, len(env))
 	for _, item := range env {
 		findings = append(findings, plan.RequirementFinding{
@@ -244,7 +244,7 @@ func environmentFindings(dir, service string, env []envVar) []plan.Finding {
 				Evidence: []plan.Evidence{{
 					Kind:    plan.EvidenceDeclaration,
 					Source:  item.Source,
-					Pointer: jsonPointer("services", service, "environment", item.Name),
+					Pointer: item.Pointer,
 				}},
 			},
 		})
