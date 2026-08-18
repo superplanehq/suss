@@ -516,7 +516,7 @@ func statementDirectories(repo, current string, stmt knowledge.Statement, matrix
 		return expandDirectories(repo, current, stmt.Chdir, matrix)
 	}
 	rel := knowledge.WorkingDirectory(stmt.Raw, stmt.Invocation)
-	if rel == "" {
+	if rel == "" || isExpression(rel) {
 		return []string{current}
 	}
 	return expandDirectories(repo, current, rel, matrix)

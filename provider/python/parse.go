@@ -290,7 +290,7 @@ func poetryScalar(section *tomlSection, key string) string {
 func parseTOML(contents string) map[string]*tomlSection {
 	contents = stripTOMLComments(contents)
 	doc := map[string]*tomlSection{}
-	current := sectionOf(doc, "")
+	section := ""
 	i := 0
 	for i < len(contents) {
 		for i < len(contents) && (contents[i] == ' ' || contents[i] == '\t' || contents[i] == '\n' || contents[i] == '\r') {
@@ -304,11 +304,12 @@ func parseTOML(contents string) map[string]*tomlSection {
 			if !ok {
 				break
 			}
-			current = sectionOf(doc, header)
+			section = header
+			sectionOf(doc, header)
 			i = next
 			continue
 		}
-		key, next, ok := readTOMLKey(contents, i)
+		key, next, quoted, ok := readTOMLKey(contents, i)
 		if !ok {
 			i = skipTOMLLine(contents, i)
 			continue
@@ -321,17 +322,36 @@ func parseTOML(contents string) map[string]*tomlSection {
 		i = skipTOMLSpace(contents, i+1)
 		value, kind, next := readTOMLValue(contents, i)
 		i = next
-		current.keys = appendUnique(current.keys, key)
-		switch kind {
-		case "string":
-			if _, exists := current.scalars[key]; !exists {
-				current.scalars[key] = value
-			}
-		case "array":
-			current.arrays[key] = splitTOMLArray(value)
-		}
+		assignTOML(doc, section, key, value, kind, quoted)
 	}
 	return doc
+}
+
+func assignTOML(doc map[string]*tomlSection, section, key, value, kind string, quoted bool) {
+	if !quoted {
+		if i := strings.LastIndexByte(key, '.'); i >= 0 {
+			prefix := key[:i]
+			leaf := key[i+1:]
+			if prefix != "" && leaf != "" {
+				if section != "" {
+					section = section + "." + prefix
+				} else {
+					section = prefix
+				}
+				key = leaf
+			}
+		}
+	}
+	current := sectionOf(doc, section)
+	current.keys = appendUnique(current.keys, key)
+	switch kind {
+	case "string":
+		if _, exists := current.scalars[key]; !exists {
+			current.scalars[key] = value
+		}
+	case "array":
+		current.arrays[key] = splitTOMLArray(value)
+	}
 }
 
 func sectionOf(doc map[string]*tomlSection, name string) *tomlSection {
@@ -363,26 +383,33 @@ func readTableHeader(contents string, i int) (string, int, bool) {
 	return header, i + end + 1, true
 }
 
-func readTOMLKey(contents string, i int) (string, int, bool) {
+func readTOMLKey(contents string, i int) (key string, next int, quoted, ok bool) {
 	if contents[i] == '"' || contents[i] == '\'' {
 		value, next, ok := readQuoted(contents, i)
-		return value, next, ok
+		return value, next, true, ok
 	}
 	start := i
 	for i < len(contents) {
 		r := contents[i]
-		if r == '=' || r == ' ' || r == '\t' || r == '\n' || r == '.' {
+		if r == '=' || r == ' ' || r == '\t' || r == '\n' {
 			break
 		}
+		if r == '.' {
+			if i+1 >= len(contents) || !isBareKey(contents[i+1]) {
+				break
+			}
+			i++
+			continue
+		}
 		if !isBareKey(r) {
-			return "", start, false
+			return "", start, false, false
 		}
 		i++
 	}
 	if i == start {
-		return "", start, false
+		return "", start, false, false
 	}
-	return contents[start:i], i, true
+	return contents[start:i], i, false, true
 }
 
 func isBareKey(r byte) bool {

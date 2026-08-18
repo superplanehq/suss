@@ -214,7 +214,12 @@ python_version = "3.12"
 	if slices.Contains(sources, "pyproject.toml") {
 		t.Fatalf("Python 3.12 evidence sources = %v, did not want pyproject.toml", sources)
 	}
-	assertCommand(t, commandsByName(result)["install dependencies"], "pipenv install", plan.CapabilityDependenciesInstall)
+	install := commandsByName(result)["install dependencies"]
+	assertCommand(t, install, "pipenv install", plan.CapabilityDependenciesInstall)
+	installSources := commandEvidenceSources(install)
+	if !slices.Contains(installSources, "Pipfile") {
+		t.Fatalf("install evidence sources = %v, want Pipfile", installSources)
+	}
 	assertCommand(t, commandsByName(result)["test"], "pipenv run pytest", plan.CapabilityTestRun)
 }
 
@@ -343,6 +348,57 @@ python_version = "3.12"
 	}
 	assertCommand(t, commandsByName(result)["install dependencies"], "pipenv install", plan.CapabilityDependenciesInstall)
 	assertCommand(t, commandsByName(result)["test"], "pipenv run pytest", plan.CapabilityTestRun)
+}
+
+func TestParsePyprojectDottedProjectKeys(t *testing.T) {
+	t.Parallel()
+
+	parsed := parsePyproject(`
+project.name = "widget"
+project.requires-python = ">=3.12"
+project.dependencies = ["django>=5.0", "pytest"]
+`)
+	if !parsed.HasProjectTable {
+		t.Fatal("dotted project keys did not mark a project table")
+	}
+	if parsed.RequiresPython != ">=3.12" {
+		t.Fatalf("requires-python = %q, want >=3.12", parsed.RequiresPython)
+	}
+	if !hasDependency(parsed, "django") || !hasDependency(parsed, "pytest") {
+		t.Fatalf("dependencies = %+v, want django and pytest", parsed.Dependencies)
+	}
+
+	nested := parsePyproject(`
+[project]
+name = "widget"
+optional-dependencies.dev = ["pytest"]
+`)
+	if !hasDependency(nested, "pytest") {
+		t.Fatalf("dotted optional-dependencies = %+v, want pytest", nested.Dependencies)
+	}
+}
+
+func TestDetectDottedProjectKeysInferInstallAndPytest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+project.name = "widget"
+project.requires-python = ">=3.12"
+project.dependencies = ["django>=5.0", "pytest"]
+`,
+		"manage.py":            "#!/usr/bin/env python\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	if !hasProperty(result, plan.PropertyFramework, "django") {
+		t.Fatalf("missing Django from dotted project.dependencies in %+v", result.Findings)
+	}
+	if !hasRuntime(result, ">=3.12") {
+		t.Fatalf("missing requires-python from dotted keys in %+v", result.Findings)
+	}
+	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -e .", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
 }
 
 func TestParsePyprojectExtractsDjangoExtras(t *testing.T) {
@@ -528,6 +584,32 @@ func TestDetectMypyExtensionsIsNotConfiguredMypy(t *testing.T) {
 	}
 }
 
+func TestDetectPytestPluginInfersPytest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+dependencies = ["pytest-cov"]
+`,
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	test := commandsByName(result)["test"]
+	assertCommand(t, test, "pytest", plan.CapabilityTestRun)
+	found := false
+	for _, evidence := range test.Evidence {
+		if evidence.Pointer == "/dependencies/pytest-cov" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("test evidence = %+v, want /dependencies/pytest-cov", test.Evidence)
+	}
+}
+
 func TestDetectPrefixedPytestCovCitesRequirements(t *testing.T) {
 	t.Parallel()
 
@@ -621,6 +703,14 @@ func assertCommand(t *testing.T, command plan.Command, run string, capability pl
 		}
 	}
 	t.Fatalf("command interpretations = %+v, want %s", command.Interpretations, capability)
+}
+
+func commandEvidenceSources(command plan.Command) []string {
+	sources := make([]string, 0, len(command.Evidence))
+	for _, evidence := range command.Evidence {
+		sources = append(sources, evidence.Source)
+	}
+	return sources
 }
 
 func configuredToolValues(result provider.Result) []string {

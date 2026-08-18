@@ -332,6 +332,37 @@ jobs:
 	}
 }
 
+func TestDetectLeavesUnresolvedUvDirectoryOnTheParent(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: uv --directory ${{ github.workspace }}/backend pytest
+      - run: uv run --directory ${{ github.workspace }}/backend pytest
+`,
+	})
+
+	found := map[string]string{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = item.Command.Directory
+	}
+	for _, run := range []string{
+		"uv --directory ${{ github.workspace }}/backend pytest",
+		"uv run --directory ${{ github.workspace }}/backend pytest",
+	} {
+		if got := found[run]; got != "." {
+			t.Fatalf("%s directory = %q, want the parent project in %+v", run, got, found)
+		}
+	}
+}
+
 func TestDetectAppliesYarnCwdToCommandDirectory(t *testing.T) {
 	t.Parallel()
 

@@ -63,8 +63,20 @@ func installSpec(ctx provider.Context, project pythonProject, choice managerChoi
 			Kind:   plan.EvidenceDeclaration,
 			Source: ctx.SourcePath("requirements.txt"),
 		})
+	} else {
+		spec.evidence = addEvidenceAfterManifest(spec.evidence, selectedManagerEvidence(choice)...)
 	}
 	return spec
+}
+
+func selectedManagerEvidence(choice managerChoice) []plan.Evidence {
+	for _, signal := range choice.signals {
+		if signal.name != choice.selected {
+			continue
+		}
+		return append([]plan.Evidence(nil), signal.evidence...)
+	}
+	return nil
 }
 
 func testCommandSpec(ctx provider.Context, project pythonProject, choice managerChoice) (commandSpec, bool, error) {
@@ -161,6 +173,15 @@ func pytestEvidence(ctx provider.Context, project pythonProject) []plan.Evidence
 			Source:  ctx.SourcePath(depSourceFile(dep, project.Manifest)),
 			Pointer: depPointer("pytest-django"),
 		})
+	}
+	if _, ok := project.Dependencies["pytest"]; !ok {
+		if dep, ok := prefixedDependency(project, "pytest"); ok && dep.Name != "pytest-django" {
+			evidence = append(evidence, plan.Evidence{
+				Kind:    plan.EvidenceDeclaration,
+				Source:  ctx.SourcePath(depSourceFile(dep, project.Manifest)),
+				Pointer: depPointer(dep.Name),
+			})
+		}
 	}
 	return evidence
 }
