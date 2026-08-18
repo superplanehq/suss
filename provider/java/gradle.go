@@ -509,10 +509,6 @@ func (g *gradleProject) javaPluginEvidence() []plan.Evidence {
 	return nil
 }
 
-func (g *gradleProject) hasSpringBootPlugin() bool {
-	return g.hasPlugin("org.springframework.boot")
-}
-
 func (b gradleBuild) hasSpringBootPlugin() bool {
 	_, ok := b.Plugins["org.springframework.boot"]
 	return ok
