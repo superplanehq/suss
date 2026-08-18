@@ -286,6 +286,107 @@
       "capabilities": ["application.run"],
       "confidence": "high",
       "description": "The command starts the Phoenix server."
+    },
+    {
+      "id": "bundle-install",
+      "executable": "bundle",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs Bundler dependencies."
+    },
+    {
+      "id": "rspec",
+      "executable": "rspec",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs RSpec tests."
+    },
+    {
+      "id": "rails-test",
+      "executable": "rails",
+      "argsPrefix": ["test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Rails tests."
+    },
+    {
+      "id": "rails-db-setup-test",
+      "executable": "rails",
+      "argsPrefix": ["db:setup", "test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command prepares the Rails database and runs tests."
+    },
+    {
+      "id": "rails-db-setup-system-test",
+      "executable": "rails",
+      "argsPrefix": ["db:setup", "test:system"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command prepares the Rails database and runs system tests."
+    },
+    {
+      "id": "rails-server",
+      "executable": "rails",
+      "argsPrefix": ["server"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts the Rails server."
+    },
+    {
+      "id": "rake-test",
+      "executable": "rake",
+      "argsPrefix": ["test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs a Rake test task."
+    },
+    {
+      "id": "rake-spec",
+      "executable": "rake",
+      "argsPrefix": ["spec"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs a Rake spec task."
+    },
+    {
+      "id": "rake-build",
+      "executable": "rake",
+      "argsPrefix": ["build"],
+      "capabilities": ["artifact.build"],
+      "confidence": "high",
+      "description": "The command builds a Ruby gem through Rake."
+    },
+    {
+      "id": "rubocop",
+      "executable": "rubocop",
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command runs RuboCop."
+    },
+    {
+      "id": "standardrb-fix",
+      "executable": "standardrb",
+      "argsPrefix": ["--fix"],
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The command fixes Ruby formatting with Standard Ruby."
+    },
+    {
+      "id": "standardrb",
+      "executable": "standardrb",
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command checks Ruby style with Standard Ruby."
+    },
+    {
+      "id": "srb-tc",
+      "executable": "srb",
+      "argsPrefix": ["tc"],
+      "capabilities": ["code.typecheck"],
+      "confidence": "high",
+      "description": "The command type-checks Ruby with Sorbet."
     }
   ]
 }

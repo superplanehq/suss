@@ -1,0 +1,266 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "ruby",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "rails",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile",
+              "pointer": "/gems/rails",
+              "description": "The Gemfile declares Rails."
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "bundler",
+          "version": "2.6.7",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "declaration",
+              "source": "Gemfile.lock",
+              "pointer": "/BUNDLED WITH"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "rubocop",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile",
+              "pointer": "/gems/rubocop"
+            },
+            {
+              "kind": "configuration",
+              "source": ".rubocop.yml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "ruby",
+          "version": "3.3.6",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".ruby-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/1/with/ruby-version"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "ruby",
+          "version": "~> 3.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile",
+              "pointer": "/ruby"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_77b1b2eca82e5c1c1edf88be53cd14be",
+          "name": "install dependencies",
+          "run": "bundle install",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/2/run"
+            },
+            {
+              "kind": "file",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "convention",
+              "source": "ruby-ecosystem",
+              "pointer": "dependencies",
+              "description": "Bundler-managed Ruby projects conventionally install dependencies with bundle install."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "ruby-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Bundler dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "bundle install --jobs 4",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/2/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_68c21fa4f6167d8f349bf46c03e35051",
+          "name": "test",
+          "run": "bin/rails test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/3/run"
+            },
+            {
+              "kind": "file",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "file",
+              "source": "bin/rails"
+            },
+            {
+              "kind": "file",
+              "source": "test/models/widget_test.rb"
+            },
+            {
+              "kind": "convention",
+              "source": "ruby-ecosystem",
+              "pointer": "test",
+              "description": "Rails applications with Minitest files conventionally run them with rails test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "ruby-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Rails tests."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "bin/rails test",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/3/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_71d5ad89658e951104979172768cf2a0",
+          "name": "server",
+          "run": "bin/rails server",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "file",
+              "source": "bin/rails"
+            },
+            {
+              "kind": "convention",
+              "source": "ruby-ecosystem",
+              "pointer": "server",
+              "description": "Rails applications conventionally start the development server with rails server."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "ruby-ecosystem",
+                  "pointer": "server",
+                  "description": "The command starts the Rails server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

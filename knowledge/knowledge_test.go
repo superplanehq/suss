@@ -165,6 +165,71 @@ func TestParseScriptStripsCoverageWrappers(t *testing.T) {
 	}
 }
 
+func TestParseScriptStripsBundlerExecWrapper(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("bundle exec rspec --format progress && bin/rails test")
+	want := []Invocation{
+		{Executable: "rspec", Args: []string{"--format", "progress"}},
+		{Executable: "rails", Args: []string{"test"}},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestInterpretMatchesRubyInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		invocation Invocation
+		capability plan.Capability
+	}{
+		{invocation: Invocation{Executable: "bundle", Args: []string{"install"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "rspec"}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "rails", Args: []string{"test"}}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "rails", Args: []string{"db:setup", "test"}}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "rails", Args: []string{"server"}}, capability: plan.CapabilityApplicationRun},
+		{invocation: Invocation{Executable: "rake", Args: []string{"test"}}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "rake", Args: []string{"build"}}, capability: plan.CapabilityArtifactBuild},
+		{invocation: Invocation{Executable: "rubocop"}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "srb", Args: []string{"tc"}}, capability: plan.CapabilityCodeTypecheck},
+	}
+	for _, tt := range tests {
+		matches := Interpret(tt.invocation)
+		if len(matches) != 1 || matches[0].Capability != tt.capability {
+			t.Fatalf("Interpret(%+v) = %+v, want %s", tt.invocation, matches, tt.capability)
+		}
+	}
+}
+
+func TestIsRemoteGemInstall(t *testing.T) {
+	t.Parallel()
+
+	if !IsRemoteGemInstall(Invocation{Executable: "gem", Args: []string{"install", "test-unit", "coveralls"}}) {
+		t.Fatal("IsRemoteGemInstall(gem install test-unit coveralls) = false, want true")
+	}
+	if IsRemoteGemInstall(Invocation{Executable: "gem", Args: []string{"install", "./pkg/widget-1.0.0.gem"}}) {
+		t.Fatal("IsRemoteGemInstall(local gem archive) = true, want false")
+	}
+}
+
+func TestIsSystemPackagePlumbing(t *testing.T) {
+	t.Parallel()
+
+	for _, invocation := range []Invocation{
+		{Executable: "apt-get", Args: []string{"update"}},
+		{Executable: "sudo", Args: []string{"apt-get", "install", "-y", "libvips"}},
+	} {
+		if !IsSystemPackagePlumbing(invocation) {
+			t.Fatalf("IsSystemPackagePlumbing(%+v) = false, want true", invocation)
+		}
+	}
+	if IsSystemPackagePlumbing(Invocation{Executable: "sudo", Args: []string{"bin/rails", "test"}}) {
+		t.Fatal("IsSystemPackagePlumbing(sudo bin/rails test) = true, want false")
+	}
+}
+
 func TestInterpretScriptCollectsEachMatchedCapabilityOnce(t *testing.T) {
 	t.Parallel()
 

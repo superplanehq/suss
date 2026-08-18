@@ -15,6 +15,7 @@ var projectManifests = map[string]struct{}{
 	"package.json":  {},
 	"go.mod":        {},
 	"mix.exs":       {},
+	"Gemfile":       {},
 	"GNUmakefile":   {},
 	"Makefile":      {},
 	"makefile":      {},

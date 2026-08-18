@@ -208,6 +208,82 @@ jobs:
 	}
 }
 
+func TestDetectReadsSetupRubyMatrixVersions(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        ruby: ["3.3", "3.4"]
+    steps:
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+`,
+	})
+
+	if got := sortedCopy(runtimeRequirementVersions(result, "ruby")); !slices.Equal(got, []string{"3.3", "3.4"}) {
+		t.Fatalf("Ruby versions = %v, want matrix pins", got)
+	}
+}
+
+func TestDetectReadsSetupRubyVersionFileInput(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".ruby-version": "3.4.5\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "ruby", "3.4.5") {
+		t.Fatalf("missing Ruby 3.4.5 from .ruby-version in %+v", result.Findings)
+	}
+}
+
+func TestDetectSkipsRemoteGemInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: gem install test-unit coveralls
+`,
+	})
+
+	if commands := commandByName(result); len(commands) != 0 {
+		t.Fatalf("remote gem install was emitted as a repository command: %+v", result.Findings)
+	}
+}
+
+func TestDetectSkipsSystemPackageProvisioning(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: sudo apt-get update && sudo apt-get install -y libvips
+`,
+	})
+
+	if commands := commandByName(result); len(commands) != 0 {
+		t.Fatalf("system package provisioning was emitted as repository commands: %+v", result.Findings)
+	}
+}
+
 func TestDetectSkipsCommentsAndContinue(t *testing.T) {
 	t.Parallel()
 

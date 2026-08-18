@@ -44,6 +44,7 @@ var corpus = []corpusEntry{
 	{name: "gha-workspace", fixture: "gha-workspace", golden: "gha-workspace.json"},
 	{name: "make-simple", fixture: "make-simple", golden: "make-simple.json"},
 	{name: "compose-env", fixture: "compose-env", golden: "compose-env.json"},
+	{name: "ruby-rails", fixture: "ruby-rails", golden: "ruby-rails.json"},
 	{
 		name:   "chalk",
 		gitURL: "https://github.com/chalk/chalk.git",
@@ -97,6 +98,18 @@ var corpus = []corpusEntry{
 		gitURL: "https://github.com/operately/operately.git",
 		commit: "063fdefe80a9ddd1d8db005e146f1040f117e6ba",
 		golden: "operately.json",
+	},
+	{
+		name:   "once-campfire",
+		gitURL: "https://github.com/basecamp/once-campfire.git",
+		commit: "f1aec6133667a7486d521430f871bc420e18ec2b",
+		golden: "once-campfire.json",
+	},
+	{
+		name:   "rake",
+		gitURL: "https://github.com/ruby/rake.git",
+		commit: "ec87311d9339f6ed9ff7143fa8e449a97ba34f1b",
+		golden: "rake.json",
 	},
 }
 
