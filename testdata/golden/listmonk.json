@@ -220,6 +220,20 @@
         },
         {
           "kind": "environment",
+          "name": "HOME",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/backend/volumes/1"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
           "name": "LISTMONK_ADMIN_PASSWORD",
           "isRequired": true,
           "hasDefault": true,

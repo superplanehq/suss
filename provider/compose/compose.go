@@ -2,11 +2,13 @@
 // Detect walks from the repository root for standard compose filenames.
 //
 // Services become requirements. Environment variable names — declared
-// keys and interpolation names from any scalar — are recorded without
+// keys and interpolation names from scalar values — are recorded without
 // values. When a directory has a default compose file and an override
-// file, they are merged (override wins) before findings are emitted.
-// `docker compose up -d` is emitted as a preparation candidate for each
-// directory that contains a compose file.
+// file, they are merged with Compose mapping/sequence rules before
+// findings are emitted; each finding points at the originating file and
+// pointer. Only an active default base file is used; a lone override is
+// ignored. `docker compose up -d` is emitted as a preparation candidate
+// for each directory that contains an active compose file.
 //
 // Known limitation: compose `include:` is detected but not expanded.
 package compose
@@ -121,27 +123,14 @@ func extractDirectory(ctx provider.Context, dir string, files []string) ([]plan.
 
 func composeProjects(files []string) [][]string {
 	base, override := selectComposeFiles(files)
-	used := make(map[string]struct{})
-	var projects [][]string
 	switch {
 	case base != "" && override != "":
-		projects = append(projects, []string{base, override})
-		used[base] = struct{}{}
-		used[override] = struct{}{}
+		return [][]string{{base, override}}
 	case base != "":
-		projects = append(projects, []string{base})
-		used[base] = struct{}{}
-	case override != "":
-		projects = append(projects, []string{override})
-		used[override] = struct{}{}
+		return [][]string{{base}}
+	default:
+		return nil
 	}
-	for _, rel := range files {
-		if _, seen := used[rel]; seen || isOverrideName(path.Base(rel)) {
-			continue
-		}
-		projects = append(projects, []string{rel})
-	}
-	return projects
 }
 
 func extractProject(ctx provider.Context, dir string, rels []string) ([]plan.Finding, error) {
@@ -158,13 +147,8 @@ func extractProject(ctx provider.Context, dir string, rels []string) ([]plan.Fin
 	}
 
 	file := parsed[0]
-	source := rels[0]
 	if len(parsed) > 1 {
-		merged, err := mergeCompose(parsed[0], parsed[1])
-		if err != nil {
-			return nil, fmt.Errorf("merge %s and %s: %w", rels[0], rels[1], err)
-		}
-		file = merged
+		file = mergeCompose(parsed[0], parsed[1])
 	}
 
 	var findings []plan.Finding
@@ -175,11 +159,11 @@ func extractProject(ctx provider.Context, dir string, rels []string) ([]plan.Fin
 	}
 	for _, name := range sortedKeys(file.Services) {
 		svc := file.Services[name]
-		findings = append(findings, serviceFinding(dir, source, name, svc))
-		findings = append(findings, environmentFindings(dir, source, name, svc.Environment)...)
+		findings = append(findings, serviceFinding(dir, name, svc))
+		findings = append(findings, environmentFindings(dir, name, svc.Environment)...)
 	}
 	for _, item := range file.Interpolations {
-		findings = append(findings, interpolationFinding(dir, source, item))
+		findings = append(findings, interpolationFinding(dir, item))
 	}
 	return findings, nil
 }
@@ -190,18 +174,20 @@ func loadCompose(ctx provider.Context, rel string) (composeFile, error) {
 	if err != nil {
 		return composeFile{}, fmt.Errorf("read %s: %w", rel, err)
 	}
-	file, err := parseCompose(contents)
+	file, err := parseCompose(contents, rel)
 	if err != nil {
 		return composeFile{}, fmt.Errorf("parse %s: %w", rel, err)
 	}
 	return file, nil
 }
 
-func serviceFinding(dir, source, name string, svc composeService) plan.Finding {
+func serviceFinding(dir, name string, svc composeService) plan.Finding {
 	_, version := splitImage(svc.Image)
 	pointer := jsonPointer("services", name)
+	source := svc.Source
 	if svc.Image != "" {
 		pointer = jsonPointer("services", name, "image")
+		source = firstNonEmpty(svc.ImageSource, svc.Source)
 	}
 	return plan.RequirementFinding{
 		ProjectPath: dir,
@@ -220,7 +206,7 @@ func serviceFinding(dir, source, name string, svc composeService) plan.Finding {
 	}
 }
 
-func interpolationFinding(dir, source string, item locatedVar) plan.Finding {
+func interpolationFinding(dir string, item locatedVar) plan.Finding {
 	return plan.RequirementFinding{
 		ProjectPath: dir,
 		Detector:    providerName,
@@ -232,14 +218,14 @@ func interpolationFinding(dir, source string, item locatedVar) plan.Finding {
 			Confidence: plan.ConfidenceHigh,
 			Evidence: []plan.Evidence{{
 				Kind:    plan.EvidenceDeclaration,
-				Source:  source,
+				Source:  item.Source,
 				Pointer: item.Pointer,
 			}},
 		},
 	}
 }
 
-func environmentFindings(dir, source, service string, env []envVar) []plan.Finding {
+func environmentFindings(dir, service string, env []envVar) []plan.Finding {
 	findings := make([]plan.Finding, 0, len(env))
 	for _, item := range env {
 		findings = append(findings, plan.RequirementFinding{
@@ -253,7 +239,7 @@ func environmentFindings(dir, source, service string, env []envVar) []plan.Findi
 				Confidence: plan.ConfidenceHigh,
 				Evidence: []plan.Evidence{{
 					Kind:    plan.EvidenceDeclaration,
-					Source:  source,
+					Source:  item.Source,
 					Pointer: jsonPointer("services", service, "environment", item.Name),
 				}},
 			},
@@ -408,10 +394,6 @@ func selectComposeFiles(files []string) (base, override string) {
 		}
 	}
 	return base, override
-}
-
-func isOverrideName(name string) bool {
-	return slices.Contains(defaultOverrideNames, name)
 }
 
 func groupByDirectory(files []string) map[string][]string {
