@@ -354,7 +354,7 @@ func skipSemaphoreStatement(statement knowledge.Statement) bool {
 	if executable == "" || strings.Contains(statement.Raw, "$(") {
 		return true
 	}
-	if knowledge.IsGlobalInstall(statement.Invocation) || knowledge.IsRemoteGoInstall(statement.Invocation) || knowledge.IsRemoteGemInstall(statement.Invocation) || knowledge.IsSystemPackagePlumbing(statement.Invocation) || knowledge.IsToolPlumbing(statement.Invocation) {
+	if knowledge.IsGlobalInstall(statement.Invocation) || knowledge.IsRemoteGoInstall(statement.Invocation) || knowledge.IsRemoteGemInstall(statement.Invocation) || knowledge.IsRemoteCargoInstall(statement.Invocation) || knowledge.IsSystemPackagePlumbing(statement.Invocation) || knowledge.IsToolPlumbing(statement.Invocation) {
 		return true
 	}
 	_, skip := semaphorePlumbing[executable]

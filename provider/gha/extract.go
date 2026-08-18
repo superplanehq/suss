@@ -12,6 +12,7 @@ import (
 	"github.com/superplanehq/suss/knowledge"
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
+	"github.com/superplanehq/suss/provider/rust"
 )
 
 func extract(ctx provider.Context, source string, workflow workflowFile) (provider.Result, error) {
@@ -147,11 +148,115 @@ func usesFindings(ctx provider.Context, source, dir, stepPointer string, step st
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "ruby", step.With, matrix, []string{"ruby-version"})
 	case "shivammathur/setup-php":
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "php", step.With, matrix, []string{"php-version"})
+	case "dtolnay/rust-toolchain":
+		return rustSetupFindings(ctx, source, dir, stepPointer, step, matrix, rustToolchainActionTag(step.Uses))
+	case "actions-rs/toolchain", "actions-rust-lang/setup-rust-toolchain":
+		return rustSetupFindings(ctx, source, dir, stepPointer, step, matrix, "")
 	case "golangci/golangci-lint-action":
 		return golangciActionFindings(source, dir, stepPointer, step)
 	default:
 		return nil
 	}
+}
+
+func rustToolchainActionTag(uses string) string {
+	name, tag, ok := strings.Cut(strings.TrimSpace(uses), "@")
+	if !ok || name != "dtolnay/rust-toolchain" {
+		return ""
+	}
+	switch tag {
+	case "", "master", "main":
+		return ""
+	default:
+		return tag
+	}
+}
+
+func rustSetupFindings(ctx provider.Context, source, dir, stepPointer string, step step, matrix map[string][]string, tagFallback string) []plan.Finding {
+	if file := strings.TrimSpace(step.With["toolchain-file"]); file != "" && !isExpression(file) {
+		return rustToolchainFileFindings(ctx, source, dir, stepPointer, "toolchain-file", file)
+	}
+
+	versionKeys := []string{"toolchain"}
+	if strings.TrimSpace(step.With["toolchain"]) == "" && strings.TrimSpace(step.With["rust-version"]) != "" {
+		versionKeys = []string{"rust-version"}
+	}
+	if strings.TrimSpace(step.With[versionKeys[0]]) != "" {
+		return setupRuntimeFindings(ctx, source, dir, stepPointer, "rust", step.With, matrix, versionKeys)
+	}
+
+	if tagFallback != "" {
+		return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/uses", "rust", tagFallback, "The rust-toolchain action tag selects the toolchain.")}
+	}
+
+	for _, name := range []string{"rust-toolchain.toml", "rust-toolchain"} {
+		rel := resolveDirectory(ctx.RepositoryRoot, dir, name)
+		abs := filepath.Join(ctx.RepositoryRoot, filepath.FromSlash(rel))
+		contents, err := os.ReadFile(abs)
+		if err != nil {
+			continue
+		}
+		channel := rust.ParseToolchainFile(string(contents))
+		if channel == "" {
+			continue
+		}
+		return []plan.Finding{requirementFinding(dir, plan.Requirement{
+			Kind:       plan.RequirementRuntime,
+			Name:       "rust",
+			Version:    channel,
+			Confidence: plan.ConfidenceHigh,
+			Evidence: []plan.Evidence{
+				{
+					Kind:        plan.EvidenceInvocation,
+					Source:      source,
+					Pointer:     stepPointer + "/uses",
+					Description: fmt.Sprintf("The setup action reads %s.", name),
+				},
+				{
+					Kind:   plan.EvidenceDeclaration,
+					Source: rel,
+				},
+			},
+		})}
+	}
+
+	return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/uses", "rust", "", "The setup action does not pin a version.")}
+}
+
+func rustToolchainFileFindings(ctx provider.Context, source, dir, stepPointer, fileKey, file string) []plan.Finding {
+	pointer := stepPointer + "/with/" + fileKey
+	evidence := []plan.Evidence{{
+		Kind:        plan.EvidenceInvocation,
+		Source:      source,
+		Pointer:     pointer,
+		Description: fmt.Sprintf("The setup action reads %s.", file),
+	}}
+
+	rel := resolveDirectory(ctx.RepositoryRoot, ".", file)
+	abs := filepath.Join(ctx.RepositoryRoot, filepath.FromSlash(rel))
+	contents, err := os.ReadFile(abs)
+	if err == nil {
+		if version := rust.ParseToolchainFile(string(contents)); version != "" {
+			evidence = append(evidence, plan.Evidence{
+				Kind:   plan.EvidenceDeclaration,
+				Source: rel,
+			})
+			return []plan.Finding{requirementFinding(dir, plan.Requirement{
+				Kind:       plan.RequirementRuntime,
+				Name:       "rust",
+				Version:    version,
+				Confidence: plan.ConfidenceHigh,
+				Evidence:   evidence,
+			})}
+		}
+	}
+
+	return []plan.Finding{requirementFinding(dir, plan.Requirement{
+		Kind:       plan.RequirementRuntime,
+		Name:       "rust",
+		Confidence: plan.ConfidenceMedium,
+		Evidence:   evidence,
+	})}
 }
 
 func golangciActionFindings(source, dir, stepPointer string, step step) []plan.Finding {
@@ -437,7 +542,7 @@ func skipStatement(stmt knowledge.Statement) bool {
 	if knowledge.IsGlobalInstall(stmt.Invocation) {
 		return true
 	}
-	if knowledge.IsRemoteGoInstall(stmt.Invocation) || knowledge.IsRemoteGemInstall(stmt.Invocation) || knowledge.IsSystemPackagePlumbing(stmt.Invocation) || knowledge.IsToolPlumbing(stmt.Invocation) {
+	if knowledge.IsRemoteGoInstall(stmt.Invocation) || knowledge.IsRemoteGemInstall(stmt.Invocation) || knowledge.IsRemoteCargoInstall(stmt.Invocation) || knowledge.IsSystemPackagePlumbing(stmt.Invocation) || knowledge.IsToolPlumbing(stmt.Invocation) {
 		return true
 	}
 	if knowledge.HasUnclosedGHAExpression(raw) {

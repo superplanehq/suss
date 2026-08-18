@@ -21,6 +21,7 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	writeFile(t, filepath.Join(root, "admin", "Gemfile"), "source \"https://rubygems.org\"\n")
 	writeFile(t, filepath.Join(root, "api", "composer.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "vendor-bin", "phpstan", "composer.json"), "{}\n")
+	writeFile(t, filepath.Join(root, "worker", "Cargo.toml"), "[package]\nname = \"worker\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
 	writeFile(t, filepath.Join(root, "node_modules", "left-pad", "package.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "vendor", "module", "go.mod"), "module example.com/vendored\n\ngo 1.26\n")
 	writeFile(t, filepath.Join(root, "deps", "plug", "mix.exs"), "defmodule Plug.MixProject do\nend\n")
@@ -31,7 +32,7 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	if err != nil {
 		t.Fatalf("findProjectRoots() error = %v", err)
 	}
-	want := []string{".", "admin", "api", "apps/web", "backend", "frontend"}
+	want := []string{".", "admin", "api", "apps/web", "backend", "frontend", "worker"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
 	}

@@ -517,6 +517,70 @@
       "capabilities": ["code.format"],
       "confidence": "high",
       "description": "The command formats PHP with Laravel Pint."
+    },
+    {
+      "id": "cargo-fetch",
+      "executable": "cargo",
+      "argsPrefix": ["fetch"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command downloads Cargo dependencies."
+    },
+    {
+      "id": "cargo-test",
+      "executable": "cargo",
+      "argsPrefix": ["test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Cargo tests."
+    },
+    {
+      "id": "cargo-nextest",
+      "executable": "cargo",
+      "argsPrefix": ["nextest", "run"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs tests through cargo-nextest."
+    },
+    {
+      "id": "cargo-build",
+      "executable": "cargo",
+      "argsPrefix": ["build"],
+      "capabilities": ["artifact.build"],
+      "confidence": "high",
+      "description": "The command builds a Cargo package."
+    },
+    {
+      "id": "cargo-clippy",
+      "executable": "cargo",
+      "argsPrefix": ["clippy"],
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command runs Clippy."
+    },
+    {
+      "id": "cargo-fmt",
+      "executable": "cargo",
+      "argsPrefix": ["fmt"],
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The command formats Rust source with rustfmt."
+    },
+    {
+      "id": "cargo-check",
+      "executable": "cargo",
+      "argsPrefix": ["check"],
+      "capabilities": ["code.typecheck"],
+      "confidence": "high",
+      "description": "The command type-checks a Cargo package."
+    },
+    {
+      "id": "cargo-run",
+      "executable": "cargo",
+      "argsPrefix": ["run"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command runs a Cargo binary."
     }
   ]
 }

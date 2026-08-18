@@ -87,6 +87,9 @@ func Interpret(inv Invocation) []Match {
 	if executable == "" {
 		return nil
 	}
+	if executable == "cargo" {
+		inv.Args = stripCargoToolchain(append([]string{"cargo"}, inv.Args...))[1:]
+	}
 
 	bestLen := -1
 	var matches []Match
@@ -312,6 +315,7 @@ func parseInvocation(part string) (Invocation, bool) {
 	tokens := splitShell(part)
 	tokens = dropLeadingAssignments(tokens)
 	tokens = dropWrappers(tokens)
+	tokens = stripCargoToolchain(tokens)
 	if len(tokens) == 0 {
 		return Invocation{}, false
 	}
@@ -664,6 +668,19 @@ func phpCLIOptionTakesValue(name string) bool {
 	default:
 		return false
 	}
+}
+
+func stripCargoToolchain(tokens []string) []string {
+	if len(tokens) < 2 || tokens[0] != "cargo" {
+		return tokens
+	}
+	selector := tokens[1]
+	if !strings.HasPrefix(selector, "+") || selector == "+" {
+		return tokens
+	}
+	out := make([]string, 0, len(tokens)-1)
+	out = append(out, "cargo")
+	return append(out, tokens[2:]...)
 }
 
 func dropLeadingFlags(tokens []string) []string {

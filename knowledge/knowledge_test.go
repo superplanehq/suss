@@ -605,6 +605,31 @@ func TestInterpretMatchesMixInvocations(t *testing.T) {
 	}
 }
 
+func TestInterpretMatchesCargoInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		inv  Invocation
+		want []plan.Capability
+	}{
+		{inv: Invocation{Executable: "cargo", Args: []string{"test"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"+nightly", "test", "--locked"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"build", "--release"}}, want: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"fetch"}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"clippy", "--", "-D", "warnings"}}, want: []plan.Capability{plan.CapabilityCodeLint}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"fmt", "--check"}}, want: []plan.Capability{plan.CapabilityCodeFormat}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"check"}}, want: []plan.Capability{plan.CapabilityCodeTypecheck}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"run"}}, want: []plan.Capability{plan.CapabilityApplicationRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"nextest", "run"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+	}
+	for _, tt := range tests {
+		got := capabilities(Interpret(tt.inv))
+		if !slices.Equal(got, tt.want) {
+			t.Fatalf("Interpret(%s %v) = %v, want %v", tt.inv.Executable, tt.inv.Args, got, tt.want)
+		}
+	}
+}
+
 func TestIsRemoteGoInstall(t *testing.T) {
 	t.Parallel()
 
@@ -630,6 +655,43 @@ func TestIsGoPlumbing(t *testing.T) {
 	}
 	if IsGoPlumbing(Invocation{Executable: "go", Args: []string{"test", "./..."}}) {
 		t.Fatal("IsGoPlumbing(go test) = true, want false")
+	}
+}
+
+func TestIsRemoteCargoInstall(t *testing.T) {
+	t.Parallel()
+
+	if !IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"install", "cargo-nextest"}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo install cargo-nextest) = false, want true")
+	}
+	if !IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"install", "--locked", "cargo-deny"}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo install --locked cargo-deny) = false, want true")
+	}
+	if IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"install", "--path", "."}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo install --path .) = true, want false")
+	}
+	if IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"install"}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo install) = true, want false")
+	}
+	if IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"test"}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo test) = true, want false")
+	}
+}
+
+func TestIsRustPlumbing(t *testing.T) {
+	t.Parallel()
+
+	if !IsRustPlumbing(Invocation{Executable: "rustup", Args: []string{"update"}}) {
+		t.Fatal("IsRustPlumbing(rustup update) = false, want true")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"--version"}}) {
+		t.Fatal("IsRustPlumbing(cargo --version) = false, want true")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"version"}}) {
+		t.Fatal("IsRustPlumbing(cargo version) = false, want true")
+	}
+	if IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"test"}}) {
+		t.Fatal("IsRustPlumbing(cargo test) = true, want false")
 	}
 }
 

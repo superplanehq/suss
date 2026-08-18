@@ -1,0 +1,12 @@
+name: CI
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.81.0
+        with:
+          components: clippy
+      - run: cargo test --locked
+      - run: cargo clippy -- -D warnings

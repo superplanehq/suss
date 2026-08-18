@@ -43,6 +43,9 @@ var toolCapabilities = map[string][]plan.Capability{
 	"php-cs-fixer":  {plan.CapabilityCodeFormat, plan.CapabilityCodeLint},
 	"phpcs":         {plan.CapabilityCodeLint},
 	"pint":          {plan.CapabilityCodeLint, plan.CapabilityCodeFormat},
+	"clippy":        {plan.CapabilityCodeLint},
+	"rustfmt":       {plan.CapabilityCodeFormat},
+	"nextest":       {plan.CapabilityTestRun},
 }
 
 type classifiedProjects struct {

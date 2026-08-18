@@ -1,0 +1,300 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "workspace.orchestrator",
+          "value": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": "1.80",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace/package/rust-version"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_151e5401050fe58d4c563c69d00078ca",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_becb52ccd7293ad8602700c2dbb77f42",
+          "name": "build",
+          "run": "cargo build",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "crates/tool",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "crates/tool/Cargo.toml",
+              "pointer": "/package/name"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "crates/tool/Cargo.toml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": "1.80",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace/package/rust-version",
+              "description": "Cargo.toml inherits rust-version from the workspace."
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_c66e75202e089106f0770dcea62f78f8",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": "crates/tool",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "crates/tool/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_37d409b28a76670498bcd25105bfae53",
+          "name": "build",
+          "run": "cargo build",
+          "directory": "crates/tool",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "crates/tool/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_8e81b53672d0372697ee657cfacec660",
+          "name": "test",
+          "run": "cargo test",
+          "directory": "crates/tool",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "crates/tool/Cargo.toml"
+            },
+            {
+              "kind": "file",
+              "source": "crates/tool/src/lib.rs"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "test",
+              "description": "Cargo packages with tests conventionally run cargo test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

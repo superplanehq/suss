@@ -46,6 +46,9 @@ var corpus = []corpusEntry{
 	{name: "compose-env", fixture: "compose-env", golden: "compose-env.json"},
 	{name: "ruby-rails", fixture: "ruby-rails", golden: "ruby-rails.json"},
 	{name: "php-laravel", fixture: "php-laravel", golden: "php-laravel.json"},
+	{name: "rust-simple", fixture: "rust-simple", golden: "rust-simple.json"},
+	{name: "rust-gha", fixture: "rust-gha", golden: "rust-gha.json"},
+	{name: "rust-workspace", fixture: "rust-workspace", golden: "rust-workspace.json"},
 	{
 		name:   "chalk",
 		gitURL: "https://github.com/chalk/chalk.git",
@@ -123,6 +126,12 @@ var corpus = []corpusEntry{
 		gitURL: "https://github.com/koel/koel.git",
 		commit: "dfec91ff290509c622ff7cf392fb5e506841ee2b",
 		golden: "koel.json",
+	},
+	{
+		name:   "clap",
+		gitURL: "https://github.com/clap-rs/clap.git",
+		commit: "3716f9f4289594b43abec42b2538efd1a90ff897",
+		golden: "clap.json",
 	},
 }
 

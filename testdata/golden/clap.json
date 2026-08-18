@@ -1,0 +1,2140 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/package/name"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml"
+            },
+            {
+              "kind": "file",
+              "source": "Cargo.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "ci.matrix.rust",
+          "value": "1.87",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/clippy/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/docs/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/rustfmt/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/ui/steps/1/with/toolchain"
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.rust",
+          "value": "beta",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/test/steps/1/with/toolchain",
+              "description": "CI tests rust beta as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.rust",
+          "value": "nightly",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/minimal-versions/steps/2/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/test/steps/1/with/toolchain",
+              "description": "CI tests rust nightly as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.rust",
+          "value": "stable",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/bench-baseline.yml",
+              "pointer": "/jobs/bench/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/check/steps/1/with/toolchain",
+              "description": "CI tests rust stable as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/lockfile/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/minimal-versions/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/shell-integration-nu/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/shell-integration/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/latest/steps/1/with/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/test/steps/1/with/toolchain",
+              "description": "CI tests rust stable as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "name": "provider.make.limitation",
+          "value": "conditionals",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile",
+              "description": "Make conditionals are detected; targets inside them are still enumerated."
+            }
+          ]
+        },
+        {
+          "name": "provider.make.limitation",
+          "value": "variable-expansion",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile",
+              "description": "Make functions, automatic variables, and predefined variables are not expanded."
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "cargo-deny",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "deny.toml"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "clippy",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": ".clippy.toml"
+            }
+          ]
+        },
+        {
+          "name": "workspace.orchestrator",
+          "value": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": "1.74",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace/package/rust-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/check/steps/1/with/toolchain",
+              "description": "CI tests rust 1.74 as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "kind": "tool",
+          "name": "make",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CARGO_TERM_COLOR",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/audit.yml",
+              "pointer": "/env/CARGO_TERM_COLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/env/CARGO_TERM_COLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/committed.yml",
+              "pointer": "/env/CARGO_TERM_COLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/pre-commit.yml",
+              "pointer": "/env/CARGO_TERM_COLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/env/CARGO_TERM_COLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/spelling.yml",
+              "pointer": "/env/CARGO_TERM_COLOR"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CLICOLOR",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/audit.yml",
+              "pointer": "/env/CLICOLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/env/CLICOLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/committed.yml",
+              "pointer": "/env/CLICOLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/pre-commit.yml",
+              "pointer": "/env/CLICOLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/env/CLICOLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/spelling.yml",
+              "pointer": "/env/CLICOLOR"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "RUST_BACKTRACE",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/audit.yml",
+              "pointer": "/env/RUST_BACKTRACE"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/env/RUST_BACKTRACE"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/committed.yml",
+              "pointer": "/env/RUST_BACKTRACE"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/pre-commit.yml",
+              "pointer": "/env/RUST_BACKTRACE"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/env/RUST_BACKTRACE"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/spelling.yml",
+              "pointer": "/env/RUST_BACKTRACE"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_151e5401050fe58d4c563c69d00078ca",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_0bcbc74707d6c107f6f0dc3d0a21d9b7",
+          "name": "make test-${{matrix.features}}",
+          "run": "make test-${{matrix.features}}",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1396a7c4e23ffffdcaaf9c8e1e02a60a",
+          "name": "make test-ui-${{ matrix.features }}",
+          "run": "make test-ui-${{ matrix.features }}",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/ui/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_28c8d73580a4b9f220dd1f6d6ac38c66",
+          "name": "check-wasm",
+          "run": "make check-wasm",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check-wasm",
+              "description": "The target recipe invokes cargo."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/check-wasm",
+                  "description": "The command type-checks a Cargo package."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_2b60d9c8bf17c42aeb765852812574a8",
+          "name": "make clippy-minimal",
+          "run": "make clippy-minimal",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/clippy/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2c3dc86b0f89a47625923b0d94a7d976",
+          "name": "make build-${{matrix.features}}",
+          "run": "make build-${{matrix.features}}",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/test/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3f1cd9bc180eb93c8fecd7d22d35a1cc",
+          "name": "cargo update",
+          "run": "cargo update --workspace --locked",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/lockfile/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_40e5dafa7319c9562e5e9796ce385dab",
+          "name": "release-notes.py ${{ env.RELEASE_VERSION }}",
+          "run": "./.github/workflows/release-notes.py --tag ${{ env.RELEASE_VERSION }} --output notes-${{ env.RELEASE_VERSION }}.md",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/post-release.yml",
+              "pointer": "/jobs/create-release/steps/2/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4c33cc16612fe47ec0c8b3142cf7fe95",
+          "name": "make check-${{ matrix.features }}",
+          "run": "make check-${{ matrix.features }}",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/check/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_508a9378b52b9e4ea0c23b26a6c1fbb1",
+          "name": "make test-${{matrix.features}}",
+          "run": "make test-${{matrix.features}} ARGS='--workspace --benches'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6b20250ed798cc348fcc6421c8b3d9d7",
+          "name": "cargo generate-lockfile",
+          "run": "cargo +nightly generate-lockfile -Z minimal-versions",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/minimal-versions/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7a42780ff099228d5e94cdc22582328a",
+          "name": "make test-${{matrix.features}}",
+          "run": "make test-${{matrix.features}}",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/latest/steps/7/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7b2454d9a8d6867020f7a7cb0fe12b9c",
+          "name": "make test-${{matrix.features}}",
+          "run": "make test-${{matrix.features}} ARGS='--workspace --benches'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/latest/steps/8/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7f94fb64e815daf9a7788de6f788da50",
+          "name": "make test-minimal",
+          "run": "make test-minimal ARGS='--manifest-path Cargo.toml'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/test/steps/7/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_80cdacfe3cc7708d41736fd81bb4cbe2",
+          "name": "cargo fmt",
+          "run": "cargo fmt --all -- --check",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/rustfmt/steps/3/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/rustfmt/steps/3/run",
+                  "description": "The command formats Rust source with rustfmt."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_83cf65cb32bcdd54324165790f710ca3",
+          "name": "make test-minimal",
+          "run": "make test-minimal ARGS='--manifest-path Cargo.toml'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/latest/steps/9/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_88a5a3882030b1977ecd16bd025e4c25",
+          "name": "doc",
+          "run": "make doc",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/doc",
+              "description": "The target recipe invokes cargo."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make doc",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/docs/steps/3/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_8f52a5424cb61f45c7818109aa09a805",
+          "name": "test",
+          "run": "cargo test",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/shell-integration-nu/steps/3/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/shell-integration/steps/4/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/7/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/latest/steps/10/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/test/steps/8/run"
+            },
+            {
+              "kind": "file",
+              "source": "Cargo.toml"
+            },
+            {
+              "kind": "file",
+              "source": "examples/tutorial_builder/05_01_assert.rs"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "test",
+              "description": "Cargo packages with tests conventionally run cargo test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "cargo test -p clap_complete -F unstable-dynamic",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/7/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/rust-next.yml",
+                  "pointer": "/jobs/latest/steps/10/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/rust-next.yml",
+                  "pointer": "/jobs/test/steps/8/run"
+                }
+              ]
+            },
+            {
+              "context": "ci",
+              "run": "cargo test -p clap_complete -F unstable-dynamic -F unstable-shell-tests",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/shell-integration/steps/4/run"
+                }
+              ]
+            },
+            {
+              "context": "ci",
+              "run": "cargo test -p clap_complete_nushell -F unstable-shell-tests",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/shell-integration-nu/steps/3/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_94c23755261b81731590b11972fa0313",
+          "name": "cargo update",
+          "run": "cargo update",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/latest/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9c7c3256fc17b840955afc608fd02661",
+          "name": "make clippy-minimal",
+          "run": "make clippy-minimal ARGS='--manifest-path Cargo.toml'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/clippy/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a046fc1392dc30dbc21a76300792d4c8",
+          "name": "make clippy-full",
+          "run": "make clippy-full",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/clippy/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a4d37997088e19fe98c308660f07443d",
+          "name": "make test-${{matrix.features}}",
+          "run": "make test-${{matrix.features}} ARGS='--workspace --benches'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/test/steps/6/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ae7afe3a46ff08a0258dade242c19af3",
+          "name": "make build-${{matrix.features}}",
+          "run": "make build-${{matrix.features}}",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_becb52ccd7293ad8602700c2dbb77f42",
+          "name": "build",
+          "run": "cargo build",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/bench-baseline.yml",
+              "pointer": "/jobs/bench/steps/4/run"
+            },
+            {
+              "kind": "file",
+              "source": "Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "cargo build --package clap --example git-derive -F derive --release",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/bench-baseline.yml",
+                  "pointer": "/jobs/bench/steps/4/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_d6577da7026a89709770d747d374ed67",
+          "name": "make build-${{matrix.features}}",
+          "run": "make build-${{matrix.features}}",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/latest/steps/6/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_dcc3b6808070441dccfcf4c256101164",
+          "name": "make test-minimal",
+          "run": "make test-minimal ARGS='--manifest-path Cargo.toml'",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/6/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e385c3bf868bde02595c58f981338ee2",
+          "name": "cargo check",
+          "run": "cargo +stable check --workspace --all-features --locked --exclude clap_complete_nushell --exclude clap_bench",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/minimal-versions/steps/4/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/minimal-versions/steps/4/run",
+                  "description": "The command type-checks a Cargo package."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_f02040bdb5158874c5367d6d1759b366",
+          "name": "make test-${{matrix.features}}",
+          "run": "make test-${{matrix.features}}",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/rust-next.yml",
+              "pointer": "/jobs/test/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f2e46b72a0cc9e477217ac5fdbb30e95",
+          "name": "make clippy-release",
+          "run": "make clippy-release",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/clippy/steps/6/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "clap_bench",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_bench/Cargo.toml",
+              "pointer": "/package/name"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_bench/Cargo.toml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": "1.74",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace/package/rust-version",
+              "description": "Cargo.toml inherits rust-version from the workspace."
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_dc4afaafc1791a4d0e27ff4c02b70654",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": "clap_bench",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_bench/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_ac170213999af40bf38306d093661373",
+          "name": "build",
+          "run": "cargo build",
+          "directory": "clap_bench",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_bench/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "clap_builder",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_builder/Cargo.toml",
+              "pointer": "/package/name"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_builder/Cargo.toml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": "1.74",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace/package/rust-version",
+              "description": "Cargo.toml inherits rust-version from the workspace."
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_afd2335f77e9e0e68315a3bc5f315561",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": "clap_builder",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_builder/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_02c2a7915f8507ab489f6cc90d704858",
+          "name": "build",
+          "run": "cargo build",
+          "directory": "clap_builder",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_builder/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_5d97e069a66d557f903f68dd658dbea7",
+          "name": "test",
+          "run": "cargo test",
+          "directory": "clap_builder",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_builder/Cargo.toml"
+            },
+            {
+              "kind": "file",
+              "source": "clap_builder/src/builder/arg.rs"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "test",
+              "description": "Cargo packages with tests conventionally run cargo test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "clap_complete",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_complete/Cargo.toml",
+              "pointer": "/package/name"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_complete/Cargo.toml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": "1.74",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace/package/rust-version",
+              "description": "Cargo.toml inherits rust-version from the workspace."
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_1fe1cbc8a9b30f6eaf403cce24b2c2f9",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": "clap_complete",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_complete/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_00df859389e1e114eff820132f435a95",
+          "name": "build",
+          "run": "cargo build",
+          "directory": "clap_complete",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_complete/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_ba0f78f13554ed4fbd0ab26e79a78359",
+          "name": "test",
+          "run": "cargo test",
+          "directory": "clap_complete",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_complete/Cargo.toml"
+            },
+            {
+              "kind": "file",
+              "source": "clap_complete/examples/dynamic.rs"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "test",
+              "description": "Cargo packages with tests conventionally run cargo test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "clap_complete_nushell",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_complete_nushell/Cargo.toml",
+              "pointer": "/package/name"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_complete_nushell/Cargo.toml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": "1.74",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace/package/rust-version",
+              "description": "Cargo.toml inherits rust-version from the workspace."
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_5103c7c2fccacf4e3b29a8bde78aa8b5",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": "clap_complete_nushell",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_complete_nushell/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_453ccf6190cdb0d48b767a1f485a0c77",
+          "name": "test",
+          "run": "cargo test",
+          "directory": "clap_complete_nushell",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_complete_nushell/Cargo.toml"
+            },
+            {
+              "kind": "file",
+              "source": "clap_complete_nushell/tests/common.rs"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "test",
+              "description": "Cargo packages with tests conventionally run cargo test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_654d8f7577fc094577aa1001b8e66228",
+          "name": "build",
+          "run": "cargo build",
+          "directory": "clap_complete_nushell",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_complete_nushell/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "clap_derive",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_derive/Cargo.toml",
+              "pointer": "/package/name"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_derive/Cargo.toml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": "1.74",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace/package/rust-version",
+              "description": "Cargo.toml inherits rust-version from the workspace."
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_a482e1bf3ee418ad9c23145c736d6f0f",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": "clap_derive",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_derive/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_7fe7b54c43e83d26ab08b92289606c07",
+          "name": "build",
+          "run": "cargo build",
+          "directory": "clap_derive",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_derive/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "clap_lex",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_lex/Cargo.toml",
+              "pointer": "/package/name"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_lex/Cargo.toml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": "1.74",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace/package/rust-version",
+              "description": "Cargo.toml inherits rust-version from the workspace."
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_1bb8c80e55a2acca407d1b5388597d5b",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": "clap_lex",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_lex/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_20831191c1d589a4fe035122aab21369",
+          "name": "build",
+          "run": "cargo build",
+          "directory": "clap_lex",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_lex/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_b91c87aedf10d5b4aa441f1c688858a3",
+          "name": "test",
+          "run": "cargo test",
+          "directory": "clap_lex",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_lex/Cargo.toml"
+            },
+            {
+              "kind": "file",
+              "source": "clap_lex/tests/testsuite/lexer.rs"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "test",
+              "description": "Cargo packages with tests conventionally run cargo test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "clap_mangen",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_mangen/Cargo.toml",
+              "pointer": "/package/name"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "clap_mangen/Cargo.toml"
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": "1.74",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/workspace/package/rust-version",
+              "description": "Cargo.toml inherits rust-version from the workspace."
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_959bcf2d790ff87b6a422e123d53328b",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": "clap_mangen",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_mangen/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_053eac9a19fbbefc88b4f07b2678051a",
+          "name": "test",
+          "run": "cargo test",
+          "directory": "clap_mangen",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_mangen/Cargo.toml"
+            },
+            {
+              "kind": "file",
+              "source": "clap_mangen/tests/testsuite/common.rs"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "test",
+              "description": "Cargo packages with tests conventionally run cargo test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_3d913d59f1a0bf7199ab36b467166305",
+          "name": "build",
+          "run": "cargo build",
+          "directory": "clap_mangen",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "clap_mangen/Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

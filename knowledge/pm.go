@@ -153,6 +153,53 @@ func IsRemoteGoInstall(inv Invocation) bool {
 	return false
 }
 
+// IsRemoteCargoInstall reports whether inv installs a named crates.io or git
+// crate (`cargo install cargo-nextest`). Those provision CI tools. A path
+// install or a bare `cargo install` of the current package is kept.
+func IsRemoteCargoInstall(inv Invocation) bool {
+	if inv.Executable != "cargo" {
+		return false
+	}
+	args := stripCargoToolchain(append([]string{"cargo"}, inv.Args...))
+	if len(args) < 2 || args[1] != "install" {
+		return false
+	}
+	hasPath := false
+	hasRemoteSource := false
+	positional := 0
+	rest := args[2:]
+	for i := 0; i < len(rest); i++ {
+		arg := rest[i]
+		if arg == "--" {
+			positional += len(rest) - i - 1
+			break
+		}
+		name, value, hasValue := strings.Cut(arg, "=")
+		switch name {
+		case "--path":
+			hasPath = true
+			if !hasValue && i+1 < len(rest) {
+				i++
+			}
+			continue
+		case "--git", "--index", "--registry":
+			hasRemoteSource = true
+			if !hasValue && value == "" && i+1 < len(rest) && !strings.HasPrefix(rest[i+1], "-") {
+				i++
+			}
+			continue
+		}
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		positional++
+	}
+	if hasPath {
+		return false
+	}
+	return hasRemoteSource || positional > 0
+}
+
 // IsRemoteGemInstall reports whether inv installs named gems rather than a
 // local gem archive. Named gem installs in CI provision tools; they do not
 // install the repository's Bundler dependency set.
@@ -216,7 +263,7 @@ func IsGoPlumbing(inv Invocation) bool {
 // toolchain (the milestone 4 `go version` / `go env` precedent) rather than
 // a repository command.
 func IsToolPlumbing(inv Invocation) bool {
-	if IsGoPlumbing(inv) {
+	if IsGoPlumbing(inv) || IsRustPlumbing(inv) {
 		return true
 	}
 	switch inv.Executable {
@@ -224,7 +271,7 @@ func IsToolPlumbing(inv Invocation) bool {
 		return isDockerPlumbing(inv.Args)
 	case "docker-compose":
 		return isVersionInfoHelp(inv.Args)
-	case "node", "python", "python3", "ruby", "java":
+	case "node", "python", "python3", "ruby", "java", "rustc":
 		return isFlagVersionHelp(inv.Args)
 	case "php":
 		return isPHPPlumbing(inv.Args)
@@ -235,6 +282,20 @@ func IsToolPlumbing(inv Invocation) bool {
 		// `npm version` / `yarn version` bump the package version; only
 		// `--version` / `-v` are probes.
 		return isFlagVersionHelp(inv.Args)
+	default:
+		return false
+	}
+}
+
+// IsRustPlumbing reports whether inv is rustup/toolchain wiring or a
+// cargo/rustc version probe rather than a repository command.
+func IsRustPlumbing(inv Invocation) bool {
+	switch inv.Executable {
+	case "rustup", "rustup-init":
+		return true
+	case "cargo":
+		args := stripCargoToolchain(append([]string{"cargo"}, inv.Args...))
+		return isVersionInfoHelp(args[1:])
 	default:
 		return false
 	}

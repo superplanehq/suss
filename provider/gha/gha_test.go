@@ -320,6 +320,83 @@ jobs:
 	}
 }
 
+func TestDetectReadsRustToolchainActionTag(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: dtolnay/rust-toolchain@1.81.0
+      - run: cargo test
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "rust", "1.81.0") {
+		t.Fatalf("missing rust 1.81.0 from action tag in %+v", result.Findings)
+	}
+	if commands := commandByName(result); deref(commands["cargo test"].Run) != "cargo test" {
+		t.Fatalf("commands = %+v, want cargo test", commands)
+	}
+}
+
+func TestDetectReadsRustToolchainFileAndSkipsRemoteInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.80.0\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        rust: ["1.80.0", "1.81.0"]
+    steps:
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - run: rustup component add clippy
+      - run: cargo install cargo-nextest
+      - run: cargo test --locked
+`,
+	})
+
+	if got := sortedCopy(runtimeRequirementVersions(result, "rust")); !slices.Equal(got, []string{"1.80.0", "1.81.0"}) {
+		t.Fatalf("Rust versions = %v, want matrix pins", got)
+	}
+	commands := commandByName(result)
+	if deref(commands["cargo test"].Run) != "cargo test --locked" {
+		t.Fatalf("commands = %+v, want cargo test --locked", commands)
+	}
+	if _, ok := commands["rustup component add"]; ok {
+		t.Fatalf("rustup was emitted as a repository command: %+v", result.Findings)
+	}
+	if _, ok := commands["cargo install"]; ok {
+		t.Fatalf("remote cargo install was emitted as a repository command: %+v", result.Findings)
+	}
+}
+
+func TestDetectReadsRustToolchainFileInput(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"stable\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain-file: rust-toolchain.toml
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "rust", "stable") {
+		t.Fatalf("missing rust stable from toolchain file in %+v", result.Findings)
+	}
+}
+
 func TestDetectSkipsRemoteGemInstalls(t *testing.T) {
 	t.Parallel()
 

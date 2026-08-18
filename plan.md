@@ -186,6 +186,7 @@ Scope:
 
 - Elixir provider: `mix.exs`, Mix tasks and aliases, `.tool-versions`, ExUnit, Credo/Dialyzer configs; knowledge base entries.
 - Ruby provider: `Gemfile`, `Gemfile.lock`, `.ruby-version`, `.tool-versions`, Bundler, Rails, RSpec/Minitest/Rake test conventions, common tool configs; knowledge base entries. GitHub Actions recognizes `ruby/setup-ruby` runtime evidence.
+- Rust provider: `Cargo.toml` (package, workspace, rust-version, well-known frameworks), `Cargo.lock`, rust-toolchain files, `.tool-versions`, convention inference (`cargo fetch` / `cargo test` / `cargo build`), Clippy/rustfmt/nextest/cargo-deny config. GitHub Actions recognizes `dtolnay/rust-toolchain`, `actions-rs/toolchain`, and `actions-rust-lang/setup-rust-toolchain`.
 - Semaphore provider: pipelines, blocks, jobs, working directories, version and service evidence — same reconciliation path as GitHub Actions.
 - Whatever gaps the dogfood repositories expose.
 
@@ -193,6 +194,8 @@ Acceptance:
 
 - Golden plans for `elixir-ecto/ecto`, then `superplanehq/superplane`, `operately/operately`, and `semaphoreio/semaphore` are correct end to end.
 - The focused `ruby-rails` golden fixture is correct: Ruby and Rails identity, runtime and Bundler versions, dependency installation, tests, server, tool configuration, and GitHub Actions reconciliation all remain evidence-backed.
+- The focused `rust-simple`, `rust-gha`, and `rust-workspace` golden fixtures are correct: Cargo identity, rust-version and toolchain pins, inferred commands, workspace membership, and GitHub Actions reconciliation all remain evidence-backed.
+- Golden plan for `clap-rs/clap` is correct at the pinned commit: Cargo workspace, rust-toolchain, inferred cargo commands, and GitHub Actions reconciliation.
 - Golden plans for `basecamp/once-campfire` as a production Rails application and `ruby/rake` as a framework-free Ruby project are correct at pinned commits.
 
 Status: in progress. Elixir and Semaphore support are implemented; Ruby/Rails support has been added while the milestone's complex-project output remains under evaluation.
@@ -234,4 +237,4 @@ Acceptance:
 
 ## Out of scope for v0
 
-Per idea.md: command execution, execution profiles, behavior characteristics, README/docs parsing, workspace fan-out modeling, Python/Rust/JVM/.NET providers, GitLab/CircleCI/Buildkite.
+Per idea.md: command execution, execution profiles, behavior characteristics, README/docs parsing, workspace fan-out modeling, Python/JVM/.NET providers, GitLab/CircleCI/Buildkite.

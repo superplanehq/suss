@@ -19,6 +19,9 @@ func StripDirectoryFlags(inv Invocation) (dir string, canonical Invocation) {
 	case "composer":
 		args, dir = stripFlag(args, "--working-dir", dir)
 		args, dir = stripFlag(args, "-d", dir)
+	case "cargo":
+		args, dir = stripFlag(args, "-C", dir)
+		args, dir = stripManifestPath(args, dir)
 	}
 	return dir, Invocation{Executable: inv.Executable, Args: args}
 }
@@ -47,4 +50,23 @@ func stripFlag(args []string, name, current string) ([]string, string) {
 		out = append(out, arg)
 	}
 	return out, dir
+}
+
+func stripManifestPath(args []string, current string) ([]string, string) {
+	out, dir := stripFlag(args, "--manifest-path", current)
+	if dir == current || dir == "" {
+		return out, current
+	}
+	normalized := strings.ReplaceAll(dir, "\\", "/")
+	if !strings.HasSuffix(normalized, "Cargo.toml") {
+		return out, dir
+	}
+	parent, _, ok := strings.Cut(normalized, "/Cargo.toml")
+	if !ok || parent == "" || parent == "." {
+		if strings.EqualFold(normalized, "Cargo.toml") {
+			return out, "."
+		}
+		return out, dir
+	}
+	return out, parent
 }
