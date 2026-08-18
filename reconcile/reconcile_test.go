@@ -351,6 +351,239 @@ func TestApplyDoesNotFoldIncompatibleRangeMembersAsEvidence(t *testing.T) {
 	}
 }
 
+func TestApplyDoesNotFoldSetupPHPExcludedByComposerInequality(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    "!=8.1",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.1.0")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 8.1.0 attached to !=8.1", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 1 {
+		t.Fatalf("conflicts = %+v, want a version conflict for 8.1.0 vs !=8.1", got[0].Conflicts)
+	}
+}
+
+func TestApplyDoesNotFoldSetupPHPExcludedByComposerWildcardInequality(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    "!=8.1.*",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.1.5")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 8.1.5 attached to !=8.1.*", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 1 {
+		t.Fatalf("conflicts = %+v, want a version conflict for 8.1.5 vs !=8.1.*", got[0].Conflicts)
+	}
+}
+
+func TestApplyFoldsSetupPHPInsideAComposerSinglePipeUnion(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    "^8.1 | ^8.3",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.3")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none for 8.3 vs ^8.1 | ^8.3", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want declaration plus CI 8.3", got[0].Requirements[0].Evidence)
+	}
+	if values := matrixPHPValues(got[0].Facts); len(values) != 0 {
+		t.Fatalf("facts = %+v, did not want ci.matrix.php for an evaluable union", got[0].Facts)
+	}
+}
+
+func TestApplyFoldsSetupPHPMatchingAComposerExactConstraint(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    "=8.3.0",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.3.0")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none for =8.3.0 vs 8.3.0", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want declaration plus CI 8.3.0", got[0].Requirements[0].Evidence)
+	}
+}
+
+func TestApplyFoldsSetupPHPMatchingABareComposerExactVersion(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    "8.3",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.3.0")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none for 8.3 vs 8.3.0", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want declaration plus CI 8.3.0", got[0].Requirements[0].Evidence)
+	}
+}
+
+func TestApplyDoesNotFoldSetupPHPBelowAStabilitySuffixedBound(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    ">=8.1@dev",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.0")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 8.0 attached to >=8.1@dev", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 1 {
+		t.Fatalf("conflicts = %+v, want a version conflict for 8.0 vs >=8.1@dev", got[0].Conflicts)
+	}
+}
+
+func TestApplyFoldsSetupPHPInsideAComposerTildeRange(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    "~8.1",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.2")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none for Composer ~8.1 vs 8.2", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want declaration plus CI 8.2", got[0].Requirements[0].Evidence)
+	}
+}
+
+func TestApplyDoesNotFoldSetupPHPOutsideAComposerCommaUpperBound(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    ">=8.1,<8.3",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.4")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 8.4 attached to >=8.1,<8.3", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 1 {
+		t.Fatalf("conflicts = %+v, want a version conflict for 8.4 vs >=8.1,<8.3", got[0].Conflicts)
+	}
+}
+
+func TestApplyDoesNotFoldACIPinOutsideAComposerCommaConstraint(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    ">=8.1,<8.4",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.4")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 8.4 attached to >=8.1,<8.4", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 1 {
+		t.Fatalf("conflicts = %+v, want a version conflict for 8.4 vs >=8.1,<8.4", got[0].Conflicts)
+	}
+}
+
+func TestApplyFoldsACIPinInsideAComposerCommaConstraint(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    ">=8.1,<8.4",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.3")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none for 8.3 vs >=8.1,<8.4", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want declaration plus CI 8.3", got[0].Requirements[0].Evidence)
+	}
+}
+
 func TestApplyDoesNotFoldAVersionAboveAnUpperBound(t *testing.T) {
 	t.Parallel()
 
@@ -550,6 +783,24 @@ func TestApplyConflictsASingleCIPinAgainstADifferentDeclaration(t *testing.T) {
 	}
 }
 
+func ciPHP(version string) plan.RequirementFinding {
+	return plan.RequirementFinding{
+		ProjectPath: ".",
+		Requirement: plan.Requirement{
+			Kind:       plan.RequirementRuntime,
+			Name:       "php",
+			Version:    version,
+			Confidence: plan.ConfidenceHigh,
+			Evidence: []plan.Evidence{{
+				Kind:        plan.EvidenceInvocation,
+				Source:      ".github/workflows/ci.yml",
+				Pointer:     "/jobs/test/steps/1/with/php-version",
+				Description: "CI tests php " + version,
+			}},
+		},
+	}
+}
+
 func ciNode(version string) plan.RequirementFinding {
 	return plan.RequirementFinding{
 		ProjectPath: ".",
@@ -569,9 +820,17 @@ func ciNode(version string) plan.RequirementFinding {
 }
 
 func matrixNodeValues(facts []plan.ProjectFact) []string {
+	return matrixRuntimeValues(facts, "node")
+}
+
+func matrixPHPValues(facts []plan.ProjectFact) []string {
+	return matrixRuntimeValues(facts, "php")
+}
+
+func matrixRuntimeValues(facts []plan.ProjectFact, runtime string) []string {
 	var values []string
 	for _, fact := range facts {
-		if fact.Name == "ci.matrix.node" {
+		if fact.Name == "ci.matrix."+runtime {
 			values = append(values, fact.Value)
 		}
 	}

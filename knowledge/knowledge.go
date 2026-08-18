@@ -40,6 +40,7 @@ type rule struct {
 	ID           string            `json:"id"`
 	Executable   string            `json:"executable"`
 	ArgsPrefix   []string          `json:"argsPrefix"`
+	ArgsContains []string          `json:"argsContains"`
 	Capabilities []plan.Capability `json:"capabilities"`
 	Confidence   plan.Confidence   `json:"confidence"`
 	Description  string            `json:"description"`
@@ -74,7 +75,8 @@ func loaded() ([]rule, error) {
 }
 
 // Interpret returns knowledge-base matches for a single invocation. When
-// several rules match, only the most specific args-prefix group is kept.
+// several rules match, only the most specific args-prefix and args-contains
+// group is kept.
 func Interpret(inv Invocation) []Match {
 	loadedRules, err := loaded()
 	if err != nil {
@@ -95,12 +97,15 @@ func Interpret(inv Invocation) []Match {
 		if !hasArgsPrefix(inv.Args, rule.ArgsPrefix) {
 			continue
 		}
-		prefixLen := len(rule.ArgsPrefix)
-		if prefixLen < bestLen {
+		if !hasArgsContains(inv.Args, rule.ArgsContains) {
 			continue
 		}
-		if prefixLen > bestLen {
-			bestLen = prefixLen
+		specificity := len(rule.ArgsPrefix) + len(rule.ArgsContains)
+		if specificity < bestLen {
+			continue
+		}
+		if specificity > bestLen {
+			bestLen = specificity
 			matches = matches[:0]
 		}
 		for _, capability := range rule.Capabilities {
@@ -113,6 +118,42 @@ func Interpret(inv Invocation) []Match {
 		}
 	}
 	return uniqueCapabilities(matches)
+}
+
+// CommandName is the stable display name for an observed invocation.
+// Package-manager installs and scripts keep their existing names. Tools
+// that do not take subcommands keep the executable so filter values are
+// not treated as commands.
+func CommandName(inv Invocation) string {
+	classified, ok := ClassifyManager(inv)
+	if ok && classified.Install {
+		return "install dependencies"
+	}
+	if ok && classified.Script != "" {
+		return classified.Script
+	}
+	if inv.Executable == "" {
+		return "command"
+	}
+	if !takesSubcommand(inv.Executable) {
+		return inv.Executable
+	}
+	for _, arg := range inv.Args {
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		return inv.Executable + " " + arg
+	}
+	return inv.Executable
+}
+
+func takesSubcommand(executable string) bool {
+	switch canonicalizeExecutable(executable) {
+	case "phpunit", "simple-phpunit", "pest", "phpstan", "psalm", "phpcs", "pint", "php-cs-fixer":
+		return false
+	default:
+		return true
+	}
 }
 
 // InterpretScript parses a shell-ish script and interprets each command.
@@ -130,6 +171,7 @@ type Statement struct {
 	Raw        string
 	EnvNames   []string
 	Chdir      string
+	WorkingDir string
 	Invocation Invocation
 }
 
@@ -185,11 +227,25 @@ func parseStatement(part string) Statement {
 	if len(rest) == 1 && rest[0] == "cd" {
 		return stmt
 	}
+	if dir := workingDirectoryFlag(rest); dir != "" {
+		stmt.WorkingDir = dir
+	}
 	inv, ok := parseInvocation(part)
 	if ok {
 		stmt.Invocation = inv
 	}
 	return stmt
+}
+
+func workingDirectoryFlag(tokens []string) string {
+	if len(tokens) == 0 {
+		return ""
+	}
+	dir, _ := StripDirectoryFlags(Invocation{
+		Executable: canonicalizeExecutable(tokens[0]),
+		Args:       tokens[1:],
+	})
+	return dir
 }
 
 func splitCommandList(script string, splitPipes bool) []string {
@@ -453,6 +509,28 @@ func dropWrappers(tokens []string) []string {
 		if len(tokens) >= 2 && tokens[1] == "exec" {
 			return dropLeadingFlags(tokens[2:])
 		}
+	case "composer":
+		rest := skipComposerGlobalOptions(tokens[1:])
+		if len(rest) == 0 {
+			break
+		}
+		if rest[0] == "exec" {
+			unwrapped := skipComposerGlobalOptions(rest[1:])
+			if len(unwrapped) > 0 && unwrapped[0] == "--" {
+				return unwrapped[1:]
+			}
+			return unwrapped
+		}
+		return append([]string{"composer"}, rest...)
+	case "php":
+		rest := skipPHPCLIOptions(tokens[1:])
+		if len(rest) == 0 {
+			break
+		}
+		if isVendorBinPath(rest[0]) {
+			return rest
+		}
+		return append([]string{"php"}, rest...)
 	case "npm", "pnpm", "yarn":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
 			return dropLeadingFlags(tokens[2:])
@@ -463,6 +541,129 @@ func dropWrappers(tokens []string) []string {
 		}
 	}
 	return tokens
+}
+
+func isVendorBinPath(value string) bool {
+	value = strings.ReplaceAll(value, "\\", "/")
+	return strings.HasPrefix(value, "vendor/bin/") || strings.Contains(value, "/vendor/bin/")
+}
+
+// skipPHPCLIOptions drops php(1) flags and their values so a following
+// script or vendor/bin executable can be unwrapped. -f/--file values are
+// kept as the PHP script target. Other value-taking options follow `php --help`.
+func skipPHPCLIOptions(tokens []string) []string {
+	i := 0
+	for i < len(tokens) {
+		token := tokens[i]
+		if token == "--" {
+			return tokens[i+1:]
+		}
+		if !strings.HasPrefix(token, "-") {
+			return tokens[i:]
+		}
+		name, hasValue := phpCLIOption(token)
+		if phpCLIExecutionMode(name) {
+			return nil
+		}
+		if name == "-f" || name == "--file" {
+			target, rest, ok := phpFileOptionTarget(tokens, i, token, hasValue)
+			if !ok {
+				return nil
+			}
+			return append([]string{target}, rest...)
+		}
+		if phpCLIOptionTakesValue(name) && !hasValue {
+			if i+1 >= len(tokens) {
+				return nil
+			}
+			i += 2
+			continue
+		}
+		i++
+	}
+	return nil
+}
+
+func phpFileOptionTarget(tokens []string, i int, token string, hasValue bool) (string, []string, bool) {
+	if hasValue {
+		var target string
+		if strings.HasPrefix(token, "--") {
+			_, target, _ = strings.Cut(token, "=")
+		} else {
+			target = strings.TrimPrefix(token[2:], "=")
+		}
+		if target == "" {
+			return "", nil, false
+		}
+		return target, tokens[i+1:], true
+	}
+	if i+1 >= len(tokens) {
+		return "", nil, false
+	}
+	return tokens[i+1], tokens[i+2:], true
+}
+
+func skipComposerGlobalOptions(args []string) []string {
+	i := 0
+	for i < len(args) && strings.HasPrefix(args[i], "-") && args[i] != "--" {
+		name, _, hasValue := strings.Cut(args[i], "=")
+		if !hasValue && composerGlobalOptionTakesValue(name) && i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+			i += 2
+			continue
+		}
+		i++
+	}
+	return args[i:]
+}
+
+func composerGlobalOptionTakesValue(name string) bool {
+	return name == "--working-dir" || name == "-d"
+}
+
+func phpCLIOption(token string) (name string, hasValue bool) {
+	if strings.HasPrefix(token, "--") {
+		name, _, hasValue = strings.Cut(token, "=")
+		return name, hasValue
+	}
+	if len(token) > 2 {
+		return token[:2], true
+	}
+	return token, false
+}
+
+func phpCLIExecutionMode(name string) bool {
+	switch name {
+	case "-r", "--run",
+		"-l", "--syntax-check",
+		"-s", "-w",
+		"-B", "--process-begin",
+		"-R", "--process-code",
+		"-F", "--process-file",
+		"-E", "--process-end",
+		"-S", "--server":
+		return true
+	default:
+		return false
+	}
+}
+
+func phpCLIOptionTakesValue(name string) bool {
+	switch name {
+	case "-c", "--php-ini",
+		"-d", "--define",
+		"-f", "--file",
+		"-r", "--run",
+		"-B", "--process-begin",
+		"-R", "--process-code",
+		"-F", "--process-file",
+		"-E", "--process-end",
+		"-S", "--server",
+		"-t", "--docroot",
+		"-z", "--zend-extension":
+		return true
+	default:
+		return false
+	}
 }
 
 func dropLeadingFlags(tokens []string) []string {
@@ -492,6 +693,22 @@ func hasArgsPrefix(args, prefix []string) bool {
 	}
 	for i, part := range prefix {
 		if args[i] != part {
+			return false
+		}
+	}
+	return true
+}
+
+func hasArgsContains(args, required []string) bool {
+	if len(required) == 0 {
+		return true
+	}
+	have := make(map[string]struct{}, len(args))
+	for _, arg := range args {
+		have[arg] = struct{}{}
+	}
+	for _, want := range required {
+		if _, ok := have[want]; !ok {
 			return false
 		}
 	}

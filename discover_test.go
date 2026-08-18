@@ -19,6 +19,8 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	writeFile(t, filepath.Join(root, "backend", "go.mod"), "module example.com/backend\n\ngo 1.26\n")
 	writeFile(t, filepath.Join(root, "apps", "web", "mix.exs"), "defmodule Web.MixProject do\nend\n")
 	writeFile(t, filepath.Join(root, "admin", "Gemfile"), "source \"https://rubygems.org\"\n")
+	writeFile(t, filepath.Join(root, "api", "composer.json"), "{}\n")
+	writeFile(t, filepath.Join(root, "vendor-bin", "phpstan", "composer.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "node_modules", "left-pad", "package.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "vendor", "module", "go.mod"), "module example.com/vendored\n\ngo 1.26\n")
 	writeFile(t, filepath.Join(root, "deps", "plug", "mix.exs"), "defmodule Plug.MixProject do\nend\n")
@@ -29,7 +31,7 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	if err != nil {
 		t.Fatalf("findProjectRoots() error = %v", err)
 	}
-	want := []string{".", "admin", "apps/web", "backend", "frontend"}
+	want := []string{".", "admin", "api", "apps/web", "backend", "frontend"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
 	}
@@ -115,6 +117,82 @@ func TestFindProjectRootsSkipsSymlinkedDirectories(t *testing.T) {
 	want := []string{"real"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestDetectConflictsSetupPHPOutsideAComposerCommaConstraint(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "composer.json"), `{"require":{"php":">=8.1,<8.3"}}`+"\n")
+	writeFile(t, filepath.Join(root, ".github", "workflows", "ci.yml"), `
+jobs:
+  test:
+    steps:
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+`)
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if len(document.Projects) != 1 {
+		t.Fatalf("len(projects) = %d, want 1", len(document.Projects))
+	}
+	project := document.Projects[0]
+	if !hasRequirement(project, plan.RequirementRuntime, "php", ">=8.1,<8.3") {
+		t.Fatalf("requirements = %+v, want declared >=8.1,<8.3", project.Requirements)
+	}
+	if len(project.Conflicts) != 1 || project.Conflicts[0].Subject != "runtime.php.version" {
+		t.Fatalf("conflicts = %+v, want 8.4 vs >=8.1,<8.3", project.Conflicts)
+	}
+}
+
+func TestDetectDoesNotLinkComposerUpgradeToADeclaredUpgradeScript(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "composer.json"), `{
+  "require": {"php": "^8.2"},
+  "scripts": {
+    "upgrade": "@php vendor/bin/phpunit"
+  }
+}`+"\n")
+	writeFile(t, filepath.Join(root, ".github", "workflows", "ci.yml"), `
+jobs:
+  test:
+    steps:
+      - run: composer upgrade
+`)
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if len(document.Projects) != 1 {
+		t.Fatalf("len(projects) = %d, want 1", len(document.Projects))
+	}
+
+	var declared, observed *plan.Command
+	for i := range document.Projects[0].Commands {
+		command := &document.Projects[0].Commands[i]
+		if command.Name == "upgrade" && derefRun(command.Run) == "composer run-script upgrade" {
+			declared = command
+		}
+		if derefRun(command.Run) == "composer upgrade" {
+			observed = command
+		}
+	}
+	if declared == nil {
+		t.Fatalf("commands = %+v, want declared upgrade script", document.Projects[0].Commands)
+	}
+	if len(declared.Variants) != 0 {
+		t.Fatalf("declared upgrade variants = %+v, did not want composer upgrade attached", declared.Variants)
+	}
+	if observed == nil {
+		t.Fatalf("commands = %+v, want observed composer upgrade as its own command", document.Projects[0].Commands)
 	}
 }
 

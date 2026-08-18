@@ -85,7 +85,7 @@ func extractStep(ctx provider.Context, source, workflowDir, jobWD, stepPointer s
 		if strings.TrimSpace(step.Run) == "" {
 			continue
 		}
-		commands, err := runFindings(ctx, source, dir, stepPointer+"/run", step.Run)
+		commands, err := runFindings(ctx, source, dir, stepPointer+"/run", step.Run, matrix)
 		if err != nil {
 			return nil, err
 		}
@@ -145,6 +145,8 @@ func usesFindings(ctx provider.Context, source, dir, stepPointer string, step st
 			}
 		}
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "ruby", step.With, matrix, []string{"ruby-version"})
+	case "shivammathur/setup-php":
+		return setupRuntimeFindings(ctx, source, dir, stepPointer, "php", step.With, matrix, []string{"php-version"})
 	case "golangci/golangci-lint-action":
 		return golangciActionFindings(source, dir, stepPointer, step)
 	default:
@@ -183,7 +185,8 @@ func setupRuntimeFindings(ctx provider.Context, source, dir, stepPointer, runtim
 
 	raw := strings.TrimSpace(with[versionKey])
 	if raw == "" {
-		return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/with/"+versionKey, runtime, "", "The setup action does not pin a version.")}
+		// The version input may be omitted entirely; /uses always exists.
+		return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/uses", runtime, "", "The setup action does not pin a version.")}
 	}
 
 	versions := []string{raw}
@@ -272,15 +275,17 @@ func runtimeFinding(source, dir, pointer, name, version, description string) pla
 	})
 }
 
-func runFindings(ctx provider.Context, source, dir, pointer, script string) ([]plan.Finding, error) {
+func runFindings(ctx provider.Context, source, dir, pointer, script string, matrix map[string][]string) ([]plan.Finding, error) {
 	statements := knowledge.ParseStatementsKeepPipelines(normalizeRunScript(script))
 	suffix := len(statements) > 1
-	current := dir
+	currents := []string{dir}
 	var findings []plan.Finding
 	for i, stmt := range statements {
-		commandDir := applyStatementDirectory(ctx.RepositoryRoot, current, stmt)
+		dirs := expandStatementDirectories(ctx.RepositoryRoot, currents, stmt, matrix)
 		if stmt.Chdir != "" {
-			current = commandDir
+			if len(dirs) > 0 {
+				currents = dirs
+			}
 			continue
 		}
 		if skipStatement(stmt) {
@@ -294,28 +299,48 @@ func runFindings(ctx provider.Context, source, dir, pointer, script string) ([]p
 		if suffix {
 			commandPointer = pointer + "#command=" + strconv.Itoa(i)
 		}
-		command, err := observedCommand(source, commandDir, commandPointer, stmt)
-		if err != nil {
-			return nil, err
+		for _, commandDir := range dirs {
+			command, err := observedCommand(source, commandDir, commandPointer, stmt)
+			if err != nil {
+				return nil, err
+			}
+			findings = append(findings, plan.CommandFinding{
+				ProjectPath: commandDir,
+				Detector:    providerName,
+				Command:     command,
+			})
 		}
-		findings = append(findings, plan.CommandFinding{
-			ProjectPath: commandDir,
-			Detector:    providerName,
-			Command:     command,
-		})
 	}
 	return findings, nil
 }
 
-func applyStatementDirectory(repo, current string, stmt knowledge.Statement) string {
+func expandStatementDirectories(repo string, currents []string, stmt knowledge.Statement, matrix map[string][]string) []string {
+	var dirs []string
+	seen := make(map[string]struct{}, len(currents))
+	for _, current := range currents {
+		for _, dir := range statementDirectories(repo, current, stmt, matrix) {
+			if _, ok := seen[dir]; ok {
+				continue
+			}
+			seen[dir] = struct{}{}
+			dirs = append(dirs, dir)
+		}
+	}
+	return dirs
+}
+
+func statementDirectories(repo, current string, stmt knowledge.Statement, matrix map[string][]string) []string {
 	if stmt.Chdir != "" {
-		return resolveDirectory(repo, current, stmt.Chdir)
+		return expandDirectories(repo, current, stmt.Chdir, matrix)
 	}
-	dir, _ := knowledge.StripDirectoryFlags(stmt.Invocation)
-	if dir == "" {
-		return current
+	rel := stmt.WorkingDir
+	if rel == "" {
+		rel, _ = knowledge.StripDirectoryFlags(stmt.Invocation)
 	}
-	return resolveDirectory(repo, current, dir)
+	if rel == "" {
+		return []string{current}
+	}
+	return expandDirectories(repo, current, rel, matrix)
 }
 
 func observedCommand(source, dir, pointer string, stmt knowledge.Statement) (plan.Command, error) {
@@ -333,7 +358,7 @@ func observedCommand(source, dir, pointer string, stmt knowledge.Statement) (pla
 	run := knowledge.RedactAssignmentValues(stmt.Raw)
 	return plan.Command{
 		ID:              id,
-		Name:            observedName(canonical),
+		Name:            knowledge.CommandName(canonical),
 		Run:             stringPtr(run),
 		Directory:       dir,
 		Scope:           plan.ScopeProject,
@@ -343,26 +368,6 @@ func observedCommand(source, dir, pointer string, stmt knowledge.Statement) (pla
 		Interpretations: observedInterpretations(source, pointer, canonical),
 		Variants:        []plan.CommandVariant{},
 	}, nil
-}
-
-func observedName(inv knowledge.Invocation) string {
-	classified, ok := knowledge.ClassifyManager(inv)
-	if ok && classified.Install {
-		return "install dependencies"
-	}
-	if ok && classified.Script != "" {
-		return classified.Script
-	}
-	if inv.Executable == "" {
-		return "command"
-	}
-	for _, arg := range inv.Args {
-		if strings.HasPrefix(arg, "-") {
-			continue
-		}
-		return inv.Executable + " " + arg
-	}
-	return inv.Executable
 }
 
 func observedInterpretations(source, pointer string, inv knowledge.Invocation) []plan.Interpretation {

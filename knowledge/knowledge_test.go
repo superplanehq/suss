@@ -203,6 +203,243 @@ func TestInterpretMatchesRubyInvocations(t *testing.T) {
 	}
 }
 
+func TestInterpretMatchesPHPInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		invocation Invocation
+		capability plan.Capability
+	}{
+		{invocation: Invocation{Executable: "composer", Args: []string{"install"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "composer", Args: []string{"i"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "phpunit"}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "simple-phpunit"}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "pest"}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "php", Args: []string{"artisan", "test"}}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "php", Args: []string{"artisan", "serve"}}, capability: plan.CapabilityApplicationRun},
+		{invocation: Invocation{Executable: "phpstan", Args: []string{"analyse"}}, capability: plan.CapabilityCodeTypecheck},
+		{invocation: Invocation{Executable: "psalm"}, capability: plan.CapabilityCodeTypecheck},
+		{invocation: Invocation{Executable: "pint"}, capability: plan.CapabilityCodeFormat},
+		{invocation: Invocation{Executable: "pint", Args: []string{"--test"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "pint", Args: []string{"--dirty", "--test"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "pint", Args: []string{"app", "--test"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "php-cs-fixer", Args: []string{"fix"}}, capability: plan.CapabilityCodeFormat},
+		{invocation: Invocation{Executable: "php-cs-fixer", Args: []string{"fix", "--dry-run", "--diff"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "php-cs-fixer", Args: []string{"check"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "phpcs"}, capability: plan.CapabilityCodeLint},
+	}
+	for _, tt := range tests {
+		matches := Interpret(tt.invocation)
+		if len(matches) != 1 || matches[0].Capability != tt.capability {
+			t.Fatalf("Interpret(%+v) = %+v, want %s", tt.invocation, matches, tt.capability)
+		}
+	}
+}
+
+func TestInterpretLeavesPHPCsFixerInspectionCommandsUnmatched(t *testing.T) {
+	t.Parallel()
+
+	for _, args := range [][]string{{"describe", "psr2"}, {"list-files"}, {"list"}} {
+		inv := Invocation{Executable: "php-cs-fixer", Args: args}
+		if matches := Interpret(inv); len(matches) != 0 {
+			t.Fatalf("Interpret(%+v) = %+v, want no fabricated code.format", inv, matches)
+		}
+	}
+}
+
+func TestCommandNameKeepsPHPUnitFilterValuesOutOfTheName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		inv  Invocation
+		want string
+	}{
+		{inv: Invocation{Executable: "phpunit", Args: []string{"--", "--group", "Elasticsearch"}}, want: "phpunit"},
+		{inv: Invocation{Executable: "phpunit", Args: []string{"--exclude-group", "Elasticsearch,Elastica"}}, want: "phpunit"},
+		{inv: Invocation{Executable: "pest", Args: []string{"--filter", "Login"}}, want: "pest"},
+		{inv: Invocation{Executable: "php", Args: []string{"artisan", "test"}}, want: "php artisan"},
+		{inv: Invocation{Executable: "go", Args: []string{"test", "./..."}}, want: "go test"},
+	}
+	for _, tt := range tests {
+		if got := CommandName(tt.inv); got != tt.want {
+			t.Fatalf("CommandName(%+v) = %q, want %q", tt.inv, got, tt.want)
+		}
+	}
+}
+
+func TestParseScriptStripsComposerExecAndPHPVendorBin(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("composer exec phpunit -- testdox && php vendor/bin/phpstan analyse")
+	want := []Invocation{
+		{Executable: "phpunit", Args: []string{"--", "testdox"}},
+		{Executable: "phpstan", Args: []string{"analyse"}},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestParseScriptSkipsPHPCLIOptionsBeforeVendorBin(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("php -d memory_limit=-1 vendor/bin/phpunit && php -dmemory_limit=-1 vendor/bin/phpunit --testdox && php -n vendor/bin/pest")
+	want := []Invocation{
+		{Executable: "phpunit"},
+		{Executable: "phpunit", Args: []string{"--testdox"}},
+		{Executable: "pest"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestParseScriptStripsPHPCLIOptionsBeforeArtisan(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("php -d memory_limit=-1 artisan test")
+	want := []Invocation{{Executable: "php", Args: []string{"artisan", "test"}}}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestParseScriptPreservesPHPFileOptionTargets(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("php -f vendor/bin/phpunit && php --file vendor/bin/phpunit --testdox && php -fvendor/bin/pest")
+	want := []Invocation{
+		{Executable: "phpunit"},
+		{Executable: "phpunit", Args: []string{"--testdox"}},
+		{Executable: "pest"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestParseStatementsKeepsComposerWorkingDirWhenUnwrappingExec(t *testing.T) {
+	t.Parallel()
+
+	got := ParseStatements("composer -d tools exec phpunit")
+	if len(got) != 1 || got[0].WorkingDir != "tools" || got[0].Invocation.Executable != "phpunit" {
+		t.Fatalf("ParseStatements() = %+v, want phpunit in tools", got)
+	}
+}
+
+func TestParseScriptNormalizesComposerGlobalOptionsBeforeInstall(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("composer --no-interaction install && composer -v install")
+	want := []Invocation{
+		{Executable: "composer", Args: []string{"install"}},
+		{Executable: "composer", Args: []string{"install"}},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+	matches := Interpret(got[0])
+	if len(matches) != 1 || matches[0].Capability != plan.CapabilityDependenciesInstall {
+		t.Fatalf("Interpret(composer --no-interaction install) = %+v, want dependencies.install", matches)
+	}
+}
+
+func TestParseScriptDoesNotUnwrapPHPSyntaxCheckAsVendorBin(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("php -l vendor/bin/phpunit && php --syntax-check vendor/bin/pest && php -s vendor/bin/phpunit && php -w vendor/bin/pest")
+	want := []Invocation{
+		{Executable: "php", Args: []string{"-l", "vendor/bin/phpunit"}},
+		{Executable: "php", Args: []string{"--syntax-check", "vendor/bin/pest"}},
+		{Executable: "php", Args: []string{"-s", "vendor/bin/phpunit"}},
+		{Executable: "php", Args: []string{"-w", "vendor/bin/pest"}},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+	for _, inv := range got {
+		if matches := Interpret(inv); len(matches) != 0 {
+			t.Fatalf("Interpret(%+v) = %+v, want no fabricated test.run", inv, matches)
+		}
+	}
+}
+
+func TestParseStatementsKeepsWorkingDirAfterComposerExec(t *testing.T) {
+	t.Parallel()
+
+	got := ParseStatements("composer exec -d tools phpunit && composer exec --working-dir tools pest")
+	if len(got) != 2 {
+		t.Fatalf("ParseStatements() = %+v, want two statements", got)
+	}
+	if got[0].WorkingDir != "tools" || got[0].Invocation.Executable != "phpunit" {
+		t.Fatalf("first statement = %+v, want phpunit in tools", got[0])
+	}
+	if got[1].WorkingDir != "tools" || got[1].Invocation.Executable != "pest" {
+		t.Fatalf("second statement = %+v, want pest in tools", got[1])
+	}
+}
+
+func TestParseScriptDoesNotUnwrapPHPInlineCodeAsVendorBin(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("php -r 'echo $argv[1];' vendor/bin/phpunit")
+	if len(got) != 1 || got[0].Executable != "php" {
+		t.Fatalf("ParseScript() = %#v, want php, not unwrapped phpunit", got)
+	}
+	if matches := Interpret(got[0]); len(matches) != 0 {
+		t.Fatalf("Interpret(php -r … phpunit) = %+v, want no fabricated test.run", matches)
+	}
+}
+
+func TestParseScriptUnwrapsComposerExecAfterGlobalOptions(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("composer --no-interaction exec phpunit && composer -d tools exec pest")
+	want := []Invocation{
+		{Executable: "phpunit"},
+		{Executable: "pest"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
+	t.Parallel()
+
+	install, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{"install", "--no-interaction"}})
+	if !ok || !install.Install || install.Script != "" {
+		t.Fatalf("ClassifyManager(composer install) = %+v, ok=%v", install, ok)
+	}
+
+	script, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{"run-script", "test", "--", "--parallel"}})
+	if !ok || script.Script != "test" || !slices.Equal(script.Args, []string{"--", "--parallel"}) {
+		t.Fatalf("ClassifyManager(composer run-script test) = %+v, ok=%v", script, ok)
+	}
+
+	bare, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{"test", "--parallel"}})
+	if !ok || bare.Script != "test" || !slices.Equal(bare.Args, []string{"--parallel"}) {
+		t.Fatalf("ClassifyManager(composer test) = %+v, ok=%v", bare, ok)
+	}
+
+	phpstan, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{"phpstan"}})
+	if !ok || phpstan.Script != "phpstan" {
+		t.Fatalf("ClassifyManager(composer phpstan) = %+v, ok=%v", phpstan, ok)
+	}
+
+	update, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{"update"}})
+	if !ok || update.Install || update.Script != "" {
+		t.Fatalf("ClassifyManager(composer update) = %+v, ok=%v", update, ok)
+	}
+
+	for _, alias := range []string{"upgrade", "u", "info", "rm", "uninstall", "r", "cc", "completion"} {
+		got, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{alias}})
+		if !ok || got.Install || got.Script != "" {
+			t.Fatalf("ClassifyManager(composer %s) = %+v, ok=%v, want a builtin", alias, got, ok)
+		}
+	}
+}
+
 func TestIsRemoteGemInstall(t *testing.T) {
 	t.Parallel()
 
@@ -419,6 +656,30 @@ func TestIsToolPlumbingCoversVersionProbes(t *testing.T) {
 	}
 	if IsToolPlumbing(Invocation{Executable: "npm", Args: []string{"version", "--no-git-tag-version", "1.2.3"}}) {
 		t.Fatal("IsToolPlumbing(npm version ...) = true, want false; npm version bumps the package")
+	}
+	if IsToolPlumbing(Invocation{Executable: "composer", Args: []string{"-v", "install"}}) {
+		t.Fatal("IsToolPlumbing(composer -v install) = true, want false; -v is verbosity")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "composer", Args: []string{"-V"}}) {
+		t.Fatal("IsToolPlumbing(composer -V) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "composer", Args: []string{"--version"}}) {
+		t.Fatal("IsToolPlumbing(composer --version) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "php", Args: []string{"-v"}}) {
+		t.Fatal("IsToolPlumbing(php -v) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "php", Args: []string{"-i"}}) {
+		t.Fatal("IsToolPlumbing(php -i) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "php", Args: []string{"--ini"}}) {
+		t.Fatal("IsToolPlumbing(php --ini) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "php", Args: []string{"-m"}}) {
+		t.Fatal("IsToolPlumbing(php -m) = false, want true")
+	}
+	if IsToolPlumbing(Invocation{Executable: "php", Args: []string{"artisan", "test"}}) {
+		t.Fatal("IsToolPlumbing(php artisan test) = true, want false")
 	}
 }
 

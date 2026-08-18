@@ -250,6 +250,76 @@ jobs:
 	}
 }
 
+func TestDetectReadsSetupPHPMatrixVersions(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        php: ["8.3", "8.4"]
+    steps:
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+`,
+	})
+
+	if got := sortedCopy(runtimeRequirementVersions(result, "php")); !slices.Equal(got, []string{"8.3", "8.4"}) {
+		t.Fatalf("PHP versions = %v, want matrix pins", got)
+	}
+}
+
+func TestDetectPointsUnpinnedSetupPHPAtUses(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: shivammathur/setup-php@v2
+`,
+	})
+
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != "php" {
+			continue
+		}
+		if item.Requirement.Version != "" {
+			t.Fatalf("unpinned setup-php version = %q, want empty", item.Requirement.Version)
+		}
+		if len(item.Requirement.Evidence) == 0 || item.Requirement.Evidence[0].Pointer != "/jobs/test/steps/0/uses" {
+			t.Fatalf("unpinned setup-php evidence = %+v, want /jobs/test/steps/0/uses", item.Requirement.Evidence)
+		}
+		return
+	}
+	t.Fatal("missing unpinned PHP runtime from setup-php")
+}
+
+func TestDetectIgnoresUnknownSetupPHPVersionFileInput(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".php-version": "8.3.6\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version-file: .php-version
+`,
+	})
+
+	if hasRequirement(result, plan.RequirementRuntime, "php", "8.3.6") {
+		t.Fatal("setup-php php-version-file input was treated as a supported version pin")
+	}
+}
+
 func TestDetectSkipsRemoteGemInstalls(t *testing.T) {
 	t.Parallel()
 
@@ -357,6 +427,179 @@ jobs:
 
 	if got := keys(commandByName(result)); !slices.Equal(got, []string{"go test"}) {
 		t.Fatalf("commands = %v, want only go test", got)
+	}
+}
+
+func TestDetectSkipsPHPDiagnosticProbes(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: |
+          php -i
+          php --ini
+          php -m
+          composer -v install
+`,
+	})
+
+	if got := keys(commandByName(result)); !slices.Equal(got, []string{"install dependencies"}) {
+		t.Fatalf("commands = %v, want only composer -v install", got)
+	}
+}
+
+func TestDetectFansOutMatrixCdBeforeComposerTest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        dir: [packages/app, packages/lib]
+    steps:
+      - run: |
+          cd ${{ matrix.dir }}
+          composer test
+          composer phpstan
+`,
+	})
+	for _, name := range []string{"test", "phpstan"} {
+		dirs := commandDirectories(result, name)
+		if !slices.Equal(sortedCopy(dirs), []string{"packages/app", "packages/lib"}) {
+			t.Fatalf("%s directories = %v, want packages/app and packages/lib", name, dirs)
+		}
+	}
+}
+
+func TestDetectNamesUnwrappedPHPUnitWithoutFilterValues(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: composer exec phpunit -- --group Elasticsearch
+`,
+	})
+	got := commandByName(result)["phpunit"]
+	if got.Name != "phpunit" || deref(got.Run) != "composer exec phpunit -- --group Elasticsearch" {
+		t.Fatalf("command = %+v, want name phpunit", got)
+	}
+	if _, ok := commandByName(result)["phpunit Elasticsearch"]; ok {
+		t.Fatalf("commands = %v, did not want a filter value in the name", keys(commandByName(result)))
+	}
+}
+
+func TestDetectExpandsMatrixComposerWorkingDir(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        dir: [packages/app, packages/lib]
+    steps:
+      - run: composer --working-dir=${{ matrix.dir }} test
+`,
+	})
+	dirs := commandDirectories(result, "test")
+	if !slices.Equal(sortedCopy(dirs), []string{"packages/app", "packages/lib"}) {
+		t.Fatalf("directories = %v, want packages/app and packages/lib", dirs)
+	}
+	for _, dir := range dirs {
+		if strings.Contains(dir, "${{") {
+			t.Fatalf("directories = %v, did not want an unresolved expression", dirs)
+		}
+	}
+}
+
+func TestDetectLeavesUnresolvedComposerWorkingDirOnTheParent(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: composer --working-dir=${{ inputs.dir }} exec phpunit
+`,
+	})
+	dirs := commandDirectories(result, "phpunit")
+	if !slices.Equal(dirs, []string{"."}) {
+		t.Fatalf("directories = %v, want the parent project", dirs)
+	}
+}
+
+func TestDetectAppliesComposerWorkingDirAfterExec(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: composer exec -d tools phpunit
+`,
+	})
+
+	got := commandByName(result)["phpunit"]
+	if deref(got.Run) != "composer exec -d tools phpunit" || got.Directory != "tools" {
+		t.Fatalf("command = %+v, want phpunit in tools", got)
+	}
+	if !commandHasCapability(got, plan.CapabilityTestRun) {
+		t.Fatalf("interpretations = %+v, want test.run", got.Interpretations)
+	}
+	if _, ok := commandByName(result)["tools phpunit"]; ok {
+		t.Fatalf("commands = %v, did not want the working-dir value as the name", keys(commandByName(result)))
+	}
+}
+
+func TestDetectAppliesComposerWorkingDirWhenUnwrappingExec(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: composer -d tools exec phpunit
+`,
+	})
+
+	got := commandByName(result)["phpunit"]
+	if deref(got.Run) != "composer -d tools exec phpunit" || got.Directory != "tools" {
+		t.Fatalf("command = %+v, want phpunit in tools", got)
+	}
+	if !commandHasCapability(got, plan.CapabilityTestRun) {
+		t.Fatalf("interpretations = %+v, want test.run", got.Interpretations)
+	}
+}
+
+func TestDetectKeepsComposerVerboseInstallAndSkipsComposerVersion(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: |
+          composer -V
+          composer --version
+          composer -v install
+`,
+	})
+
+	if got := keys(commandByName(result)); !slices.Equal(got, []string{"install dependencies"}) {
+		t.Fatalf("commands = %v, want only composer -v install", got)
 	}
 }
 

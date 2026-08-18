@@ -1,0 +1,859 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "php",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "composer",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "ci.matrix.php",
+          "value": "latest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/phpstan.yml",
+              "pointer": "/jobs/tests/steps/1/with/php-version",
+              "description": "CI tests php latest as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.php",
+          "value": "nightly",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/tests/steps/1/with/php-version",
+              "description": "CI tests php nightly as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "php-cs-fixer",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": ".php-cs-fixer.php"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "phpstan",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require-dev/phpstan~1phpstan"
+            },
+            {
+              "kind": "configuration",
+              "source": "phpstan.neon.dist"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "phpunit",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require-dev/phpunit~1phpunit"
+            },
+            {
+              "kind": "configuration",
+              "source": "phpunit.xml.dist"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "php",
+          "version": ">=8.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require/php"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/3/with/php-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-8/steps/3/with/php-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests/steps/3/with/php-version",
+              "description": "CI tests php 8.1 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests/steps/3/with/php-version",
+              "description": "CI tests php 8.2 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests/steps/3/with/php-version",
+              "description": "CI tests php 8.3 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests/steps/3/with/php-version",
+              "description": "CI tests php 8.4 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests/steps/3/with/php-version",
+              "description": "CI tests php 8.5 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/tests/steps/1/with/php-version",
+              "description": "CI tests php 8.1 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/phpstan.yml",
+              "pointer": "/jobs/tests/steps/1/with/php-version",
+              "description": "CI tests php 8.1 as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "COMPOSER_ROOT_VERSION",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/env/COMPOSER_ROOT_VERSION"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/phpstan.yml",
+              "pointer": "/env/COMPOSER_ROOT_VERSION"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_7baa24c815715f192fde7c735329181b",
+          "name": "install dependencies",
+          "run": "composer install",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "composer.json"
+            },
+            {
+              "kind": "convention",
+              "source": "php-ecosystem",
+              "pointer": "dependencies",
+              "description": "Composer-managed PHP projects conventionally install dependencies with composer install."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "php-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Composer dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_0632a2adc510d058dabe9570c8359dd8",
+          "name": "composer require",
+          "run": "composer require $COMPOSER_FLAGS mongodb/mongodb --dev --no-update",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/phpstan.yml",
+              "pointer": "/jobs/tests/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_19ff79a080d9b70e732063ce5d43f365",
+          "name": "phpstan",
+          "run": "composer run-script phpstan",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/scripts/phpstan"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "composer.json",
+                  "pointer": "/scripts/phpstan",
+                  "description": "The command runs PHPStan."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "composer phpstan",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/phpstan.yml",
+                  "pointer": "/jobs/tests/steps/4/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_1e0d27cf3edf9adbc1b5bd4d56bb9d30",
+          "name": "composer require",
+          "run": "composer require --no-update --no-interaction --dev elasticsearch/elasticsearch:^$ES_VERSION",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_22fac96f55b855af07745458ee0413ae",
+          "name": "composer remove",
+          "run": "composer remove --no-update --dev graylog2/gelf-php ruflin/elastica elasticsearch/elasticsearch rollbar/rollbar",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/7/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2c10a0abed13a2d4115a0cd451ca66a9",
+          "name": "sudo sysctl",
+          "run": "sudo sysctl -w fs.file-max=262144",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-8/steps/1/run#command=2"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3e430b7c938ae8abd08f3b860c49a588",
+          "name": "sudo swapoff",
+          "run": "sudo swapoff -a",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-8/steps/1/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_44902ff7b363594638e7e4f7773905f3",
+          "name": "composer update",
+          "run": "composer update",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/7/run#command=3"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4b508d4786621488ec3f0b1ca5e907d6",
+          "name": "composer require",
+          "run": "composer require --no-update --no-interaction --dev elasticsearch/elasticsearch:^7",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_53b978f0915127081fde9fea58606f2b",
+          "name": "composer require",
+          "run": "composer require mongodb/mongodb --dev --no-update",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_59a8af1eac4067cd162d9d1c1c26deec",
+          "name": "phpunit",
+          "run": "composer exec phpunit -- --exclude-group Elasticsearch,Elastica",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests/steps/8/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/continuous-integration.yml",
+                  "pointer": "/jobs/tests/steps/8/run",
+                  "description": "The command runs PHPUnit tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_5bc7a324560b9a9d072014299a1a0065",
+          "name": "sudo swapoff",
+          "run": "sudo swapoff -a",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/1/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_5c8f5a77dcc2eaa6363e9c129d2c8b78",
+          "name": "phpunit",
+          "run": "composer exec phpunit -- --group Elasticsearch,Elastica",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/7/run#command=4"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/continuous-integration.yml",
+                  "pointer": "/jobs/tests-es-7/steps/7/run#command=4",
+                  "description": "The command runs PHPUnit tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_6b0b295064ac3a61bc5ffe61c779e453",
+          "name": "sudo sysctl",
+          "run": "sudo sysctl -w vm.swappiness=1",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/1/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_716d6b7c7683eb6b4b55295e75fca6c6",
+          "name": "composer require",
+          "run": "composer require --no-update psr/log:^3",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/7/run#command=2"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_721400019d873e06d91fd0879b6c277a",
+          "name": "elasticsearch discovery.type=single-node",
+          "run": "ES_JAVA_OPTS=$ES_JAVA_OPTS \"elasticsearch-${ES_VERSION}/bin/elasticsearch\"    -E discovery.type=single-node    -E xpack.security.enabled=false    -d -p /tmp/es.pid",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/2/run#command=3"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7d0593e22e306250f2fc891da2de0aa0",
+          "name": "sudo sysctl",
+          "run": "sudo sysctl -w fs.file-max=262144",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/1/run#command=2"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8b9ff10616aff6671933d03275475282",
+          "name": "phpunit",
+          "run": "composer exec phpunit -- --exclude-group Elasticsearch --exclude-group Elastica",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests/steps/7/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/continuous-integration.yml",
+                  "pointer": "/jobs/tests/steps/7/run",
+                  "description": "The command runs PHPUnit tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_93373a4582f7e365356c5e53933a2cb9",
+          "name": "phpunit",
+          "run": "composer exec phpunit -- --group Elasticsearch,Elastica",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-8/steps/6/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/continuous-integration.yml",
+                  "pointer": "/jobs/tests-es-8/steps/6/run",
+                  "description": "The command runs PHPUnit tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_a2ad1e3906ed247c4497b59cdd0583f9",
+          "name": "sleep 2",
+          "run": "sleep 2",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-8/steps/2/run#command=14"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b300022086fc8b45567337e3e2c0c581",
+          "name": "test",
+          "run": "composer run-script test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "composer.json",
+                  "pointer": "/scripts/test",
+                  "description": "The command runs PHPUnit tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_b40646f2435ba4dbf6303fd8a1595c38",
+          "name": "sudo sysctl",
+          "run": "sudo sysctl -w vm.swappiness=1",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-8/steps/1/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c53670a5cb90c436896d43cca1d65c7f",
+          "name": "elasticsearch discovery.type=single-node",
+          "run": "ES_JAVA_OPTS=$ES_JAVA_OPTS \"elasticsearch-${ES_VERSION}/bin/elasticsearch\"    -E discovery.type=single-node    -E xpack.security.enabled=false    -d -p /tmp/es.pid",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-8/steps/2/run#command=2"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c8a9f5dacc7e90a65059c07fad75f401",
+          "name": "composer require",
+          "run": "composer require --no-update --no-interaction --dev ruflin/elastica:^7 elasticsearch/elasticsearch:^7",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/7/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_dc63beaeb98ee2ca5b6711d4031c6859",
+          "name": "composer require",
+          "run": "composer require --no-update --no-interaction --dev elasticsearch/elasticsearch:^8 ruflin/elastica:^8",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-8/steps/4/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_dc922563b7c5ae1d34e9e6c282478c3a",
+          "name": "sudo sysctl",
+          "run": "sudo sysctl -w vm.max_map_count=262144",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-8/steps/1/run#command=3"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_eed402b27c273391f9cf8f47320547a4",
+          "name": "sleep 2",
+          "run": "sleep 2",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/2/run#command=15"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f0f696e579b30d7bb1e647835b40b1f5",
+          "name": "phpunit",
+          "run": "composer exec phpunit -- --group Elasticsearch,Elastica",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/6/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/continuous-integration.yml",
+                  "pointer": "/jobs/tests-es-7/steps/6/run",
+                  "description": "The command runs PHPUnit tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_f493f6d69c6ed222da754db34bbabf9d",
+          "name": "sudo sysctl",
+          "run": "sudo sysctl -w vm.max_map_count=262144",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-7/steps/1/run#command=3"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f9fc1976be8892a1e54756eae236a48e",
+          "name": "composer remove",
+          "run": "composer remove --no-update --dev graylog2/gelf-php ruflin/elastica elasticsearch/elasticsearch rollbar/rollbar",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/continuous-integration.yml",
+              "pointer": "/jobs/tests-es-8/steps/4/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

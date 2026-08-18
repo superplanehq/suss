@@ -16,6 +16,9 @@ func StripDirectoryFlags(inv Invocation) (dir string, canonical Invocation) {
 		args, dir = stripFlag(args, "-C", dir)
 	case "npm":
 		args, dir = stripFlag(args, "--prefix", dir)
+	case "composer":
+		args, dir = stripFlag(args, "--working-dir", dir)
+		args, dir = stripFlag(args, "-d", dir)
 	}
 	return dir, Invocation{Executable: inv.Executable, Args: args}
 }

@@ -197,6 +197,27 @@ Acceptance:
 
 Status: in progress. Elixir and Semaphore support are implemented; Ruby/Rails support has been added while the milestone's complex-project output remains under evaluation.
 
+## Milestone 7b — PHP
+
+Add Composer-managed PHP the way Ruby was added: one focused fixture, one framework-free library, one production application.
+
+PHP project types that matter for detection:
+
+- **Composer library** — `composer.json` with no app framework. The Packagist default. Analog of `ruby/rake`.
+- **Laravel application** — `laravel/framework` plus `artisan`. Analog of Rails / `once-campfire`.
+- **Symfony application** — `symfony/framework-bundle` plus `bin/console`. Detected as a framework; conventions other than PHPUnit are not inferred. Covered by unit tests, not a remote corpus pin in this pass.
+- **WordPress / Drupal / legacy PHP without Composer** — no reliable project root. Out of scope, same as Ruby without a Gemfile.
+
+Canonical corpus:
+
+- Focused `php-laravel` fixture: Laravel identity, PHP runtime pins, Composer, declared `test` script, inferred `composer install` and `php artisan serve`, PHPUnit/Pint/PHPStan configuration, and `shivammathur/setup-php` reconciliation.
+- `Seldaek/monolog` as the framework-free Composer library (declared `test` and `phpstan` scripts; PHPUnit).
+- `koel/koel` as a production Laravel application (Artisan, Composer scripts, GitHub Actions; also has a Vue frontend).
+
+`guzzle/guzzle` was considered for the library pin and rejected: it has no Composer scripts and nests `vendor-bin/*/composer.json` tool installs. `vendor-bin` is skipped during discovery the same way `vendor` is.
+
+Status: in progress.
+
 ## Milestone 8 — Polish and v0 release
 
 Scope:

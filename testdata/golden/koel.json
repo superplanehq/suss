@@ -1,0 +1,2827 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            }
+          ]
+        },
+        {
+          "name": "php",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/devDependencies/typescript"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "laravel",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require/laravel~1framework",
+              "description": "The composer.json require list declares laravel."
+            }
+          ]
+        },
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "vite.config.ts"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "composer",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json"
+            },
+            {
+              "kind": "declaration",
+              "source": "composer.lock"
+            }
+          ]
+        },
+        {
+          "name": "pnpm",
+          "version": "10.32.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "ci.matrix.mariadb",
+          "value": "mariadb:${{ matrix.mariadb-version }}",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-backend-mariadb.yml",
+              "pointer": "/jobs/test/services/mariadb/image"
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.postgres",
+          "value": "postgres:${{ matrix.postgres-version }}",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-backend-pgsql.yml",
+              "pointer": "/jobs/test/services/postgres/image"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "phpstan",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require-dev/larastan~1larastan"
+            },
+            {
+              "kind": "configuration",
+              "source": "phpstan.neon.dist"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "phpunit",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require-dev/phpunit~1phpunit"
+            },
+            {
+              "kind": "configuration",
+              "source": "phpunit.xml.dist"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "vite.config.ts"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": "^20.19.0 || >=22.12.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/engines/node"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "php",
+          "version": "8.3.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/config/platform/php"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint-backend.yml",
+              "pointer": "/jobs/lint/steps/1/with/php-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-backend-mariadb.yml",
+              "pointer": "/jobs/test/steps/1/with/php-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-backend-pgsql.yml",
+              "pointer": "/jobs/test/steps/1/with/php-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-backend-sqlite.yml",
+              "pointer": "/jobs/test/steps/1/with/php-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/1/with/php-version"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "php",
+          "version": ">=8.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require/php"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/build/steps/2/with/php-version"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "AI_ENABLED",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/AI_ENABLED"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "AI_PROVIDER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/AI_PROVIDER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "ALGOLIA_APP_ID",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/ALGOLIA_APP_ID"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "ALGOLIA_SECRET",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/ALGOLIA_SECRET"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "ALLOW_DOWNLOAD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/ALLOW_DOWNLOAD"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "ANTHROPIC_API_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/ANTHROPIC_API_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "APP_DEBUG",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/APP_DEBUG"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "APP_ENV",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/APP_ENV"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "APP_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/APP_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "APP_MAX_SCAN_TIME",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/APP_MAX_SCAN_TIME"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "APP_NAME",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/APP_NAME"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "APP_URL",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/APP_URL"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "ARTIFACTS_PATH",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/ARTIFACTS_PATH"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "AWS_ACCESS_KEY_ID",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/AWS_ACCESS_KEY_ID"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "AWS_BUCKET",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/AWS_BUCKET"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "AWS_ENDPOINT",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/AWS_ENDPOINT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "AWS_REGION",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/AWS_REGION"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/AWS_SECRET_ACCESS_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "BACKUP_ON_DELETE",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/BACKUP_ON_DELETE"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "BROADCAST_CONNECTION",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/BROADCAST_CONNECTION"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CACHE_DRIVER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/CACHE_DRIVER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CDN_URL",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/CDN_URL"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DATABASE_URL",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DATABASE_URL"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DB_CONNECTION",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DB_CONNECTION"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DB_DATABASE",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DB_DATABASE"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DB_HOST",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DB_HOST"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DB_PASSWORD",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DB_PASSWORD"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DB_PORT",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DB_PORT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DB_USERNAME",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DB_USERNAME"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DOWNLOAD_LIMIT",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DOWNLOAD_LIMIT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DROPBOX_APP_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DROPBOX_APP_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DROPBOX_APP_SECRET",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DROPBOX_APP_SECRET"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DROPBOX_REFRESH_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/DROPBOX_REFRESH_TOKEN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "EMBED_ENABLED",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/EMBED_ENABLED"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "FFMPEG_PATH",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/FFMPEG_PATH"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "FILESYSTEM_DISK",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/FILESYSTEM_DISK"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "FORCE_HTTPS",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/FORCE_HTTPS"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "IGNORE_DOT_FILES",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/IGNORE_DOT_FILES"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "IPINFO_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/IPINFO_TOKEN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "KOEL_PLUS_LICENSE_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/5/env/KOEL_PLUS_LICENSE_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LARAVEL_BYPASS_ENV_CHECK",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint-frontend.yml",
+              "pointer": "/env/LARAVEL_BYPASS_ENV_CHECK"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/unit-frontend.yml",
+              "pointer": "/env/LARAVEL_BYPASS_ENV_CHECK"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LASTFM_API_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/LASTFM_API_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LASTFM_API_SECRET",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/LASTFM_API_SECRET"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MAIL_ENCRYPTION",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MAIL_ENCRYPTION"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MAIL_FROM_ADDRESS",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MAIL_FROM_ADDRESS"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MAIL_FROM_NAME",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MAIL_FROM_NAME"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MAIL_HOST",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MAIL_HOST"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MAIL_MAILER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MAIL_MAILER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MAIL_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MAIL_PASSWORD"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MAIL_PORT",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MAIL_PORT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MAIL_USERNAME",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MAIL_USERNAME"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MEDIA_BROWSER_ENABLED",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MEDIA_BROWSER_ENABLED"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MEDIA_PATH",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MEDIA_PATH"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MEILISEARCH_HOST",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MEILISEARCH_HOST"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MEILISEARCH_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MEILISEARCH_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MEMORY_LIMIT",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MEMORY_LIMIT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MUSICBRAINZ_USER_AGENT",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MUSICBRAINZ_USER_AGENT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MYSQL_ATTR_SSL_CA",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/MYSQL_ATTR_SSL_CA"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "OPENAI_API_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/OPENAI_API_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PROXY_AUTH_ALLOW_LIST",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/PROXY_AUTH_ALLOW_LIST"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PROXY_AUTH_ENABLED",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/PROXY_AUTH_ENABLED"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PROXY_AUTH_PREFERRED_NAME_HEADER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/PROXY_AUTH_PREFERRED_NAME_HEADER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PROXY_AUTH_USER_HEADER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/PROXY_AUTH_USER_HEADER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PUSHER_APP_CLUSTER",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/PUSHER_APP_CLUSTER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PUSHER_APP_ID",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/PUSHER_APP_ID"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PUSHER_APP_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/PUSHER_APP_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PUSHER_APP_SECRET",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/PUSHER_APP_SECRET"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "QUEUE_CONNECTION",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/QUEUE_CONNECTION"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SCAN_JOBS",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SCAN_JOBS"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SCOUT_DRIVER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SCOUT_DRIVER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SESSION_DRIVER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SESSION_DRIVER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SESSION_LIFETIME",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SESSION_LIFETIME"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SFTP_HOST",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SFTP_HOST"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SFTP_PASSPHRASE",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SFTP_PASSPHRASE"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SFTP_PASSWORD",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SFTP_PASSWORD"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SFTP_PORT",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SFTP_PORT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SFTP_PRIVATE_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SFTP_PRIVATE_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SFTP_ROOT",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SFTP_ROOT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SFTP_USERNAME",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SFTP_USERNAME"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SPOTIFY_CLIENT_ID",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SPOTIFY_CLIENT_ID"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SPOTIFY_CLIENT_SECRET",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SPOTIFY_CLIENT_SECRET"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SQS_PUBLIC_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SQS_PUBLIC_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SQS_QUEUE_NAME",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SQS_QUEUE_NAME"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SQS_QUEUE_PREFIX",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SQS_QUEUE_PREFIX"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SQS_QUEUE_REGION",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SQS_QUEUE_REGION"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SQS_SECRET_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SQS_SECRET_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SSO_DEFAULT_ROLE",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SSO_DEFAULT_ROLE"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SSO_GOOGLE_CLIENT_ID",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SSO_GOOGLE_CLIENT_ID"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SSO_GOOGLE_CLIENT_SECRET",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SSO_GOOGLE_CLIENT_SECRET"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SSO_GOOGLE_HOSTED_DOMAIN",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SSO_GOOGLE_HOSTED_DOMAIN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SSO_OIDC_BUTTON_LABEL",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SSO_OIDC_BUTTON_LABEL"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SSO_OIDC_CLIENT_ID",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SSO_OIDC_CLIENT_ID"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SSO_OIDC_CLIENT_SECRET",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SSO_OIDC_CLIENT_SECRET"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SSO_OIDC_ISSUER",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SSO_OIDC_ISSUER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "STORAGE_DRIVER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/STORAGE_DRIVER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "STREAMING_METHOD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/STREAMING_METHOD"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SYNC_LOG_LEVEL",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/SYNC_LOG_LEVEL"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "TICKETMASTER_API_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/TICKETMASTER_API_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "TICKETMASTER_DEFAULT_COUNTRY_CODE",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/TICKETMASTER_DEFAULT_COUNTRY_CODE"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "TRANSCODE_AAC_FAST",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/TRANSCODE_AAC_FAST"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "TRANSCODE_BIT_RATE",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/TRANSCODE_BIT_RATE"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "TRANSCODE_FLAC",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/TRANSCODE_FLAC"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "TRANSCODE_TIMEOUT",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/TRANSCODE_TIMEOUT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "TRUSTED_HOSTS",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/TRUSTED_HOSTS"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "USE_MUSICBRAINZ",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/USE_MUSICBRAINZ"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "WEBDAV_BASE_URL",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/WEBDAV_BASE_URL"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "WEBDAV_PASSWORD",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/WEBDAV_PASSWORD"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "WEBDAV_PATH_PREFIX",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/WEBDAV_PATH_PREFIX"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "WEBDAV_USERNAME",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/WEBDAV_USERNAME"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "YOUTUBE_API_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".env.example",
+              "pointer": "/YOUTUBE_API_KEY"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_7baa24c815715f192fde7c735329181b",
+          "name": "install dependencies",
+          "run": "composer install",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "composer.json"
+            },
+            {
+              "kind": "convention",
+              "source": "php-ecosystem",
+              "pointer": "dependencies",
+              "description": "Composer-managed PHP projects conventionally install dependencies with composer install."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "php-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Composer dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_ae21e52c391ccef56f7107de041061bb",
+          "name": "install dependencies",
+          "run": "pnpm install --frozen-lockfile",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint-frontend.yml",
+              "pointer": "/jobs/test/steps/3/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/unit-frontend.yml",
+              "pointer": "/jobs/test/steps/3/run"
+            },
+            {
+              "kind": "file",
+              "source": "pnpm-lock.yaml"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "pnpm-frozen-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "pnpm-frozen-install"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm install --frozen-lockfile",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint-frontend.yml",
+                  "pointer": "/jobs/test/steps/3/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/unit-frontend.yml",
+                  "pointer": "/jobs/test/steps/3/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_01820381f9edf10baac6d90fa56f8d39",
+          "name": "prepare",
+          "run": "pnpm run prepare",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/prepare"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_01b29f7e393d89f3598fc525c7f6d69e",
+          "name": "typecheck",
+          "run": "pnpm run typecheck",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/typecheck"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pnpm typecheck",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint-frontend.yml",
+                  "pointer": "/jobs/test/steps/5/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_039446c6ba5f09be8bcd4abe77c56d6e",
+          "name": "zip /tmp/koel-${{ steps.get_version.outputs.VERSION }}.zip",
+          "run": "zip -r /tmp/koel-${{ steps.get_version.outputs.VERSION }}.zip koel/",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/build/steps/7/run#command=4"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1d6f041f624400d99577e7b12c2baaaf",
+          "name": "set_env PROXY_AUTH_ENABLED",
+          "run": "set_env PROXY_AUTH_ENABLED true",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/3/run#command=14"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1e23f35f55e0ba05ae5a50d0ebceeb27",
+          "name": "php artisan",
+          "run": "php artisan key:generate --quiet",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-backend-pgsql.yml",
+              "pointer": "/jobs/test/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1e3d91ee1cc67f9afb28be9c928b70d5",
+          "name": "test:unit",
+          "run": "pnpm run test:unit",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test:unit"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1ef7149012bfe1af7e3d1c2a499ea31c",
+          "name": "docs:preview",
+          "run": "pnpm run docs:preview",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/docs:preview"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1f025572fd5c443007084c2c8e3a8675",
+          "name": "docs:dev",
+          "run": "pnpm run docs:dev",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/docs:dev"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_22a6ff644c075d90d3c4dbbc70fac7d5",
+          "name": "php artisan",
+          "run": "php artisan key:generate --quiet",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/3/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_306cb1d66310ceb4bafd618cfbe95912",
+          "name": "nohup caddy",
+          "run": "nohup caddy run --config /tmp/Caddyfile > /tmp/caddy.log 2>&1 &",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/9/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_40934e0cf9c977b4f3b51be3d097b77b",
+          "name": "set_env PROXY_AUTH_USER_HEADER",
+          "run": "set_env PROXY_AUTH_USER_HEADER remote-user",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/3/run#command=15"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_465e7604e04da194ee352de9faebfb08",
+          "name": "php artisan",
+          "run": "php artisan koel:init --no-interaction",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/build/steps/6/run#command=3"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4eac52a91deb5bfd311e4c10fa0ac9ff",
+          "name": "dev",
+          "run": "pnpm run dev",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_65e452ee2e1ae8e19682224e80b22e24",
+          "name": "php artisan",
+          "run": "php artisan key:generate --quiet",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-backend-sqlite.yml",
+              "pointer": "/jobs/test/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_66c71913a93033ee38d43c9f2e088704",
+          "name": "test",
+          "run": "pnpm run test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_68c01f82aaed134cf80fb51b153e9c92",
+          "name": "php artisan",
+          "run": "php artisan migrate --force",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/3/run#command=18"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7d25e8b5947c3eea6d33ab4078ae1c50",
+          "name": "analyze",
+          "run": "composer run-script analyze",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/scripts/analyze"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "composer.json",
+                  "pointer": "/scripts/analyze",
+                  "description": "The command runs PHPStan."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "composer analyze -- --no-progress",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint-backend.yml",
+                  "pointer": "/jobs/lint/steps/5/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_80b1a4d94eee5c5d85bd8cb714048e32",
+          "name": "check",
+          "run": "pnpm run check",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/check"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_827056a98e248b2236b4d561f88123c7",
+          "name": "lint",
+          "run": "composer run-script lint",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "composer lint",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint-backend.yml",
+                  "pointer": "/jobs/lint/steps/4/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_84c99a4a06e9a424a9861b20215bee0e",
+          "name": "nohup php",
+          "run": "nohup php artisan serve --host=127.0.0.1 --port=8000 > /tmp/koel.log 2>&1 &",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/8/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_87ab5b703105246428690cf969d3a6cf",
+          "name": "vp test",
+          "run": "pnpm exec vp test --run --shard=${{ matrix.shard }}",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/unit-frontend.yml",
+              "pointer": "/jobs/test/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_89eeef7b79e8b8ffb0d4f488951896ff",
+          "name": "cs:fix",
+          "run": "composer run-script cs:fix",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/scripts/cs:fix"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_91eee3a0a6bd93b250bf00bdc2dad01c",
+          "name": "vp check",
+          "run": "pnpm exec vp check resources/assets",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint-frontend.yml",
+              "pointer": "/jobs/test/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_989c0378b0530a5b27add100d3f75ccd",
+          "name": "build:sw",
+          "run": "pnpm run build:sw",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build:sw"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a003927032c5d92b9264c2ade0375b17",
+          "name": "koel:init",
+          "run": "composer run-script koel:init",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/scripts/koel:init"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ac1d00ae28290dacfd227b74a3abb62d",
+          "name": "build",
+          "run": "pnpm run build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_adf0dba717fadd5e85586739bbafdfd7",
+          "name": "php artisan",
+          "run": "php artisan koel:license:activate \"$KOEL_PLUS_LICENSE_KEY\" >/dev/null 2>&1",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/5/run#command=5"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_afd580b91f6c41565a29373ed74a3489",
+          "name": "docs:build",
+          "run": "pnpm run docs:build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/docs:build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b300022086fc8b45567337e3e2c0c581",
+          "name": "test",
+          "run": "composer run-script test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "composer.json",
+                  "pointer": "/scripts/test",
+                  "description": "The command runs Laravel tests through Artisan."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "composer test",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test-backend-mariadb.yml",
+                  "pointer": "/jobs/test/steps/4/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test-backend-pgsql.yml",
+                  "pointer": "/jobs/test/steps/4/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test-backend-sqlite.yml",
+                  "pointer": "/jobs/test/steps/4/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_b308d64cefa84a81d550c8deb0e969a8",
+          "name": "tar /tmp/koel-${{ steps.get_version.outputs.VERSION }}.tar.gz",
+          "run": "tar -zcf /tmp/koel-${{ steps.get_version.outputs.VERSION }}.tar.gz koel/",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/build/steps/7/run#command=5"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b3b0dd817d54706449152f4863db4aaf",
+          "name": "php artisan",
+          "run": "php artisan key:generate --quiet",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-backend-mariadb.yml",
+              "pointer": "/jobs/test/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b6e38e3f93cb21f073915fca3c20d331",
+          "name": "dev",
+          "run": "composer run-script dev",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b8f3d7737daf5c9ead94ccb59cdc57d2",
+          "name": "check:fix",
+          "run": "pnpm run check:fix",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/check:fix"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ba00824925f94b82bf4c1292435c1dd2",
+          "name": "server",
+          "run": "php artisan serve",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "artisan"
+            },
+            {
+              "kind": "file",
+              "source": "bootstrap/app.php"
+            },
+            {
+              "kind": "file",
+              "source": "composer.json"
+            },
+            {
+              "kind": "file",
+              "source": "config/app.php"
+            },
+            {
+              "kind": "convention",
+              "source": "php-ecosystem",
+              "pointer": "server",
+              "description": "Laravel applications conventionally start the development server with php artisan serve."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "php-ecosystem",
+                  "pointer": "server",
+                  "description": "The command starts the Laravel development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_bcde14a261e6e93d1726cc448b3ae8d9",
+          "name": "sudo systemctl",
+          "run": "sudo systemctl stop caddy",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/6/run#command=6"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c16f3dff2139c85e7a454ad970c3fbb4",
+          "name": "sleep 1",
+          "run": "sleep 1",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/10/run#command=12"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cee51f05638d941dbe3056430c2e8a97",
+          "name": "set_env PROXY_AUTH_PREFERRED_NAME_HEADER",
+          "run": "set_env PROXY_AUTH_PREFERRED_NAME_HEADER remote-preferred-name",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/3/run#command=16"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d0ad592ad84ccd5cdc1a8ee3a175a0b2",
+          "name": "set_env PROXY_AUTH_ALLOW_LIST",
+          "run": "set_env PROXY_AUTH_ALLOW_LIST 127.0.0.1",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/3/run#command=17"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d30c0b2ba731afab2da2e86326dc2509",
+          "name": "set_env DB_CONNECTION",
+          "run": "set_env DB_CONNECTION sqlite",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-proxy-auth-e2e.yml",
+              "pointer": "/jobs/e2e/steps/3/run#command=12"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e8291d0b8ffb255129350cd0e5f45c97",
+          "name": "cs",
+          "run": "composer run-script cs",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/scripts/cs"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "composer cs",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint-backend.yml",
+                  "pointer": "/jobs/lint/steps/3/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": [
+        {
+          "subject": "runtime.node.version",
+          "message": "CI pins a different node version than the repository declaration.",
+          "assertions": [
+            {
+              "value": "22",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint-frontend.yml",
+                  "pointer": "/jobs/test/steps/1/with/node-version"
+                }
+              ]
+            },
+            {
+              "value": "^20.19.0 || >=22.12.0",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/engines/node"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "subject": "runtime.node.version",
+          "message": "CI pins a different node version than the repository declaration.",
+          "assertions": [
+            {
+              "value": "22",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/release.yml",
+                  "pointer": "/jobs/build/steps/4/with/node-version"
+                }
+              ]
+            },
+            {
+              "value": "^20.19.0 || >=22.12.0",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/engines/node"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "subject": "runtime.node.version",
+          "message": "CI pins a different node version than the repository declaration.",
+          "assertions": [
+            {
+              "value": "22",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/unit-frontend.yml",
+                  "pointer": "/jobs/test/steps/2/with/node-version"
+                }
+              ]
+            },
+            {
+              "value": "^20.19.0 || >=22.12.0",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/engines/node"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

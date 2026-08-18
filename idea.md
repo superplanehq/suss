@@ -576,6 +576,7 @@ NodeProvider
 GoProvider
 ElixirProvider
 RubyProvider
+PHPProvider
 GitHubActionsProvider
 SemaphoreProvider
 MakeProvider
@@ -665,6 +666,7 @@ The initial version should support:
 - Go;
 - Elixir;
 - Ruby and Ruby on Rails;
+- PHP, Composer, Laravel, and Symfony;
 - GitHub Actions;
 - Semaphore;
 - Docker Compose;
@@ -691,6 +693,8 @@ To avoid overfitting to our own conventions, the corpus also includes neutral op
 - `caddyserver/caddy` — a Go application with a plain toolchain and a cross-platform GitHub Actions matrix.
 - `excalidraw/excalidraw` — a TypeScript Yarn-workspaces monorepo with Vitest, where root scripts delegate into packages; exercises workspace detection.
 - `plausible/analytics` — a polyglot Elixir/Phoenix application with a React/TypeScript frontend, a Makefile, and PostgreSQL + ClickHouse services; structurally close to the dogfood repositories but neutral.
+- `Seldaek/monolog` — a Composer PHP library with declared test and PHPStan scripts; the framework-free PHP case.
+- `koel/koel` — a production Laravel application with a Vue frontend, Composer scripts, and GitHub Actions.
 - `grafana/grafana` — a very large Go + TypeScript monorepo with a heavy Makefile and extensive CI; the stress test.
 
 Each corpus repository has an expected golden plan checked in, and detection runs against the corpus as snapshot tests. The corpus is the definition of done for v0 and the regression suite as providers evolve.

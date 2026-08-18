@@ -36,6 +36,13 @@ var toolCapabilities = map[string][]plan.Capability{
 	"rubocop":       {plan.CapabilityCodeLint},
 	"standard":      {plan.CapabilityCodeLint, plan.CapabilityCodeFormat},
 	"sorbet":        {plan.CapabilityCodeTypecheck},
+	"phpunit":       {plan.CapabilityTestRun},
+	"pest":          {plan.CapabilityTestRun},
+	"phpstan":       {plan.CapabilityCodeTypecheck},
+	"psalm":         {plan.CapabilityCodeTypecheck},
+	"php-cs-fixer":  {plan.CapabilityCodeFormat, plan.CapabilityCodeLint},
+	"phpcs":         {plan.CapabilityCodeLint},
+	"pint":          {plan.CapabilityCodeLint, plan.CapabilityCodeFormat},
 }
 
 type classifiedProjects struct {
@@ -50,7 +57,7 @@ func Write(w io.Writer, document plan.Document, opts Options) {
 	writePreface(w, len(classified.primary), classified.omittedFixtures)
 
 	if len(document.Projects) == 0 {
-		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, mix.exs, Gemfile, Makefile, and .env.example.")
+		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, mix.exs, Gemfile, composer.json, Makefile, and .env.example.")
 		return
 	}
 	if len(classified.primary) == 0 && len(classified.examples) == 0 {

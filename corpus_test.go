@@ -45,6 +45,7 @@ var corpus = []corpusEntry{
 	{name: "make-simple", fixture: "make-simple", golden: "make-simple.json"},
 	{name: "compose-env", fixture: "compose-env", golden: "compose-env.json"},
 	{name: "ruby-rails", fixture: "ruby-rails", golden: "ruby-rails.json"},
+	{name: "php-laravel", fixture: "php-laravel", golden: "php-laravel.json"},
 	{
 		name:   "chalk",
 		gitURL: "https://github.com/chalk/chalk.git",
@@ -110,6 +111,18 @@ var corpus = []corpusEntry{
 		gitURL: "https://github.com/ruby/rake.git",
 		commit: "ec87311d9339f6ed9ff7143fa8e449a97ba34f1b",
 		golden: "rake.json",
+	},
+	{
+		name:   "monolog",
+		gitURL: "https://github.com/Seldaek/monolog.git",
+		commit: "57eb1028342134e701e77c617565d51b6e5a2a53",
+		golden: "monolog.json",
+	},
+	{
+		name:   "koel",
+		gitURL: "https://github.com/koel/koel.git",
+		commit: "dfec91ff290509c622ff7cf392fb5e506841ee2b",
+		golden: "koel.json",
 	},
 }
 
