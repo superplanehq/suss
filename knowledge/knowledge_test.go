@@ -440,6 +440,63 @@ func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
 	}
 }
 
+func TestParseScriptStripsPythonWrappers(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("poetry run pytest -q && uv run --locked --group dev tox run && python -m pytest && python src/manage.py test")
+	want := []Invocation{
+		{Executable: "pytest", Args: []string{"-q"}},
+		{Executable: "tox", Args: []string{"run"}},
+		{Executable: "pytest"},
+		{Executable: "python", Args: []string{"manage.py", "test"}},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+
+func TestInterpretMatchesPythonInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		invocation Invocation
+		capability plan.Capability
+	}{
+		{invocation: Invocation{Executable: "pip", Args: []string{"install", "-e", "."}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "uv", Args: []string{"sync"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "poetry", Args: []string{"install"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "pytest"}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "python", Args: []string{"manage.py", "test"}}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "python", Args: []string{"manage.py", "runserver"}}, capability: plan.CapabilityApplicationRun},
+		{invocation: Invocation{Executable: "flask", Args: []string{"run"}}, capability: plan.CapabilityApplicationRun},
+		{invocation: Invocation{Executable: "ruff", Args: []string{"check"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "mypy"}, capability: plan.CapabilityCodeTypecheck},
+	}
+	for _, tt := range tests {
+		matches := Interpret(tt.invocation)
+		if len(matches) != 1 || matches[0].Capability != tt.capability {
+			t.Fatalf("Interpret(%+v) = %+v, want %s", tt.invocation, matches, tt.capability)
+		}
+	}
+}
+
+
+func TestIsRemotePipInstall(t *testing.T) {
+	t.Parallel()
+
+	if !IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "ruff", "pytest"}}) {
+		t.Fatal("IsRemotePipInstall(pip install ruff pytest) = false, want true")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "-r", "requirements.txt"}}) {
+		t.Fatal("IsRemotePipInstall(requirements file) = true, want false")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "-e", "."}}) {
+		t.Fatal("IsRemotePipInstall(editable project) = true, want false")
+	}
+}
+
+
 func TestIsRemoteGemInstall(t *testing.T) {
 	t.Parallel()
 

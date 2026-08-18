@@ -12,18 +12,21 @@ import (
 )
 
 var projectManifests = map[string]struct{}{
-	"package.json":  {},
-	"go.mod":        {},
-	"Cargo.toml":    {},
-	"mix.exs":       {},
-	"Gemfile":       {},
-	"composer.json": {},
-	"GNUmakefile":   {},
-	"Makefile":      {},
-	"makefile":      {},
-	".env.example":  {},
-	".env.sample":   {},
-	".env.template": {},
+	"package.json":   {},
+	"go.mod":         {},
+	"Cargo.toml":     {},
+	"mix.exs":        {},
+	"Gemfile":        {},
+	"composer.json":  {},
+	"pyproject.toml": {},
+	"setup.py":       {},
+	"Pipfile":        {},
+	"GNUmakefile":    {},
+	"Makefile":       {},
+	"makefile":       {},
+	".env.example":   {},
+	".env.sample":    {},
+	".env.template":  {},
 }
 
 var skippedDirectories = map[string]struct{}{
@@ -35,6 +38,12 @@ var skippedDirectories = map[string]struct{}{
 	"dist":         {},
 	"target":       {},
 	"tmp":          {},
+	"venv":          {},
+	"virtualenv":    {},
+	"env":           {},
+	"site-packages": {},
+	"__pycache__":   {},
+	"htmlcov":       {},
 }
 
 func findProjectRoots(root string) ([]string, error) {

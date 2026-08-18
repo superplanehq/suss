@@ -1,0 +1,302 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "django",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/django",
+              "description": "The project declares Django."
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "requirements.txt"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "pytest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pytest"
+            },
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pytest-django"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/pytest"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "ruff",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/ruff"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/ruff"
+            },
+            {
+              "kind": "configuration",
+              "source": "ruff.toml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": "3.12.8",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".python-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/1/with/python-version"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.12",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_a5439528f72be03f5a5bfcd6c0f45aa9",
+          "name": "install dependencies",
+          "run": "pip install -r requirements.txt",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "requirements.txt"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/2/run"
+            },
+            {
+              "kind": "file",
+              "source": "pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -r requirements.txt."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pip install -r requirements.txt",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/2/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_770660407a8685d170e55f4b111a6110",
+          "name": "server",
+          "run": "python manage.py runserver",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "manage.py"
+            },
+            {
+              "kind": "file",
+              "source": "pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "server",
+              "description": "Django applications conventionally start the development server with manage.py runserver."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "server",
+                  "description": "The command starts the Django development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_a7e0bfbfa93d758a55acc76c9ce6d4fa",
+          "name": "test",
+          "run": "pytest",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pytest"
+            },
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pytest-django"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/3/run"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/pytest"
+            },
+            {
+              "kind": "file",
+              "source": "pyproject.toml"
+            },
+            {
+              "kind": "file",
+              "source": "tests/test_widget.py"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "test",
+              "description": "Python projects with pytest conventionally run tests with pytest."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs pytest."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "pytest",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/3/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

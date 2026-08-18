@@ -1,0 +1,353 @@
+package python
+
+import (
+	"os"
+	"path/filepath"
+	"slices"
+	"testing"
+
+	"github.com/superplanehq/suss/plan"
+	"github.com/superplanehq/suss/provider"
+)
+
+func TestDetectReturnsNothingWithoutPythonManifest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{"README.md": "hello\n"})
+	if len(result.Findings) != 0 {
+		t.Fatalf("Detect() = %+v, want no findings", result)
+	}
+}
+
+func TestDetectDjangoProjectRuntimesPipToolsAndPytest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+requires-python = ">=3.12"
+dependencies = ["django>=5.0", "ruff"]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-django"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+`,
+		".python-version":      "3.12.8\n",
+		".tool-versions":       "python 3.12.8\nnodejs 22.4.0\n",
+		"manage.py":            "#!/usr/bin/env python\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+		"ruff.toml":            "line-length = 88\n",
+		"requirements.txt":     "django>=5.0\n",
+	})
+
+	if !hasProperty(result, plan.PropertyLanguage, "python") {
+		t.Fatalf("missing Python language in %+v", result.Findings)
+	}
+	if !hasProperty(result, plan.PropertyFramework, "django") {
+		t.Fatalf("missing Django framework in %+v", result.Findings)
+	}
+	if !hasPackageManager(result, "pip") {
+		t.Fatalf("missing pip in %+v", result.Findings)
+	}
+	for _, version := range []string{"3.12.8", ">=3.12"} {
+		if !hasRuntime(result, version) {
+			t.Fatalf("missing Python runtime %q in %+v", version, result.Findings)
+		}
+	}
+
+	commands := commandsByName(result)
+	assertCommand(t, commands["install dependencies"], "pip install -r requirements.txt", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commands["test"], "pytest", plan.CapabilityTestRun)
+	assertCommand(t, commands["server"], "python manage.py runserver", plan.CapabilityApplicationRun)
+
+	tools := factValues(result, "tool.configured")
+	for _, tool := range []string{"pytest", "ruff"} {
+		if !slices.Contains(tools, tool) {
+			t.Fatalf("configured tools = %v, want %s", tools, tool)
+		}
+	}
+}
+
+func TestDetectUvLockfileSelectsUvSync(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml":    "[project]\nname = \"click\"\nrequires-python = \">=3.10\"\n",
+		"uv.lock":           "version = 1\n",
+		"tests/test_cli.py": "def test_cli():\n    assert True\n",
+	})
+
+	if !hasPackageManager(result, "uv") {
+		t.Fatalf("missing uv in %+v", result.Findings)
+	}
+	assertCommand(t, commandsByName(result)["install dependencies"], "uv sync", plan.CapabilityDependenciesInstall)
+}
+
+func TestDetectPoetryProject(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[tool.poetry]
+name = "widget"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+flask = "^3.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+`,
+		"poetry.lock":       "[[package]]\nname = \"flask\"\n",
+		"app.py":            "from flask import Flask\napp = Flask(__name__)\n",
+		"tests/test_app.py": "def test_app():\n    assert True\n",
+	})
+
+	if !hasProperty(result, plan.PropertyFramework, "flask") {
+		t.Fatalf("missing Flask framework in %+v", result.Findings)
+	}
+	if !hasPackageManager(result, "poetry") {
+		t.Fatalf("missing poetry in %+v", result.Findings)
+	}
+	if !hasRuntime(result, "^3.11") {
+		t.Fatalf("missing Poetry Python pin in %+v", result.Findings)
+	}
+	commands := commandsByName(result)
+	assertCommand(t, commands["install dependencies"], "poetry install", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commands["test"], "pytest", plan.CapabilityTestRun)
+	assertCommand(t, commands["server"], "flask run", plan.CapabilityApplicationRun)
+}
+
+func TestDetectFlaskDependencyWithoutAppDoesNotInferServer(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nname = \"flask\"\ndependencies = [\"flask\"]\n",
+	})
+
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("Flask dependency without application evidence unexpectedly has a server command")
+	}
+}
+
+func TestDetectDjangoDependencyWithoutManagePyDoesNotInferServer(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nname = \"djangorestframework\"\ndependencies = [\"django\"]\n",
+	})
+
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("Django dependency without manage.py unexpectedly has a server command")
+	}
+}
+
+func TestDetectUnittestWithoutPytest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"setup.py":             "from setuptools import setup\nsetup(name=\"widget\")\n",
+		"tests/test_widget.py": "import unittest\nclass TestWidget(unittest.TestCase):\n    pass\n",
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "python -m unittest", plan.CapabilityTestRun)
+	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -e .", plan.CapabilityDependenciesInstall)
+}
+
+func TestDetectCompetingLockfiles(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nname = \"widget\"\n",
+		"poetry.lock":    "[[package]]\n",
+		"uv.lock":        "version = 1\n",
+	})
+
+	if len(result.Ambiguities) != 1 || result.Ambiguities[0].Subject != "tool.package-manager" {
+		t.Fatalf("ambiguities = %+v, want one package-manager ambiguity", result.Ambiguities)
+	}
+	if _, ok := commandsByName(result)["install dependencies"]; ok {
+		t.Fatal("competing lockfiles unexpectedly selected an install command")
+	}
+}
+
+func TestDetectReportsConflictingRuntimePins(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml":  "[project]\nname = \"widget\"\n",
+		".python-version": "3.12.8\n",
+		".tool-versions":  "python 3.13.1\n",
+	})
+
+	if len(result.Conflicts) != 1 || result.Conflicts[0].Subject != "runtime.python.version" {
+		t.Fatalf("conflicts = %+v, want one Python runtime conflict", result.Conflicts)
+	}
+	if !hasRuntime(result, "3.12.8") || !hasRuntime(result, "3.13.1") {
+		t.Fatalf("runtime findings = %+v, want both conflicting pins", result.Findings)
+	}
+}
+
+func TestDetectMergesMatchingRuntimeEvidence(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml":  "[project]\nname = \"widget\"\nrequires-python = \"3.12.8\"\n",
+		".python-version": "3.12.8\n",
+	})
+
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != "python" || item.Requirement.Version != "3.12.8" {
+			continue
+		}
+		sources := make([]string, 0, len(item.Requirement.Evidence))
+		for _, evidence := range item.Requirement.Evidence {
+			sources = append(sources, evidence.Source)
+		}
+		if !slices.Contains(sources, ".python-version") || !slices.Contains(sources, "pyproject.toml") {
+			t.Fatalf("runtime evidence = %v, want .python-version and pyproject.toml", sources)
+		}
+		return
+	}
+	t.Fatal("missing merged Python 3.12.8 requirement")
+}
+
+func TestDetectPipfile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Pipfile": `
+[[source]]
+url = "https://pypi.org/simple"
+
+[packages]
+requests = "*"
+
+[dev-packages]
+pytest = "*"
+
+[requires]
+python_version = "3.12"
+`,
+		"tests/test_client.py": "def test_client():\n    assert True\n",
+	})
+
+	if !hasPackageManager(result, "pipenv") {
+		t.Fatalf("missing pipenv in %+v", result.Findings)
+	}
+	if !hasRuntime(result, "3.12") {
+		t.Fatalf("missing Pipfile Python pin in %+v", result.Findings)
+	}
+	assertCommand(t, commandsByName(result)["install dependencies"], "pipenv install", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+}
+
+func TestParsePyprojectExtractsDjangoExtras(t *testing.T) {
+	t.Parallel()
+
+	parsed := parsePyproject(`
+[project]
+dependencies = ["Django[argon2]~=6.0.0", "djangorestframework~=3.18.0"]
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+`)
+	if !hasDependency(parsed, "django") {
+		t.Fatalf("dependencies = %+v, want django", parsed.Dependencies)
+	}
+	if !hasDependency(parsed, "pytest") || !hasDependency(parsed, "ruff") {
+		t.Fatalf("optional dependencies = %+v, want pytest and ruff", parsed.Dependencies)
+	}
+}
+
+func detectFiles(t *testing.T, files map[string]string) provider.Result {
+	t.Helper()
+
+	root := t.TempDir()
+	for name, contents := range files {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("os.MkdirAll() error = %v", err)
+		}
+		if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+			t.Fatalf("os.WriteFile() error = %v", err)
+		}
+	}
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "."})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	return result
+}
+
+func hasProperty(result provider.Result, kind plan.PropertyKind, name string) bool {
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.PropertyFinding)
+		if ok && item.Property.Kind == kind && item.Property.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func hasPackageManager(result provider.Result, name string) bool {
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.PropertyFinding)
+		if ok && item.Property.Kind == plan.PropertyPackageManager && item.Property.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func hasRuntime(result provider.Result, version string) bool {
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if ok && item.Requirement.Kind == plan.RequirementRuntime && item.Requirement.Name == "python" && item.Requirement.Version == version {
+			return true
+		}
+	}
+	return false
+}
+
+func commandsByName(result provider.Result) map[string]plan.Command {
+	commands := make(map[string]plan.Command)
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if ok {
+			commands[item.Command.Name] = item.Command
+		}
+	}
+	return commands
+}
+
+func assertCommand(t *testing.T, command plan.Command, run string, capability plan.Capability) {
+	t.Helper()
+	if command.Run == nil || *command.Run != run || command.Origin != plan.CommandInferred {
+		t.Fatalf("command = %+v, want inferred %q", command, run)
+	}
+	for _, interpretation := range command.Interpretations {
+		if interpretation.Capability == capability {
+			return
+		}
+	}
+	t.Fatalf("command interpretations = %+v, want %s", command.Interpretations, capability)
+}
+
+func factValues(result provider.Result, name string) []string {
+	var values []string
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.PropertyFinding)
+		if ok && item.Property.Kind == plan.PropertyFact && item.Property.Name == name {
+			values = append(values, item.Property.Value)
+		}
+	}
+	return values
+}

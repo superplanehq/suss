@@ -200,6 +200,60 @@ func IsRemoteCargoInstall(inv Invocation) bool {
 	return hasRemoteSource || positional > 0
 }
 
+// IsRemotePipInstall reports whether inv installs named PyPI packages rather
+// than a local project or a requirements file. Named pip installs in CI
+// provision tools; they do not install the repository's dependency set.
+func IsRemotePipInstall(inv Invocation) bool {
+	executable := inv.Executable
+	args := inv.Args
+	if executable == "uv" && len(args) >= 1 && args[0] == "pip" {
+		args = args[1:]
+		executable = "pip"
+	}
+	if executable != "pip" && executable != "pip3" {
+		return false
+	}
+	args = dropLeadingFlags(args)
+	if len(args) == 0 || args[0] != "install" {
+		return false
+	}
+	rest := args[1:]
+	hasRequirement := false
+	hasLocal := false
+	hasNamed := false
+	for i := 0; i < len(rest); i++ {
+		arg := rest[i]
+		name, _, _ := strings.Cut(arg, "=")
+		if name == "-r" || name == "--requirement" || name == "-c" || name == "--constraint" {
+			hasRequirement = true
+			continue
+		}
+		if name == "-e" || name == "--editable" {
+			hasLocal = true
+			continue
+		}
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		if isLocalPythonInstall(arg) {
+			hasLocal = true
+			continue
+		}
+		hasNamed = true
+	}
+	return hasNamed && !hasRequirement && !hasLocal
+}
+
+func isLocalPythonInstall(arg string) bool {
+	if arg == "." || strings.HasPrefix(arg, "./") || strings.HasPrefix(arg, "/") {
+		return true
+	}
+	if strings.HasPrefix(arg, ".[") || strings.HasPrefix(arg, "./") {
+		return true
+	}
+	return strings.HasSuffix(arg, ".whl") || strings.HasSuffix(arg, ".tar.gz") || strings.HasSuffix(arg, ".zip") || strings.HasPrefix(arg, "requirements")
+}
+
 // IsRemoteGemInstall reports whether inv installs named gems rather than a
 // local gem archive. Named gem installs in CI provision tools; they do not
 // install the repository's Bundler dependency set.
@@ -271,7 +325,7 @@ func IsToolPlumbing(inv Invocation) bool {
 		return isDockerPlumbing(inv.Args)
 	case "docker-compose":
 		return isVersionInfoHelp(inv.Args)
-	case "node", "python", "python3", "ruby", "java":
+	case "node", "python", "python3", "ruby", "java", "pip", "pip3", "poetry", "uv", "pipenv", "pdm":
 		return isFlagVersionHelp(inv.Args)
 	case "php":
 		return isPHPPlumbing(inv.Args)

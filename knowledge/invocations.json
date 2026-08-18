@@ -581,6 +581,212 @@
       "capabilities": ["application.run"],
       "confidence": "high",
       "description": "The command runs a Cargo binary."
+
+    },
+    {
+      "id": "pip-install",
+      "executable": "pip",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs Python dependencies with pip."
+    },
+    {
+      "id": "pip3-install",
+      "executable": "pip3",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs Python dependencies with pip."
+    },
+    {
+      "id": "uv-sync",
+      "executable": "uv",
+      "argsPrefix": ["sync"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs a locked uv environment."
+    },
+    {
+      "id": "uv-pip-install",
+      "executable": "uv",
+      "argsPrefix": ["pip", "install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs Python dependencies with uv pip."
+    },
+    {
+      "id": "poetry-install",
+      "executable": "poetry",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs Poetry dependencies."
+    },
+    {
+      "id": "pdm-install",
+      "executable": "pdm",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs PDM dependencies."
+    },
+    {
+      "id": "pdm-sync",
+      "executable": "pdm",
+      "argsPrefix": ["sync"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs a locked PDM environment."
+    },
+    {
+      "id": "pipenv-install",
+      "executable": "pipenv",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs Pipenv dependencies."
+    },
+    {
+      "id": "pytest",
+      "executable": "pytest",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs pytest."
+    },
+    {
+      "id": "unittest",
+      "executable": "unittest",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs unittest."
+    },
+    {
+      "id": "python-manage-test",
+      "executable": "python",
+      "argsPrefix": ["manage.py", "test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Django tests through manage.py."
+    },
+    {
+      "id": "python-manage-runserver",
+      "executable": "python",
+      "argsPrefix": ["manage.py", "runserver"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts the Django development server."
+    },
+    {
+      "id": "python3-manage-test",
+      "executable": "python3",
+      "argsPrefix": ["manage.py", "test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Django tests through manage.py."
+    },
+    {
+      "id": "python3-manage-runserver",
+      "executable": "python3",
+      "argsPrefix": ["manage.py", "runserver"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts the Django development server."
+    },
+    {
+      "id": "flask-run",
+      "executable": "flask",
+      "argsPrefix": ["run"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts the Flask development server."
+    },
+    {
+      "id": "uvicorn",
+      "executable": "uvicorn",
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts a Uvicorn ASGI server."
+    },
+    {
+      "id": "gunicorn",
+      "executable": "gunicorn",
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts a Gunicorn server."
+    },
+    {
+      "id": "ruff-check",
+      "executable": "ruff",
+      "argsPrefix": ["check"],
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command lints Python with Ruff."
+    },
+    {
+      "id": "ruff-format",
+      "executable": "ruff",
+      "argsPrefix": ["format"],
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The command formats Python with Ruff."
+    },
+    {
+      "id": "black",
+      "executable": "black",
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The command formats Python with Black."
+    },
+    {
+      "id": "isort",
+      "executable": "isort",
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The command sorts Python imports with isort."
+    },
+    {
+      "id": "mypy",
+      "executable": "mypy",
+      "capabilities": ["code.typecheck"],
+      "confidence": "high",
+      "description": "The command type-checks Python with mypy."
+    },
+    {
+      "id": "pyright",
+      "executable": "pyright",
+      "capabilities": ["code.typecheck"],
+      "confidence": "high",
+      "description": "The command type-checks Python with Pyright."
+    },
+    {
+      "id": "flake8",
+      "executable": "flake8",
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command lints Python with Flake8."
+    },
+    {
+      "id": "pylint",
+      "executable": "pylint",
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command lints Python with Pylint."
+    },
+    {
+      "id": "tox",
+      "executable": "tox",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs the tox test matrix."
+    },
+    {
+      "id": "nox",
+      "executable": "nox",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Nox sessions."
+
     }
   ]
 }

@@ -1,0 +1,1517 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "uv",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "uv.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "ci.matrix.python",
+          "value": "3.14t",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yaml",
+              "pointer": "/jobs/tests/steps/2/with/python-version",
+              "description": "CI tests python 3.14t as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.python",
+          "value": "pypy-3.11",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yaml",
+              "pointer": "/jobs/tests/steps/2/with/python-version",
+              "description": "CI tests python pypy-3.11 as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "mypy",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/mypy"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/mypy"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "pyright",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pyright"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/pyright"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "pytest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pytest"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/pytest"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "ruff",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/ruff"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/ruff"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tox",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/tox"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/tox"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/requires-python"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yaml",
+              "pointer": "/jobs/flask-tests/steps/2/with/python-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yaml",
+              "pointer": "/jobs/tests/steps/2/with/python-version",
+              "description": "CI tests python 3.10 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yaml",
+              "pointer": "/jobs/tests/steps/2/with/python-version",
+              "description": "CI tests python 3.11 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yaml",
+              "pointer": "/jobs/tests/steps/2/with/python-version",
+              "description": "CI tests python 3.12 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yaml",
+              "pointer": "/jobs/tests/steps/2/with/python-version",
+              "description": "CI tests python 3.13 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yaml",
+              "pointer": "/jobs/tests/steps/2/with/python-version",
+              "description": "CI tests python 3.14 as part of a job matrix."
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_a5439528f72be03f5a5bfcd6c0f45aa9",
+          "name": "install dependencies",
+          "run": "uv sync",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "uv.lock"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yaml",
+              "pointer": "/jobs/flask-tests/steps/3/run"
+            },
+            {
+              "kind": "file",
+              "source": "pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "uv-managed Python projects conventionally install dependencies with uv sync."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs a locked uv environment."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "uv sync --all-extras",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/nightly.yaml",
+                  "pointer": "/jobs/flask-tests/steps/3/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_1482f047bfd41e95bc0aa89a8620fd1f",
+          "name": "tox run",
+          "run": "uv run --locked --no-default-groups --group dev tox run",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yaml",
+              "pointer": "/jobs/race-tests/steps/3/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/nightly.yaml",
+                  "pointer": "/jobs/race-tests/steps/3/run",
+                  "description": "The command runs the tox test matrix."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_7655fb6bf4d6b419e8bccc2de5447a9e",
+          "name": "pre-commit run",
+          "run": "uv run --locked --no-default-groups --group pre-commit pre-commit run --show-diff-on-failure --color=always --all-files",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/pre-commit.yaml",
+              "pointer": "/jobs/main/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8ce3d4211ca8b4b679ce1612f6de075c",
+          "name": "gh release",
+          "run": "gh release create --draft --repo ${GITHUB_REPOSITORY} ${GITHUB_REF_NAME} dist/*",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish.yaml",
+              "pointer": "/jobs/create-release/steps/1/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a7e0bfbfa93d758a55acc76c9ce6d4fa",
+          "name": "test",
+          "run": "pytest",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pytest"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yaml",
+              "pointer": "/jobs/flask-tests/steps/4/run"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/pytest"
+            },
+            {
+              "kind": "file",
+              "source": "pyproject.toml"
+            },
+            {
+              "kind": "file",
+              "source": "tests/test_arguments.py"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "test",
+              "description": "Python projects with pytest conventionally run tests with pytest."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs pytest."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "uv run --with \"git+https://github.com/pallets/click.git@${CLICK_REF}\" -- pytest",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/nightly.yaml",
+                  "pointer": "/jobs/flask-tests/steps/4/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_acf7d3aa6f4b0dfbba3e57cd5553aaff",
+          "name": "tox run",
+          "run": "uv run --locked --no-default-groups --group dev tox run",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yaml",
+              "pointer": "/jobs/tests/steps/3/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tests.yaml",
+                  "pointer": "/jobs/tests/steps/3/run",
+                  "description": "The command runs the tox test matrix."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_bd905545ed41bb56ddcdce898bc04296",
+          "name": "tox run",
+          "run": "uv run --locked --no-default-groups --group dev tox run -e typing",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yaml",
+              "pointer": "/jobs/typing/steps/4/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tests.yaml",
+                  "pointer": "/jobs/typing/steps/4/run",
+                  "description": "The command runs the tox test matrix."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_f733cfc01fcf5ba3aedef98bdf4928ed",
+          "name": "uv build",
+          "run": "uv build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish.yaml",
+              "pointer": "/jobs/build/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/aliases",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/aliases/pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/aliases/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "package-manager",
+              "description": "Python projects without a lockfile conventionally use pip."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/aliases",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/aliases/pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_963cef35b6d0d04c7faa7ddff5c56454",
+          "name": "install dependencies",
+          "run": "pip install -e .",
+          "directory": "examples/aliases",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/aliases/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -e .."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/colors",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/colors/pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/colors/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "package-manager",
+              "description": "Python projects without a lockfile conventionally use pip."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/colors",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/colors/pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_7c1e752b79d16858b70f768455aae833",
+          "name": "install dependencies",
+          "run": "pip install -e .",
+          "directory": "examples/colors",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/colors/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -e .."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/completion",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/completion/pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/completion/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "package-manager",
+              "description": "Python projects without a lockfile conventionally use pip."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/completion",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/completion/pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_86308708be332377a182c5c41489dbd8",
+          "name": "install dependencies",
+          "run": "pip install -e .",
+          "directory": "examples/completion",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/completion/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -e .."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/complex",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/complex/pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/complex/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "package-manager",
+              "description": "Python projects without a lockfile conventionally use pip."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/complex",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/complex/pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_1abb2b78169eaa0e2811b7c363bad039",
+          "name": "install dependencies",
+          "run": "pip install -e .",
+          "directory": "examples/complex",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/complex/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -e .."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/imagepipe",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/imagepipe/pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/imagepipe/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "package-manager",
+              "description": "Python projects without a lockfile conventionally use pip."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/imagepipe",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/imagepipe/pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_418fcdd9675580f1e3d52b25fde713d9",
+          "name": "install dependencies",
+          "run": "pip install -e .",
+          "directory": "examples/imagepipe",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/imagepipe/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -e .."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/inout",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/inout/pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/inout/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "package-manager",
+              "description": "Python projects without a lockfile conventionally use pip."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/inout",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/inout/pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_be7483fd0df4790cbc839989200530f6",
+          "name": "install dependencies",
+          "run": "pip install -e .",
+          "directory": "examples/inout",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/inout/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -e .."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/naval",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/naval/pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/naval/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "package-manager",
+              "description": "Python projects without a lockfile conventionally use pip."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/naval",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/naval/pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_003524f0cf82daf7878dc2609a165028",
+          "name": "install dependencies",
+          "run": "pip install -e .",
+          "directory": "examples/naval",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/naval/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -e .."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/repo",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/repo/pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/repo/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "package-manager",
+              "description": "Python projects without a lockfile conventionally use pip."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/repo",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/repo/pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_caea566435f43bbb60fbdb076b5539bc",
+          "name": "install dependencies",
+          "run": "pip install -e .",
+          "directory": "examples/repo",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/repo/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -e .."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/termui",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/termui/pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/termui/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "package-manager",
+              "description": "Python projects without a lockfile conventionally use pip."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/termui",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/termui/pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_b9bc3529f7f85384d4c9a0cfc9e87930",
+          "name": "install dependencies",
+          "run": "pip install -e .",
+          "directory": "examples/termui",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/termui/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -e .."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "examples/validation",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/validation/pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "pip",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/validation/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "package-manager",
+              "description": "Python projects without a lockfile conventionally use pip."
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "fixture",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/validation",
+              "description": "The project root sits under the examples path segment."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.10",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "examples/validation/pyproject.toml",
+              "pointer": "/requires-python"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_dca26f07b522ebb3b26620a9f1e8d492",
+          "name": "install dependencies",
+          "run": "pip install -e .",
+          "directory": "examples/validation",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "examples/validation/pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "pip-managed Python projects conventionally install dependencies with pip install -e .."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Python dependencies with pip."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

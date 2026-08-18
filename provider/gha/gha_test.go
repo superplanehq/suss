@@ -620,6 +620,96 @@ jobs:
 	}
 }
 
+func TestDetectReadsSetupPythonMatrixVersions(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+`,
+	})
+
+	if got := sortedCopy(runtimeRequirementVersions(result, "python")); !slices.Equal(got, []string{"3.12", "3.13"}) {
+		t.Fatalf("Python versions = %v, want matrix pins", got)
+	}
+}
+
+
+func TestDetectIgnoresPyprojectTomlAsPythonVersionFile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nrequires-python = \">=3.10\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+`,
+	})
+
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != "python" {
+			continue
+		}
+		if item.Requirement.Version == "[project]" {
+			t.Fatalf("treated pyproject.toml table header as a Python version: %+v", item.Requirement)
+		}
+	}
+}
+
+
+func TestDetectReadsSetupPythonVersionFileInput(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".python-version": "3.12.8\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "python", "3.12.8") {
+		t.Fatalf("missing Python 3.12.8 from .python-version in %+v", result.Findings)
+	}
+}
+
+
+func TestDetectSkipsRemotePipInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: pip install ruff pytest
+      - run: python -m pip install coveralls
+`,
+	})
+
+	if commands := commandByName(result); len(commands) != 0 {
+		t.Fatalf("remote pip install was emitted as a repository command: %+v", result.Findings)
+	}
+}
+
+
 func TestDetectSkipsRemoteGemInstalls(t *testing.T) {
 	t.Parallel()
 

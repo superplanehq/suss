@@ -61,6 +61,10 @@ var skippedDirectories = map[string]struct{}{
 	"dist":         {},
 	"target":       {},
 	"tmp":          {},
+	"venv":         {},
+	"virtualenv":   {},
+	"__pycache__":  {},
+	"htmlcov":      {},
 }
 
 // Provider detects Docker Compose files at the repository root and below.

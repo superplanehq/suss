@@ -1,0 +1,1044 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "python",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "django",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/django",
+              "description": "The project declares Django."
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "uv",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "uv.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "pytest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pytest"
+            },
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pytest-django"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/pytest"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "ruff",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/ruff"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/ruff"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": "latest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/packaging/steps/4/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/frontend.yml",
+              "pointer": "/jobs/eslint/steps/2/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yml",
+              "pointer": "/jobs/test/steps/4/with/node-version"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "python",
+          "version": ">=3.13",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".github/workflows/python-version.txt"
+            },
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/requires-python"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/packaging/steps/1/with/python-version",
+              "description": "CI tests python 3.13 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/packaging/steps/1/with/python-version",
+              "description": "CI tests python 3.14 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/docs.yml",
+              "pointer": "/jobs/build/steps/1/with/python-version-file",
+              "description": "The setup action reads .github/workflows/python-version.txt."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/docs.yml",
+              "pointer": "/jobs/linkcheck/steps/1/with/python-version-file",
+              "description": "The setup action reads .github/workflows/python-version.txt."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/strings.yml",
+              "pointer": "/jobs/compile/steps/1/with/python-version-file",
+              "description": "The setup action reads .github/workflows/python-version.txt."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/style.yml",
+              "pointer": "/jobs/compliance/steps/1/with/python-version-file",
+              "description": "The setup action reads .github/workflows/python-version.txt."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/style.yml",
+              "pointer": "/jobs/linters/steps/1/with/python-version-file",
+              "description": "The setup action reads .github/workflows/python-version.txt."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yml",
+              "pointer": "/jobs/test/steps/1/with/python-version",
+              "description": "CI tests python 3.13 as part of a job matrix."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yml",
+              "pointer": "/jobs/test/steps/1/with/python-version",
+              "description": "CI tests python 3.14 as part of a job matrix."
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "postgres",
+          "version": "16",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yml",
+              "pointer": "/jobs/test/services/postgres/image"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "FORCE_COLOR",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/env/FORCE_COLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/frontend.yml",
+              "pointer": "/env/FORCE_COLOR"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yml",
+              "pointer": "/env/FORCE_COLOR"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_a5439528f72be03f5a5bfcd6c0f45aa9",
+          "name": "install dependencies",
+          "run": "uv sync",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "uv.lock"
+            },
+            {
+              "kind": "file",
+              "source": "pyproject.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "dependencies",
+              "description": "uv-managed Python projects conventionally install dependencies with uv sync."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs a locked uv environment."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_2c25f536b1494dbcd78acb6c797002fe",
+          "name": "just release-check-package",
+          "run": "just release-check-package",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/packaging/steps/6/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2c9db0101efa30b626540e8d0a1e748b",
+          "name": "just install",
+          "run": "just install --extra devdocs",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/docs.yml",
+              "pointer": "/jobs/build/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_35a70f10e94d488656ecc1bc8c3dc463",
+          "name": "just run",
+          "run": "just run update_translation_percentages",
+          "directory": "base",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/strings.yml",
+              "pointer": "/jobs/update-percentages/steps/8/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_40fdc27f2a76b2cedc44735c47192263",
+          "name": "just test-coverage",
+          "run": "just test-coverage -n auto -p no:sugar",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yml",
+              "pointer": "/jobs/test/steps/7/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_724a272dcea849ba680e305cbe76a1e8",
+          "name": "just install",
+          "run": "just install --extra devdocs",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/docs.yml",
+              "pointer": "/jobs/linkcheck/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_770660407a8685d170e55f4b111a6110",
+          "name": "server",
+          "run": "python src/manage.py runserver",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "pyproject.toml"
+            },
+            {
+              "kind": "file",
+              "source": "src/manage.py"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "server",
+              "description": "Django applications conventionally start the development server with manage.py runserver."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "server",
+                  "description": "The command starts the Django development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_7e3bf572d424308d3481e984315d1513",
+          "name": "just release-check-rebuild",
+          "run": "just release-check-rebuild",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/packaging/steps/7/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7f948150ba1ee782bbf932d1c3c5311d",
+          "name": "just docs-linkcheck",
+          "run": "just docs-linkcheck",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/docs.yml",
+              "pointer": "/jobs/linkcheck/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a1ec08d1ccf9a1f2f66b68fb661cfb62",
+          "name": "just run",
+          "run": "just run compilemessages",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tests.yml",
+              "pointer": "/jobs/test/steps/6/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a7e0bfbfa93d758a55acc76c9ce6d4fa",
+          "name": "test",
+          "run": "pytest",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pytest"
+            },
+            {
+              "kind": "declaration",
+              "source": "pyproject.toml",
+              "pointer": "/dependencies/pytest-django"
+            },
+            {
+              "kind": "configuration",
+              "source": "pyproject.toml",
+              "pointer": "/tool/pytest"
+            },
+            {
+              "kind": "file",
+              "source": "pyproject.toml"
+            },
+            {
+              "kind": "file",
+              "source": "src/pretalx/common/settings/test_settings.py"
+            },
+            {
+              "kind": "convention",
+              "source": "python-ecosystem",
+              "pointer": "test",
+              "description": "Python projects with pytest conventionally run tests with pytest."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "python-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs pytest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_b93f6f25301553414e7f377a59e44851",
+          "name": "just run",
+          "run": "just run compilemessages",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/strings.yml",
+              "pointer": "/jobs/compile/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_be629e7875b3819822f52c914635dcfe",
+          "name": "just docs-build",
+          "run": "just docs-build dirhtml -W",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/docs.yml",
+              "pointer": "/jobs/build/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c8a4b9346fb7e32f2297a735fef53c95",
+          "name": "just install-npm",
+          "run": "just install-npm",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/frontend.yml",
+              "pointer": "/jobs/eslint/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cc15ab930736cc93fca777bad114f8c3",
+          "name": "just run",
+          "run": "just run compilemessages",
+          "directory": "base",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/strings.yml",
+              "pointer": "/jobs/update-percentages/steps/7/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d5b52b0d3729cda60cca91a822b815b0",
+          "name": "just reuse",
+          "run": "just reuse",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/style.yml",
+              "pointer": "/jobs/compliance/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f10f5ab69cb1161da244cba2f3225e16",
+          "name": "just release-check-wheel",
+          "run": "just release-check-wheel",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build.yml",
+              "pointer": "/jobs/packaging/steps/8/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fd364a8b0dc9dd18be7b76057607dc13",
+          "name": "just fmt-npm-check",
+          "run": "just fmt-npm-check",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/frontend.yml",
+              "pointer": "/jobs/eslint/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "src/pretalx/frontend",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "src/pretalx/frontend/vite.config.js"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "src/pretalx/frontend/package-lock.json"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "src/pretalx/frontend/vite.config.js"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_cc0c13ca36318e2b6a54b70e96d07d56",
+          "name": "install dependencies",
+          "run": "npm ci",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "src/pretalx/frontend/package-lock.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-ci"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-ci"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_16814b841af912b41c9fcb9cd9dce1f2",
+          "name": "i18n:convert2gettext",
+          "run": "npm run i18n:convert2gettext",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/i18n:convert2gettext"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_38b122807e41b61e03c9c39cc1b1d440",
+          "name": "build",
+          "run": "npm run build",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_46a71d96068456940c775f7807a203c2",
+          "name": "i18n:extract",
+          "run": "npm run i18n:extract",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/i18n:extract"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_46a7f750310b539d0b711630b821511a",
+          "name": "dev:schedule",
+          "run": "npm run dev:schedule",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/dev:schedule"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "src/pretalx/frontend/package.json",
+                  "pointer": "/scripts/dev:schedule",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_60513c72028cdb85edcdb9a1bfb9c945",
+          "name": "lint",
+          "run": "npm run lint",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6f1ebae72fa315c90faa25d3a2ea00b3",
+          "name": "lint:schedule",
+          "run": "npm run lint:schedule",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/lint:schedule"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "src/pretalx/frontend/package.json",
+                  "pointer": "/scripts/lint:schedule",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_71c05f99cb19f7d46a89cb971d296b6d",
+          "name": "start",
+          "run": "npm start",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/start"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "src/pretalx/frontend/package.json",
+                  "pointer": "/scripts/start",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_8aa47ad2cd5fe00dfa9db620395e1041",
+          "name": "dev:editor",
+          "run": "npm run dev:editor",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/dev:editor"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "src/pretalx/frontend/package.json",
+                  "pointer": "/scripts/dev:editor",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_91028613f2394e6cb0f39a4b3fc50741",
+          "name": "build:manifest",
+          "run": "npm run build:manifest",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/build:manifest"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "src/pretalx/frontend/package.json",
+                  "pointer": "/scripts/build:manifest",
+                  "description": "The script invokes vite build."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_a5cf64e674515c8ee0fbb5c08555dff3",
+          "name": "lint:editor",
+          "run": "npm run lint:editor",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/lint:editor"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "src/pretalx/frontend/package.json",
+                  "pointer": "/scripts/lint:editor",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_f33a183238b6372d17bc4efa50d51baf",
+          "name": "build:wc",
+          "run": "npm run build:wc",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/build:wc"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "src/pretalx/frontend/package.json",
+                  "pointer": "/scripts/build:wc",
+                  "description": "The script invokes vite build."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_ff45a188ad9f7e6a00edf2a1498b99f4",
+          "name": "lint:fix",
+          "run": "npm run lint:fix",
+          "directory": "src/pretalx/frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "src/pretalx/frontend/package.json",
+              "pointer": "/scripts/lint:fix"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "src/pretalx/frontend/package.json",
+                  "pointer": "/scripts/lint:fix",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

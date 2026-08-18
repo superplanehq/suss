@@ -549,6 +549,25 @@ func dropWrappers(tokens []string) []string {
 			return rest
 		}
 		return append([]string{"php"}, rest...)
+	case "poetry", "pipenv":
+		if len(tokens) >= 2 && tokens[1] == "run" {
+			return dropLeadingFlags(tokens[2:])
+		}
+	case "uv":
+		if len(tokens) >= 2 && tokens[1] == "run" {
+			return dropLeadingFlagsWithValues(tokens[2:], uvRunValueFlags)
+		}
+		if len(tokens) >= 3 && tokens[1] == "tool" && tokens[2] == "run" {
+			return dropLeadingFlagsWithValues(tokens[3:], uvRunValueFlags)
+		}
+	case "python", "python3":
+		if len(tokens) >= 3 && tokens[1] == "-m" {
+			return dropLeadingFlags(tokens[2:])
+		}
+		if len(tokens) >= 2 && path.Base(tokens[1]) == "manage.py" {
+			rewritten := append([]string{tokens[0], "manage.py"}, tokens[2:]...)
+			return rewritten
+		}
 	case "npm", "pnpm", "yarn":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
 			return dropLeadingFlags(tokens[2:])
@@ -793,8 +812,27 @@ func isCargoVerboseFlag(name string) bool {
 }
 
 func dropLeadingFlags(tokens []string) []string {
+	return dropLeadingFlagsWithValues(tokens, nil)
+}
+
+var uvRunValueFlags = map[string]struct{}{
+	"--directory": {}, "-C": {}, "--project": {}, "--package": {},
+	"--python": {}, "--group": {}, "--extra": {}, "--with": {},
+	"--index": {}, "--default-index": {},
+}
+
+func dropLeadingFlagsWithValues(tokens []string, valueFlags map[string]struct{}) []string {
 	i := 0
 	for i < len(tokens) && strings.HasPrefix(tokens[i], "-") {
+		name, _, hasValue := strings.Cut(tokens[i], "=")
+		if hasValue {
+			i++
+			continue
+		}
+		if _, ok := valueFlags[name]; ok && i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
+			i += 2
+			continue
+		}
 		i++
 	}
 	return tokens[i:]
