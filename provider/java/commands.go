@@ -252,9 +252,11 @@ func skipJavaWalkDir(name string) bool {
 
 func isJavaTestName(name string) bool {
 	switch {
-	case strings.HasSuffix(name, "Test.java"), strings.HasSuffix(name, "Tests.java"), strings.HasSuffix(name, "IT.java"):
+	case strings.HasSuffix(name, "Test.java"), strings.HasSuffix(name, "Tests.java"), strings.HasSuffix(name, "IT.java"), strings.HasSuffix(name, "TestCase.java"):
 		return true
-	case strings.HasSuffix(name, "Test.kt"), strings.HasSuffix(name, "Tests.kt"):
+	case strings.HasSuffix(name, "Test.kt"), strings.HasSuffix(name, "Tests.kt"), strings.HasSuffix(name, "TestCase.kt"):
+		return true
+	case strings.HasPrefix(name, "Test") && (strings.HasSuffix(name, ".java") || strings.HasSuffix(name, ".kt")):
 		return true
 	default:
 		return false

@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -16,6 +17,7 @@ type mavenProject struct {
 	Source            string
 	JavaVersion       string
 	JavaVersionPtr    string
+	JavaVersionSource string
 	Aggregator        bool
 	SpringBoot        bool
 	SpringPointer     string
@@ -27,6 +29,7 @@ type mavenProject struct {
 
 type pomDocument struct {
 	XMLName          xml.Name      `xml:"project"`
+	Source           string        `xml:"-"`
 	Packaging        string        `xml:"packaging"`
 	Parent           pomParent     `xml:"parent"`
 	Properties       pomProperties `xml:"properties"`
@@ -50,6 +53,7 @@ type pomArtifact struct {
 type pomPlugin struct {
 	GroupID       string `xml:"groupId"`
 	ArtifactID    string `xml:"artifactId"`
+	Source        string `xml:"-"`
 	Configuration struct {
 		Release string `xml:"release"`
 		Source  string `xml:"source"`
@@ -64,6 +68,7 @@ type pomProperties struct {
 type pomProperty struct {
 	XMLName xml.Name
 	Value   string `xml:",chardata"`
+	Source  string `xml:"-"`
 }
 
 var xmlnsAttrPattern = regexp.MustCompile(`\sxmlns(?::[A-Za-z_][\w.-]*)?="[^"]*"`)
@@ -78,9 +83,9 @@ func readMaven(ctx provider.Context) (*mavenProject, error) {
 		Aggregator: strings.TrimSpace(parsed.Packaging) == "pom" && len(parsed.Modules) > 0,
 		Plugins:    pluginSet(parsed),
 	}
-	project.JavaVersion, project.JavaVersionPtr = pomJavaVersion(parsed)
+	project.JavaVersion, project.JavaVersionPtr, project.JavaVersionSource = pomJavaVersion(parsed)
 	project.SpringBoot, project.SpringPointer = pomSpringBoot(parsed)
-	project.Wrapper, project.WrapperVersion, project.WrapperProperties = mavenWrapper(ctx.ProjectDir())
+	project.Wrapper, project.WrapperVersion, project.WrapperProperties = mavenWrapper(ctx)
 	return project, nil
 }
 
@@ -108,6 +113,15 @@ func loadPOMFile(path, repoRoot string, seen map[string]struct{}) (pomDocument, 
 	if err != nil {
 		return pomDocument{}, false, fmt.Errorf("parse pom.xml: %w", err)
 	}
+	root, err := filepath.Abs(repoRoot)
+	if err != nil {
+		return pomDocument{}, false, fmt.Errorf("resolve repository root: %w", err)
+	}
+	relative, err := filepath.Rel(root, canonical)
+	if err != nil {
+		return pomDocument{}, false, fmt.Errorf("resolve pom source: %w", err)
+	}
+	stampPOM(&parsed, filepath.ToSlash(relative))
 	seen[canonical] = struct{}{}
 
 	parent, ok, err := loadParentPOM(filepath.Dir(path), repoRoot, parsed.Parent, seen)
@@ -187,6 +201,19 @@ func interpolate(value string, properties map[string]string, depth int) string {
 	return interpolate(replaced, properties, depth+1)
 }
 
+func stampPOM(parsed *pomDocument, source string) {
+	parsed.Source = source
+	for i := range parsed.Properties.Entries {
+		parsed.Properties.Entries[i].Source = source
+	}
+	for i := range parsed.Plugins {
+		parsed.Plugins[i].Source = source
+	}
+	for i := range parsed.PluginManagement {
+		parsed.PluginManagement[i].Source = source
+	}
+}
+
 func mergePOM(parent, child pomDocument) pomDocument {
 	merged := child
 	if merged.Packaging == "" {
@@ -204,39 +231,111 @@ func mergePOM(parent, child pomDocument) pomDocument {
 	}
 	merged.Properties.resolve()
 	merged.Dependencies = append(append([]pomArtifact{}, parent.Dependencies...), child.Dependencies...)
-	merged.Plugins = append(append([]pomPlugin{}, parent.Plugins...), child.Plugins...)
-	merged.PluginManagement = append(append([]pomPlugin{}, parent.PluginManagement...), child.PluginManagement...)
+	merged.Plugins = mergePlugins(parent.Plugins, child.Plugins)
+	merged.PluginManagement = mergePlugins(parent.PluginManagement, child.PluginManagement)
 	if merged.Parent.ArtifactID == "" {
 		merged.Parent = parent.Parent
 	}
 	return merged
 }
 
-func pomJavaVersion(parsed pomDocument) (string, string) {
-	for _, name := range []string{"java.version", "maven.compiler.release", "maven.compiler.source", "maven.compiler.target"} {
-		if version := literalVersion(parsed.Properties.lookup(name)); version != "" {
-			return version, "/properties/" + pointerToken(name)
+func mergePlugins(parent, child []pomPlugin) []pomPlugin {
+	merged := append([]pomPlugin{}, parent...)
+	for _, item := range child {
+		replaced := false
+		for i, existing := range merged {
+			if pluginsMatch(existing, item) {
+				merged[i] = item
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			merged = append(merged, item)
 		}
 	}
+	return merged
+}
+
+func pluginsMatch(a, b pomPlugin) bool {
+	if strings.TrimSpace(a.ArtifactID) != strings.TrimSpace(b.ArtifactID) {
+		return false
+	}
+	groupA, groupB := strings.TrimSpace(a.GroupID), strings.TrimSpace(b.GroupID)
+	if groupA == "" || groupB == "" {
+		return true
+	}
+	return groupA == groupB
+}
+
+func pomJavaVersion(parsed pomDocument) (string, string, string) {
 	values := propertyMap(parsed.Properties)
-	for _, plugin := range append(append([]pomPlugin{}, parsed.Plugins...), parsed.PluginManagement...) {
+	if version, pointer, source, ok := compilerPluginJavaVersion(parsed, parsed.Plugins, values, "/build/plugins/maven-compiler-plugin"); ok {
+		return version, pointer, source
+	}
+	if version, pointer, source, ok := compilerPluginJavaVersion(parsed, parsed.PluginManagement, values, "/build/pluginManagement/plugins/maven-compiler-plugin"); ok {
+		return version, pointer, source
+	}
+	for _, name := range []string{"java.version", "maven.compiler.release", "maven.compiler.source", "maven.compiler.target"} {
+		if version := literalVersion(parsed.Properties.lookup(name)); version != "" {
+			return version, "/properties/" + pointerToken(name), propertySource(parsed, name)
+		}
+	}
+	return "", "", ""
+}
+
+func compilerPluginJavaVersion(parsed pomDocument, plugins []pomPlugin, values map[string]string, pointerBase string) (string, string, string, bool) {
+	for _, plugin := range plugins {
 		if !isCompilerPlugin(plugin) {
 			continue
 		}
 		for _, candidate := range []struct {
-			value   string
-			pointer string
+			value string
+			field string
 		}{
-			{plugin.Configuration.Release, "/build/plugins/maven-compiler-plugin/configuration/release"},
-			{plugin.Configuration.Source, "/build/plugins/maven-compiler-plugin/configuration/source"},
-			{plugin.Configuration.Target, "/build/plugins/maven-compiler-plugin/configuration/target"},
+			{plugin.Configuration.Release, "release"},
+			{plugin.Configuration.Source, "source"},
+			{plugin.Configuration.Target, "target"},
 		} {
-			if version := literalVersion(interpolate(candidate.value, values, 0)); version != "" {
-				return version, candidate.pointer
+			raw := strings.TrimSpace(candidate.value)
+			if raw == "" {
+				continue
+			}
+			if name := singlePropertyRef(raw); name != "" {
+				if version := literalVersion(interpolate(raw, values, 0)); version != "" {
+					return version, "/properties/" + pointerToken(name), propertySource(parsed, name), true
+				}
+			}
+			if version := literalVersion(interpolate(raw, values, 0)); version != "" {
+				source := plugin.Source
+				if source == "" {
+					source = parsed.Source
+				}
+				return version, pointerBase + "/configuration/" + candidate.field, source, true
 			}
 		}
 	}
-	return "", ""
+	return "", "", "", false
+}
+
+func singlePropertyRef(value string) string {
+	match := propertyPattern.FindStringSubmatch(strings.TrimSpace(value))
+	if len(match) != 2 || match[0] != strings.TrimSpace(value) {
+		return ""
+	}
+	return match[1]
+}
+
+func propertySource(parsed pomDocument, name string) string {
+	for _, entry := range parsed.Properties.Entries {
+		if entry.XMLName.Local == name && entry.Source != "" {
+			return entry.Source
+		}
+	}
+	if parsed.Source != "" {
+		return parsed.Source
+	}
+	return "pom.xml"
 }
 
 func propertyMap(properties pomProperties) map[string]string {
@@ -268,7 +367,7 @@ func pomSpringBoot(parsed pomDocument) (bool, string) {
 			return true, "/dependencies/" + pointerToken(dep.ArtifactID)
 		}
 	}
-	for _, plugin := range append(append([]pomPlugin{}, parsed.Plugins...), parsed.PluginManagement...) {
+	for _, plugin := range parsed.Plugins {
 		if plugin.ArtifactID == "spring-boot-maven-plugin" {
 			return true, "/build/plugins/" + pointerToken(plugin.ArtifactID)
 		}
@@ -285,7 +384,7 @@ func isSpringBootArtifact(groupID, artifactID string) bool {
 
 func pluginSet(parsed pomDocument) map[string]struct{} {
 	out := make(map[string]struct{})
-	for _, plugin := range append(append([]pomPlugin{}, parsed.Plugins...), parsed.PluginManagement...) {
+	for _, plugin := range parsed.Plugins {
 		name := strings.TrimSpace(plugin.ArtifactID)
 		if name != "" {
 			out[name] = struct{}{}
@@ -314,18 +413,48 @@ func (m *mavenProject) hasPlugin(artifactID string) bool {
 	return ok
 }
 
-func mavenWrapper(dir string) (script, version, properties string) {
-	if fileExists(dir, "mvnw") {
-		script = "./mvnw"
-	} else if fileExists(dir, "mvnw.cmd") {
-		script = "mvnw.cmd"
+func mavenWrapper(ctx provider.Context) (script, version, properties string) {
+	dir := ctx.ProjectDir()
+	for {
+		name := ""
+		switch {
+		case fileExists(dir, "mvnw"):
+			name = "mvnw"
+		case fileExists(dir, "mvnw.cmd"):
+			name = "mvnw.cmd"
+		}
+		if name != "" {
+			script = wrapperRun(ctx.ProjectDir(), filepath.Join(dir, name))
+			propName := ".mvn/wrapper/maven-wrapper.properties"
+			if fileExists(dir, propName) {
+				if rel, err := filepath.Rel(ctx.RepositoryRoot, filepath.Join(dir, filepath.FromSlash(propName))); err == nil {
+					properties = filepath.ToSlash(rel)
+				}
+				version = wrapperVersionFromURL(readFileIfPresent(dir, propName), "apache-maven-")
+			}
+			return script, version, properties
+		}
+		if dir == ctx.RepositoryRoot {
+			return "", "", ""
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir || !insideRepository(ctx.RepositoryRoot, parent) {
+			return "", "", ""
+		}
+		dir = parent
 	}
-	name := ".mvn/wrapper/maven-wrapper.properties"
-	if fileExists(dir, name) {
-		properties = name
-		version = wrapperVersionFromURL(readFileIfPresent(dir, name), "apache-maven-")
+}
+
+func wrapperRun(fromDir, wrapperPath string) string {
+	rel, err := filepath.Rel(fromDir, wrapperPath)
+	if err != nil {
+		return ""
 	}
-	return script, version, properties
+	run := filepath.ToSlash(rel)
+	if path.Base(run) == "mvnw" && !strings.HasPrefix(run, "../") {
+		return "./" + strings.TrimPrefix(run, "./")
+	}
+	return run
 }
 
 func insideRepository(root, path string) bool {

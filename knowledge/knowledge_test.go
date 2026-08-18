@@ -455,6 +455,9 @@ func TestInterpretMatchesJavaInvocations(t *testing.T) {
 		{invocation: Invocation{Executable: "./gradlew", Args: []string{"bootRun"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
 		{invocation: Invocation{Executable: "gradlew.bat", Args: []string{"test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
 		{invocation: Invocation{Executable: "gradle", Args: []string{"spotlessCheck"}}, capabilities: []plan.Capability{plan.CapabilityCodeLint}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"verify", "-Dmaven.test.skip"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"-DskipTests", "verify"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"verify", "-DskipTests=false"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
 	}
 	for _, tt := range tests {
 		got := capabilities(Interpret(tt.invocation))

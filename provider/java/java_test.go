@@ -223,6 +223,216 @@ func TestDetectMavenChildInheritsParentCompilerRelease(t *testing.T) {
 	if !hasRuntime(result, "8") {
 		t.Fatalf("missing inherited Java 8 in %+v", result.Findings)
 	}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != "java" || item.Requirement.Version != "8" {
+			continue
+		}
+		for _, evidence := range item.Requirement.Evidence {
+			if evidence.Source != "pom.xml" {
+				t.Fatalf("inherited Java 8 evidence source = %q, want parent pom.xml", evidence.Source)
+			}
+			if evidence.Pointer != "/properties/maven.compiler.release" {
+				t.Fatalf("inherited Java 8 pointer = %q, want /properties/maven.compiler.release", evidence.Pointer)
+			}
+		}
+		return
+	}
+	t.Fatal("missing inherited Java 8 requirement")
+}
+
+func TestDetectMavenChildCompilerPluginOverridesParent(t *testing.T) {
+	t.Parallel()
+
+	root := writeFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>parent</artifactId>
+  <packaging>pom</packaging>
+  <modules><module>lib</module></modules>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration><release>8</release></configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+`,
+		"lib/pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>parent</artifactId>
+    <groupId>com.example</groupId>
+    <version>1.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>lib</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration><release>17</release></configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+`,
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "lib"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if !hasRuntime(result, "17") {
+		t.Fatalf("missing child Java 17 in %+v", result.Findings)
+	}
+	if hasRuntime(result, "8") {
+		t.Fatalf("parent compiler plugin release leaked into child: %+v", result.Findings)
+	}
+}
+
+func TestDetectMavenModuleUsesAncestorWrapper(t *testing.T) {
+	t.Parallel()
+
+	root := writeFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <packaging>pom</packaging>
+  <modules><module>lib</module></modules>
+</project>
+`,
+		"mvnw":                                  "#!/bin/sh\n",
+		".mvn/wrapper/maven-wrapper.properties": "distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.9/apache-maven-3.9.9-bin.zip\n",
+		"lib/pom.xml":                           `<project><modelVersion>4.0.0</modelVersion><artifactId>lib</artifactId></project>`,
+		"lib/src/test/java/LibTest.java":        "class LibTest {}\n",
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "lib"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if !hasPackageManager(result, "maven", "3.9.9") {
+		t.Fatalf("missing ancestor Maven wrapper version in %+v", result.Findings)
+	}
+	assertCommand(t, commandsByName(result)["test"], "../mvnw test", plan.CapabilityTestRun)
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.PropertyFinding)
+		if !ok || item.Property.Kind != plan.PropertyPackageManager || item.Property.Name != "maven" {
+			continue
+		}
+		var sources []string
+		for _, evidence := range item.Property.Evidence {
+			sources = append(sources, evidence.Source)
+		}
+		if !slices.Contains(sources, ".mvn/wrapper/maven-wrapper.properties") {
+			t.Fatalf("wrapper evidence = %v, want repo-root maven-wrapper.properties", sources)
+		}
+		if slices.Contains(sources, "lib/.mvn/wrapper/maven-wrapper.properties") {
+			t.Fatalf("wrapper evidence fabricated a module-local properties path: %v", sources)
+		}
+		return
+	}
+	t.Fatal("missing Maven package manager finding")
+}
+
+func TestDetectIgnoresMavenPluginManagementSpringBoot(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>lib</artifactId>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>
+`,
+		"src/main/java/com/example/App.java": "public class App { public static void main(String[] args) {} }\n",
+	})
+
+	if hasProperty(result, plan.PropertyFramework, "spring-boot") {
+		t.Fatal("pluginManagement-only spring-boot-maven-plugin was treated as Spring Boot")
+	}
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("inferred spring-boot:run from pluginManagement")
+	}
+}
+
+func TestDetectGradleLegacyJavaVersion(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		src  string
+	}{
+		{name: "enum", src: "plugins { id 'java' }\nsourceCompatibility = JavaVersion.VERSION_1_8\n"},
+		{name: "quoted", src: "plugins { id 'java' }\nsourceCompatibility = '1.8'\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			result := detectFiles(t, map[string]string{"build.gradle": tt.src})
+			if !hasRuntime(result, "8") {
+				t.Fatalf("missing normalized Java 8 in %+v", result.Findings)
+			}
+			if hasRuntime(result, "1") {
+				t.Fatalf("legacy Java 8 declaration was reported as Java 1: %+v", result.Findings)
+			}
+		})
+	}
+}
+
+func TestDetectIgnoresUnappliedGradlePlugins(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"settings.gradle.kts": `pluginManagement {
+    plugins {
+        id("org.springframework.boot") version "3.4.0"
+    }
+}
+rootProject.name = "demo"
+`,
+		"build.gradle.kts": `plugins {
+    id("java")
+    id("org.springframework.boot") version "3.4.0" apply false
+    id("com.diffplug.spotless") version "7.0.0" apply false
+}
+`,
+		"src/main/java/com/example/App.java":     "public class App {}\n",
+		"src/test/java/com/example/AppTest.java": "class AppTest {}\n",
+	})
+
+	if hasProperty(result, plan.PropertyFramework, "spring-boot") {
+		t.Fatal("unapplied Spring Boot plugin was treated as applied")
+	}
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("inferred bootRun from unapplied plugin")
+	}
+	if slices.Contains(factValues(result, "tool.configured"), "spotless") {
+		t.Fatal("unapplied Spotless plugin was reported as configured")
+	}
+}
+
+func TestDetectMavenInfersTestsFromSurefireDefaultNames(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml":                           `<project><modelVersion>4.0.0</modelVersion><artifactId>lib</artifactId></project>`,
+		"src/test/java/TestWidget.java":     "class TestWidget {}\n",
+		"src/test/java/WidgetTestCase.java": "class WidgetTestCase {}\n",
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "mvn test", plan.CapabilityTestRun)
 }
 
 func TestDetectReportsConflictingRuntimePins(t *testing.T) {

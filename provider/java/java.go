@@ -117,7 +117,7 @@ func mavenManagerEvidence(ctx provider.Context, maven *mavenProject) []plan.Evid
 	if maven.WrapperProperties != "" {
 		evidence = append(evidence, plan.Evidence{
 			Kind:    plan.EvidenceDeclaration,
-			Source:  ctx.SourcePath(maven.WrapperProperties),
+			Source:  maven.WrapperProperties,
 			Pointer: "/distributionUrl",
 		})
 	}

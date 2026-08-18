@@ -75,11 +75,15 @@ type manifestVersion struct {
 func manifestJavaVersions(ctx provider.Context, project javaProject) []manifestVersion {
 	var versions []manifestVersion
 	if project.Maven != nil && project.Maven.JavaVersion != "" {
+		source := project.Maven.JavaVersionSource
+		if source == "" {
+			source = ctx.SourcePath(project.Maven.Source)
+		}
 		versions = append(versions, manifestVersion{
 			value: project.Maven.JavaVersion,
 			evidence: plan.Evidence{
 				Kind:    plan.EvidenceDeclaration,
-				Source:  ctx.SourcePath(project.Maven.Source),
+				Source:  source,
 				Pointer: project.Maven.JavaVersionPtr,
 			},
 		})

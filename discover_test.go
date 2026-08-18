@@ -121,6 +121,28 @@ func TestFindProjectRootsSkipsNestedGradleMembers(t *testing.T) {
 	}
 }
 
+func TestFindProjectRootsKeepsUnrelatedManifestsUnderGradleSettings(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "settings.gradle.kts"), "rootProject.name = \"demo\"\ninclude(\"lib\")\n")
+	writeFile(t, filepath.Join(root, "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "lib", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "frontend", "package.json"), "{}\n")
+	writeFile(t, filepath.Join(root, "backend", "go.mod"), "module example.com/backend\n\ngo 1.26\n")
+	writeFile(t, filepath.Join(root, "orphan", "build.gradle"), "plugins { id 'java' }\n")
+	writeFile(t, filepath.Join(root, "lib", "package.json"), "{}\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{".", "backend", "frontend", "lib", "orphan"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
 func TestFindProjectRootsSkipsSymlinkedDirectories(t *testing.T) {
 	t.Parallel()
 

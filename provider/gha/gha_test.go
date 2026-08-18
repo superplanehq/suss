@@ -398,6 +398,33 @@ jobs:
 	}
 }
 
+func TestDetectKeepsPathQualifiedTestScripts(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: ./test
+      - run: bin/test
+`,
+	})
+
+	var runs []string
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok {
+			continue
+		}
+		runs = append(runs, deref(item.Command.Run))
+	}
+	slices.Sort(runs)
+	if !slices.Equal(runs, []string{"./test", "bin/test"}) {
+		t.Fatalf("runs = %v, want ./test and bin/test", runs)
+	}
+}
+
 func TestDetectSkipsRemoteGemInstalls(t *testing.T) {
 	t.Parallel()
 

@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -48,9 +49,8 @@ var skippedDirectories = map[string]struct{}{
 }
 
 func findProjectRoots(root string) ([]string, error) {
-	found := make(map[string]struct{})
+	found := make(map[string]map[string]struct{})
 	settings := make(map[string]struct{})
-	poms := make(map[string]struct{})
 
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -73,12 +73,12 @@ func findProjectRoots(root string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		found[relative] = struct{}{}
+		if found[relative] == nil {
+			found[relative] = make(map[string]struct{})
+		}
+		found[relative][entry.Name()] = struct{}{}
 		if _, ok := gradleSettingsFiles[entry.Name()]; ok {
 			settings[relative] = struct{}{}
-		}
-		if entry.Name() == "pom.xml" {
-			poms[relative] = struct{}{}
 		}
 		return nil
 	})
@@ -86,9 +86,14 @@ func findProjectRoots(root string) ([]string, error) {
 		return nil, err
 	}
 
+	includes, err := loadGradleIncludes(root, settings)
+	if err != nil {
+		return nil, err
+	}
+
 	paths := make([]string, 0, len(found))
-	for path := range found {
-		if isNestedGradleMember(path, settings, poms) {
+	for path, files := range found {
+		if isDeclaredGradleMember(path, files, settings, includes) {
 			continue
 		}
 		paths = append(paths, path)
@@ -97,11 +102,70 @@ func findProjectRoots(root string) ([]string, error) {
 	return paths, nil
 }
 
-func isNestedGradleMember(path string, settings, poms map[string]struct{}) bool {
-	if _, ok := poms[path]; ok {
+func loadGradleIncludes(root string, settings map[string]struct{}) (map[string][]string, error) {
+	includes := make(map[string][]string, len(settings))
+	for relative := range settings {
+		dir := root
+		if relative != "." {
+			dir = filepath.Join(root, filepath.FromSlash(relative))
+		}
+		var contents strings.Builder
+		for _, name := range []string{"settings.gradle.kts", "settings.gradle"} {
+			data, err := os.ReadFile(filepath.Join(dir, name))
+			if err == nil {
+				contents.Write(data)
+				contents.WriteByte('\n')
+				continue
+			}
+			if !os.IsNotExist(err) {
+				return nil, err
+			}
+		}
+		includes[relative] = parseGradleIncludes(contents.String())
+	}
+	return includes, nil
+}
+
+var (
+	gradleIncludeCall = regexp.MustCompile(`(?m)(?:^|[^\w])include\s*\(([^)]*)\)`)
+	gradleIncludeBare = regexp.MustCompile(`(?m)(?:^|[^\w])include\s+([^;\n]+)`)
+	gradleQuoted      = regexp.MustCompile(`["']([^"']+)["']`)
+)
+
+func parseGradleIncludes(contents string) []string {
+	var paths []string
+	seen := make(map[string]struct{})
+	add := func(raw string) {
+		raw = strings.TrimSpace(raw)
+		raw = strings.Trim(raw, ":")
+		raw = strings.ReplaceAll(raw, ":", "/")
+		if raw == "" {
+			return
+		}
+		if _, ok := seen[raw]; ok {
+			return
+		}
+		seen[raw] = struct{}{}
+		paths = append(paths, raw)
+	}
+	for _, match := range gradleIncludeCall.FindAllStringSubmatch(contents, -1) {
+		for _, quoted := range gradleQuoted.FindAllStringSubmatch(match[1], -1) {
+			add(quoted[1])
+		}
+	}
+	for _, match := range gradleIncludeBare.FindAllStringSubmatch(contents, -1) {
+		for _, quoted := range gradleQuoted.FindAllStringSubmatch(match[1], -1) {
+			add(quoted[1])
+		}
+	}
+	return paths
+}
+
+func isDeclaredGradleMember(path string, files map[string]struct{}, settings map[string]struct{}, includes map[string][]string) bool {
+	if _, ok := settings[path]; ok {
 		return false
 	}
-	if _, ok := settings[path]; ok {
+	if !onlyGradleBuildManifests(files) {
 		return false
 	}
 	dir := path
@@ -110,12 +174,44 @@ func isNestedGradleMember(path string, settings, poms map[string]struct{}) bool 
 		if parent == dir {
 			break
 		}
-		if _, ok := settings[parent]; ok {
+		if gradleIncludeContains(includes[parent], relativeToParent(parent, path)) {
 			return true
 		}
 		dir = parent
 	}
 	return false
+}
+
+func onlyGradleBuildManifests(files map[string]struct{}) bool {
+	if len(files) == 0 {
+		return false
+	}
+	for name := range files {
+		switch name {
+		case "build.gradle", "build.gradle.kts":
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func gradleIncludeContains(listed []string, relative string) bool {
+	if relative == "" {
+		return false
+	}
+	return slices.Contains(listed, relative)
+}
+
+func relativeToParent(parent, path string) string {
+	if parent == "." {
+		return path
+	}
+	prefix := parent + "/"
+	if strings.HasPrefix(path, prefix) {
+		return path[len(prefix):]
+	}
+	return ""
 }
 
 func parentProjectPath(projectPath string) string {

@@ -47,7 +47,7 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 		}
 	}
 
-	stripped := stripGradleComments(buildContents + "\n" + settingsContents)
+	stripped := stripGradleComments(buildContents)
 	project := &gradleProject{
 		Source:       source,
 		SettingsFile: settings,
@@ -85,19 +85,29 @@ func hasGradleIncludes(contents string) bool {
 func gradlePlugins(contents string) map[string]struct{} {
 	out := make(map[string]struct{})
 	patterns := []*regexp.Regexp{
-		regexp.MustCompile(`(?m)\bid\s*\(\s*["']([^"']+)["']`),
-		regexp.MustCompile(`(?m)\bid\s+["']([^"']+)["']`),
-		regexp.MustCompile(`(?m)apply\s+plugin:\s*["']([^"']+)["']`),
+		regexp.MustCompile(`(?m)\bid\s*\(\s*["']([^"']+)["']\s*\)([^\n]*)`),
+		regexp.MustCompile(`(?m)\bid\s+["']([^"']+)["']([^\n]*)`),
 	}
 	for _, pattern := range patterns {
 		for _, match := range pattern.FindAllStringSubmatch(contents, -1) {
-			if len(match) == 2 {
-				out[match[1]] = struct{}{}
+			if len(match) < 2 || gradleApplyFalse.MatchString(match[2]) {
+				continue
 			}
+			out[match[1]] = struct{}{}
+		}
+	}
+	for _, match := range gradleApplyPlugin.FindAllStringSubmatch(contents, -1) {
+		if len(match) == 2 {
+			out[match[1]] = struct{}{}
 		}
 	}
 	return out
 }
+
+var (
+	gradleApplyFalse  = regexp.MustCompile(`(?i)\bapply\s*(?:false|\(\s*false\s*\))`)
+	gradleApplyPlugin = regexp.MustCompile(`(?m)apply\s+plugin:\s*["']([^"']+)["']`)
+)
 
 func gradleJavaVersion(contents string) (string, string) {
 	patterns := []struct {
@@ -105,17 +115,28 @@ func gradleJavaVersion(contents string) (string, string) {
 		pointer string
 	}{
 		{regexp.MustCompile(`JavaLanguageVersion\.of\(\s*["']?(\d+)["']?\s*\)`), "/java/toolchain"},
-		{regexp.MustCompile(`JavaVersion\.VERSION_(\d+)`), "/sourceCompatibility"},
-		{regexp.MustCompile(`(?m)sourceCompatibility\s*=\s*["']?(\d+)["']?`), "/sourceCompatibility"},
-		{regexp.MustCompile(`(?m)targetCompatibility\s*=\s*["']?(\d+)["']?`), "/targetCompatibility"},
-		{regexp.MustCompile(`(?m)jvmTarget\s*=\s*["']?(\d+)["']?`), "/jvmTarget"},
+		{regexp.MustCompile(`JavaVersion\.VERSION_(\d+(?:_\d+)?)`), "/sourceCompatibility"},
+		{regexp.MustCompile(`(?m)sourceCompatibility\s*=\s*["']?(\d+(?:\.\d+)?)["']?`), "/sourceCompatibility"},
+		{regexp.MustCompile(`(?m)targetCompatibility\s*=\s*["']?(\d+(?:\.\d+)?)["']?`), "/targetCompatibility"},
+		{regexp.MustCompile(`(?m)jvmTarget\s*=\s*["']?(\d+(?:\.\d+)?)["']?`), "/jvmTarget"},
 	}
 	for _, candidate := range patterns {
 		if match := candidate.pattern.FindStringSubmatch(contents); len(match) == 2 {
-			return match[1], candidate.pointer
+			return normalizeJavaVersion(match[1]), candidate.pointer
 		}
 	}
 	return "", ""
+}
+
+func normalizeJavaVersion(raw string) string {
+	raw = strings.ReplaceAll(strings.TrimSpace(raw), "_", ".")
+	if strings.HasPrefix(raw, "1.") {
+		rest := strings.TrimPrefix(raw, "1.")
+		if rest != "" && !strings.Contains(rest, ".") {
+			return rest
+		}
+	}
+	return raw
 }
 
 func gradleSpringBoot(contents string, plugins map[string]struct{}) (bool, string) {

@@ -121,7 +121,11 @@ func Interpret(inv Invocation) []Match {
 			})
 		}
 	}
-	return uniqueCapabilities(matches)
+	matches = uniqueCapabilities(matches)
+	if mavenSkipsTests(inv) {
+		matches = dropCapability(matches, plan.CapabilityTestRun)
+	}
+	return matches
 }
 
 // CommandName is the stable display name for an observed invocation.
@@ -476,6 +480,25 @@ func HasUnclosedGHAExpression(s string) bool {
 	return false
 }
 
+// IsBareUnixTest reports whether the statement invokes the shell `test`
+// builtin rather than a path-qualified repository script such as ./test.
+func IsBareUnixTest(stmt Statement) bool {
+	tokens := splitShell(stmt.Raw)
+	_, tokens = takeLeadingAssignments(tokens)
+	tokens = dropWrappers(tokens)
+	if len(tokens) == 0 {
+		return false
+	}
+	original := strings.Trim(tokens[0], `"'`)
+	original = strings.ReplaceAll(original, "\\", "/")
+	base := path.Base(original)
+	base = strings.TrimSuffix(strings.TrimSuffix(base, ".exe"), ".cmd")
+	if base != "test" {
+		return false
+	}
+	return !strings.Contains(original, "/")
+}
+
 func ghaExprClose(s string, i int) int {
 	if i < 0 || i+3 > len(s) || s[i:i+3] != "${{" {
 		return -1
@@ -741,6 +764,47 @@ func hasArgsContains(args, required []string) bool {
 		}
 	}
 	return true
+}
+
+func mavenSkipsTests(inv Invocation) bool {
+	if canonicalizeExecutable(inv.Executable) != "mvn" {
+		return false
+	}
+	for _, arg := range inv.Args {
+		key, value, ok := mavenPropertyFlag(arg)
+		if !ok {
+			continue
+		}
+		switch key {
+		case "skipTests", "maven.test.skip":
+			if value == "" || strings.EqualFold(value, "true") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func mavenPropertyFlag(arg string) (key, value string, ok bool) {
+	if !strings.HasPrefix(arg, "-D") {
+		return "", "", false
+	}
+	rest := strings.TrimPrefix(arg, "-D")
+	if rest == "" {
+		return "", "", false
+	}
+	key, value, _ = strings.Cut(rest, "=")
+	return key, value, key != ""
+}
+
+func dropCapability(matches []Match, capability plan.Capability) []Match {
+	filtered := make([]Match, 0, len(matches))
+	for _, match := range matches {
+		if match.Capability != capability {
+			filtered = append(filtered, match)
+		}
+	}
+	return filtered
 }
 
 func uniqueCapabilities(matches []Match) []Match {

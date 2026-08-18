@@ -445,6 +445,9 @@ func skipStatement(stmt knowledge.Statement) bool {
 	if knowledge.HasUnclosedGHAExpression(raw) {
 		return true
 	}
+	if knowledge.IsBareUnixTest(stmt) {
+		return true
+	}
 	_, skip := skippedExecutables[name]
 	return skip
 }
@@ -487,7 +490,7 @@ var skippedExecutables = map[string]struct{}{
 	"which": {}, "command": {}, "type": {},
 	"git": {}, "curl": {}, "wget": {},
 	"env": {}, "ssh": {}, "rsync": {},
-	"test": {}, "udevadm": {},
+	"udevadm": {},
 }
 
 func envFindings(source, pointer, dir string, env stringMap, keepLiterals bool) []plan.Finding {
