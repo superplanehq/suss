@@ -235,15 +235,17 @@ func installSelectorsFor(project pythonProject, manager string, names []string) 
 	return extras, groups
 }
 
-func pytestPackageNames(project pythonProject) []string {
-	var names []string
-	for name := range project.Dependencies {
-		if name == "pytest" || strings.HasPrefix(name, "pytest-") {
-			names = append(names, name)
-		}
+func pytestSignalNames(project pythonProject) []string {
+	if _, ok := project.Dependencies["pytest"]; ok {
+		return []string{"pytest"}
 	}
-	slices.Sort(names)
-	return names
+	if _, ok := project.Dependencies["pytest-django"]; ok {
+		return []string{"pytest-django"}
+	}
+	if dep, ok := prefixedDependency(project, "pytest"); ok {
+		return []string{dep.Name}
+	}
+	return nil
 }
 
 func depInstalledByDefault(project pythonProject, manager string, dep depDeclaration) bool {

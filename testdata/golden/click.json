@@ -435,20 +435,7 @@
               "pointer": "/jobs/typing/steps/4/run"
             }
           ],
-          "interpretations": [
-            {
-              "capability": "test.run",
-              "confidence": "high",
-              "evidence": [
-                {
-                  "kind": "invocation",
-                  "source": ".github/workflows/tests.yaml",
-                  "pointer": "/jobs/typing/steps/4/run",
-                  "description": "The command runs the tox test matrix."
-                }
-              ]
-            }
-          ],
+          "interpretations": [],
           "variants": []
         },
         {

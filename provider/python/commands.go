@@ -27,7 +27,7 @@ func commandFindings(ctx provider.Context, project pythonProject, choice manager
 		}
 		var needed []string
 		if testFile != "" && len(pytestEvidence(ctx, project)) > 0 {
-			needed = pytestPackageNames(project)
+			needed = pytestSignalNames(project)
 		}
 		specs = append(specs, installSpec(ctx, project, choice, needed))
 	}

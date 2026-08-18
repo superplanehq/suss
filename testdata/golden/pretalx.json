@@ -219,7 +219,7 @@
         {
           "id": "cmd_a5439528f72be03f5a5bfcd6c0f45aa9",
           "name": "install dependencies",
-          "run": "uv sync",
+          "run": "uv sync --extra dev",
           "directory": ".",
           "scope": "project",
           "origin": "inferred",
@@ -237,7 +237,7 @@
               "kind": "convention",
               "source": "python-ecosystem",
               "pointer": "dependencies",
-              "description": "uv-managed Python projects conventionally install dependencies with uv sync."
+              "description": "uv-managed Python projects conventionally install dependencies with uv sync --extra dev."
             }
           ],
           "interpretations": [

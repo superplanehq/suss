@@ -651,6 +651,7 @@ name = "widget"
 [dependency-groups]
 dev = ["pytest"]
 tests = ["pytest"]
+tests-random = ["pytest-randomly"]
 
 [tool.uv]
 default-groups = ["dev", "tests"]
