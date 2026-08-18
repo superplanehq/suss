@@ -69,37 +69,32 @@ func stripCargoDirectoryFlagsFromRun(redacted string) string {
 		return redacted
 	}
 	args := rest[1:]
-	args, _ = stripFlagQuoted(args, "-C", "")
-	args, _ = stripFlagQuoted(args, "--manifest-path", "")
+	args = stripFlagQuoted(args, "-C")
+	args = stripFlagQuoted(args, "--manifest-path")
 	out := append(append([]string{}, prefix...), rest[0])
 	out = append(out, args...)
 	return strings.Join(out, " ")
 }
 
-func stripFlagQuoted(args []string, name, current string) ([]string, string) {
+func stripFlagQuoted(args []string, name string) []string {
 	out := make([]string, 0, len(args))
-	dir := current
 	for i := 0; i < len(args); i++ {
 		arg := unquoteShellToken(args[i])
 		if arg == "--" {
-			out = append(out, args[i:]...)
-			return out, dir
+			return append(out, args[i:]...)
 		}
 		if arg == name {
 			if i+1 < len(args) {
-				dir = unquoteShellToken(args[i+1])
 				i++
 			}
 			continue
 		}
-		prefix := name + "="
-		if strings.HasPrefix(arg, prefix) {
-			dir = strings.TrimPrefix(arg, prefix)
+		if strings.HasPrefix(arg, name+"=") {
 			continue
 		}
 		out = append(out, args[i])
 	}
-	return out, dir
+	return out
 }
 
 func unquoteShellToken(token string) string {
