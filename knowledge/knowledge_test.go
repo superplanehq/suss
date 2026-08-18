@@ -280,6 +280,44 @@ func TestParseScriptPreservesPHPFileOptionTargets(t *testing.T) {
 	}
 }
 
+func TestParseStatementsKeepsComposerWorkingDirWhenUnwrappingExec(t *testing.T) {
+	t.Parallel()
+
+	got := ParseStatements("composer -d tools exec phpunit")
+	if len(got) != 1 || got[0].WorkingDir != "tools" || got[0].Invocation.Executable != "phpunit" {
+		t.Fatalf("ParseStatements() = %+v, want phpunit in tools", got)
+	}
+}
+
+func TestParseScriptNormalizesComposerGlobalOptionsBeforeInstall(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("composer --no-interaction install && composer -v install")
+	want := []Invocation{
+		{Executable: "composer", Args: []string{"install"}},
+		{Executable: "composer", Args: []string{"install"}},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+	matches := Interpret(got[0])
+	if len(matches) != 1 || matches[0].Capability != plan.CapabilityDependenciesInstall {
+		t.Fatalf("Interpret(composer --no-interaction install) = %+v, want dependencies.install", matches)
+	}
+}
+
+func TestParseScriptDoesNotUnwrapPHPInlineCodeAsVendorBin(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("php -r 'echo $argv[1];' vendor/bin/phpunit")
+	if len(got) != 1 || got[0].Executable != "php" {
+		t.Fatalf("ParseScript() = %#v, want php, not unwrapped phpunit", got)
+	}
+	if matches := Interpret(got[0]); len(matches) != 0 {
+		t.Fatalf("Interpret(php -r … phpunit) = %+v, want no fabricated test.run", matches)
+	}
+}
+
 func TestParseScriptUnwrapsComposerExecAfterGlobalOptions(t *testing.T) {
 	t.Parallel()
 

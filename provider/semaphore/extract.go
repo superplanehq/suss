@@ -105,22 +105,26 @@ func extractCommands(ctx provider.Context, source, base, pointer string, command
 				current = resolveDirectory(ctx.RepositoryRoot, current, statement.Chdir)
 				continue
 			}
+			dir := current
+			if statement.WorkingDir != "" {
+				dir = resolveDirectory(ctx.RepositoryRoot, current, statement.WorkingDir)
+			}
 			if statement.Invocation.Executable == "sem-version" {
-				findings = append(findings, versionEvidence(source, current, statementPointer, statement.Invocation, matrix)...)
+				findings = append(findings, versionEvidence(source, dir, statementPointer, statement.Invocation, matrix)...)
 				continue
 			}
 			if statement.Invocation.Executable == "sem-service" {
-				findings = append(findings, serviceEvidence(source, current, statementPointer, statement.Invocation, matrix)...)
+				findings = append(findings, serviceEvidence(source, dir, statementPointer, statement.Invocation, matrix)...)
 				continue
 			}
 			if skipSemaphoreStatement(statement) {
 				continue
 			}
-			command, err := observedCommand(source, current, statementPointer, statement)
+			command, err := observedCommand(source, dir, statementPointer, statement)
 			if err != nil {
 				return base, nil, err
 			}
-			findings = append(findings, plan.CommandFinding{ProjectPath: current, Detector: providerName, Command: command})
+			findings = append(findings, plan.CommandFinding{ProjectPath: dir, Detector: providerName, Command: command})
 		}
 	}
 	return current, findings, nil

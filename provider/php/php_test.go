@@ -94,6 +94,23 @@ func TestDetectLaravelMinitestWithoutDeclaredTestScript(t *testing.T) {
 	assertCommand(t, commands["server"], "php artisan serve", plan.CommandInferred, plan.CapabilityApplicationRun)
 }
 
+func TestDetectLaravelPackageWithoutArtisanDoesNotInferArtisanCommands(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json":        `{"require":{"laravel/framework":"^11.0"}}`,
+		"bootstrap/app.php":    "<?php\n",
+		"config/app.php":       "<?php\n",
+		"tests/WidgetTest.php": "<?php\nclass WidgetTest {}\n",
+	})
+
+	commands := commandsByName(result)
+	if _, ok := commands["server"]; ok {
+		t.Fatal("Laravel package without artisan unexpectedly has a server command")
+	}
+	assertCommand(t, commands["test"], "vendor/bin/phpunit", plan.CommandInferred, plan.CapabilityTestRun)
+}
+
 func TestDetectLaravelDependencyWithoutApplicationDoesNotInferServer(t *testing.T) {
 	t.Parallel()
 
@@ -128,6 +145,13 @@ func TestDetectComposerLibraryPHPUnitAndPest(t *testing.T) {
 		"tests/example.php": "<?php\nit('works');\n",
 	})
 	assertCommand(t, commandsByName(pest)["test"], "vendor/bin/pest", plan.CommandInferred, plan.CapabilityTestRun)
+
+	configured := detectFiles(t, map[string]string{
+		"composer.json":     `{"require":{"php":"^8.2"}}`,
+		"tests/Pest.php":    "<?php\n",
+		"tests/example.php": "<?php\nit('works');\n",
+	})
+	assertCommand(t, commandsByName(configured)["test"], "vendor/bin/pest", plan.CommandInferred, plan.CapabilityTestRun)
 }
 
 func TestDetectSymfonyFrameworkWithoutInferredServer(t *testing.T) {

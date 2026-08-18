@@ -130,6 +130,7 @@ type Statement struct {
 	Raw        string
 	EnvNames   []string
 	Chdir      string
+	WorkingDir string
 	Invocation Invocation
 }
 
@@ -185,11 +186,25 @@ func parseStatement(part string) Statement {
 	if len(rest) == 1 && rest[0] == "cd" {
 		return stmt
 	}
+	if dir := workingDirectoryFlag(rest); dir != "" {
+		stmt.WorkingDir = dir
+	}
 	inv, ok := parseInvocation(part)
 	if ok {
 		stmt.Invocation = inv
 	}
 	return stmt
+}
+
+func workingDirectoryFlag(tokens []string) string {
+	if len(tokens) == 0 {
+		return ""
+	}
+	dir, _ := StripDirectoryFlags(Invocation{
+		Executable: canonicalizeExecutable(tokens[0]),
+		Args:       tokens[1:],
+	})
+	return dir
 }
 
 func splitCommandList(script string, splitPipes bool) []string {
@@ -455,9 +470,13 @@ func dropWrappers(tokens []string) []string {
 		}
 	case "composer":
 		rest := skipComposerGlobalOptions(tokens[1:])
-		if len(rest) > 0 && rest[0] == "exec" {
+		if len(rest) == 0 {
+			break
+		}
+		if rest[0] == "exec" {
 			return dropLeadingFlags(rest[1:])
 		}
+		return append([]string{"composer"}, rest...)
 	case "php":
 		rest := skipPHPCLIOptions(tokens[1:])
 		if len(rest) == 0 {
@@ -498,6 +517,9 @@ func skipPHPCLIOptions(tokens []string) []string {
 			return tokens[i:]
 		}
 		name, hasValue := phpCLIOption(token)
+		if phpCLIExecutionMode(name) {
+			return nil
+		}
 		if name == "-f" || name == "--file" {
 			target, rest, ok := phpFileOptionTarget(tokens, i, token, hasValue)
 			if !ok {
@@ -562,6 +584,20 @@ func phpCLIOption(token string) (name string, hasValue bool) {
 		return token[:2], true
 	}
 	return token, false
+}
+
+func phpCLIExecutionMode(name string) bool {
+	switch name {
+	case "-r", "--run",
+		"-B", "--process-begin",
+		"-R", "--process-code",
+		"-F", "--process-file",
+		"-E", "--process-end",
+		"-S", "--server":
+		return true
+	default:
+		return false
+	}
 }
 
 func phpCLIOptionTakesValue(name string) bool {

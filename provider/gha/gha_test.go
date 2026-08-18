@@ -451,6 +451,27 @@ jobs:
 	}
 }
 
+func TestDetectAppliesComposerWorkingDirWhenUnwrappingExec(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: composer -d tools exec phpunit
+`,
+	})
+
+	got := commandByName(result)["phpunit"]
+	if deref(got.Run) != "composer -d tools exec phpunit" || got.Directory != "tools" {
+		t.Fatalf("command = %+v, want phpunit in tools", got)
+	}
+	if !commandHasCapability(got, plan.CapabilityTestRun) {
+		t.Fatalf("interpretations = %+v, want test.run", got.Interpretations)
+	}
+}
+
 func TestDetectKeepsComposerVerboseInstallAndSkipsComposerVersion(t *testing.T) {
 	t.Parallel()
 

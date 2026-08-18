@@ -106,7 +106,7 @@ func testCommandSpec(ctx provider.Context, manifest composerManifest) (commandSp
 	if err != nil {
 		return commandSpec{}, false, err
 	}
-	if testFile == "" && !phpunitConfigured(ctx) && !fileExists(ctx.ProjectDir(), "tests/Pest.php") {
+	if testFile == "" && !phpunitConfigured(ctx) && !pestConfigured(ctx) {
 		return commandSpec{}, false, nil
 	}
 
@@ -120,10 +120,12 @@ func testCommandSpec(ctx provider.Context, manifest composerManifest) (commandSp
 		return spec, true, nil
 	}
 
-	if hasPest(manifest) {
-		spec := conventionSpec(source, "test", "vendor/bin/pest", "/#test", plan.ConfidenceHigh, "PHP projects that declare Pest conventionally run tests with vendor/bin/pest.")
+	if hasPest(manifest) || pestConfigured(ctx) {
+		spec := conventionSpec(source, "test", "vendor/bin/pest", "/#test", plan.ConfidenceHigh, "PHP projects with Pest conventionally run tests with vendor/bin/pest.")
 		if testFile != "" {
 			spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
+		} else if pestFile := pestConfigFile(ctx); pestFile != "" {
+			spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(pestFile)})
 		}
 		return spec, true, nil
 	}
@@ -139,16 +141,29 @@ func testCommandSpec(ctx provider.Context, manifest composerManifest) (commandSp
 }
 
 func laravelApplicationEvidence(ctx provider.Context, manifest composerManifest) []plan.Evidence {
-	if !hasLaravel(manifest) {
+	if !hasLaravel(manifest) || !fileExists(ctx.ProjectDir(), "artisan") {
 		return nil
 	}
-	var evidence []plan.Evidence
-	for _, name := range []string{"artisan", "bootstrap/app.php", "config/app.php"} {
+	evidence := []plan.Evidence{{Kind: plan.EvidenceFile, Source: ctx.SourcePath("artisan")}}
+	for _, name := range []string{"bootstrap/app.php", "config/app.php"} {
 		if fileExists(ctx.ProjectDir(), name) {
 			evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(name)})
 		}
 	}
 	return evidence
+}
+
+func pestConfigured(ctx provider.Context) bool {
+	return pestConfigFile(ctx) != ""
+}
+
+func pestConfigFile(ctx provider.Context) string {
+	for _, name := range []string{"tests/Pest.php", "Pest.php"} {
+		if fileExists(ctx.ProjectDir(), name) {
+			return name
+		}
+	}
+	return ""
 }
 
 func phpunitConfigured(ctx provider.Context) bool {

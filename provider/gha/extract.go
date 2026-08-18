@@ -314,6 +314,9 @@ func applyStatementDirectory(repo, current string, stmt knowledge.Statement) str
 	if stmt.Chdir != "" {
 		return resolveDirectory(repo, current, stmt.Chdir)
 	}
+	if stmt.WorkingDir != "" {
+		return resolveDirectory(repo, current, stmt.WorkingDir)
+	}
 	dir, _ := knowledge.StripDirectoryFlags(stmt.Invocation)
 	if dir == "" {
 		return current

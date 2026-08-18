@@ -62,6 +62,27 @@ func TestDetectEnumeratesTargetsAndInterpretsRecipes(t *testing.T) {
 	}
 }
 
+func TestDetectInterpretsComposerInstallWithGlobalOptions(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Makefile": "" +
+			"install:\n" +
+			"\tcomposer --no-interaction install\n" +
+			"\n" +
+			"ci-install:\n" +
+			"\tcomposer -v install\n",
+	})
+
+	commands := commandByName(result)
+	if !hasCapability(commands["install"], plan.CapabilityDependenciesInstall) {
+		t.Fatalf("install interpretations = %+v, want dependencies.install", commands["install"].Interpretations)
+	}
+	if !hasCapability(commands["ci-install"], plan.CapabilityDependenciesInstall) {
+		t.Fatalf("ci-install interpretations = %+v, want dependencies.install", commands["ci-install"].Interpretations)
+	}
+}
+
 func TestDetectExpandsSimpleVariablesAndRecordsLimitations(t *testing.T) {
 	t.Parallel()
 

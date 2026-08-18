@@ -89,7 +89,7 @@ func matchExistingRuntime(project plan.ProjectPlan, indexes []int, version strin
 	}
 	unevaluable := -1
 	for _, index := range indexes {
-		ok, known := versionSatisfies(project.Requirements[index].Version, version)
+		ok, known := versionSatisfies(project.Requirements[index].Name, project.Requirements[index].Version, version)
 		if !known {
 			if unevaluable < 0 {
 				unevaluable = index
@@ -230,7 +230,7 @@ func normalizeVersion(version string) string {
 	return version
 }
 
-func versionSatisfies(declared, version string) (ok, known bool) {
+func versionSatisfies(runtime, declared, version string) (ok, known bool) {
 	declared = strings.TrimSpace(declared)
 	version = normalizeVersion(version)
 	if declared == "" || version == "" || !comparableVersion(version) {
@@ -241,7 +241,7 @@ func versionSatisfies(declared, version string) (ok, known bool) {
 	}
 
 	for _, group := range strings.Split(declared, "||") {
-		satisfied, groupKnown := andConstraints(strings.TrimSpace(group), version)
+		satisfied, groupKnown := andConstraints(runtime, strings.TrimSpace(group), version)
 		if !groupKnown {
 			return false, false
 		}
@@ -252,13 +252,16 @@ func versionSatisfies(declared, version string) (ok, known bool) {
 	return false, true
 }
 
-func andConstraints(group, version string) (ok, known bool) {
+func andConstraints(runtime, group, version string) (ok, known bool) {
+	if left, right, hyphen := splitHyphenRange(group); hyphen {
+		return hyphenSatisfies(runtime, left, right, version)
+	}
 	tokens := splitConstraints(group)
 	if len(tokens) == 0 {
 		return false, false
 	}
 	for _, token := range tokens {
-		matched, tokenKnown := constraintSatisfies(token, version)
+		matched, tokenKnown := constraintSatisfies(runtime, token, version)
 		if !tokenKnown {
 			return false, false
 		}
@@ -267,6 +270,54 @@ func andConstraints(group, version string) (ok, known bool) {
 		}
 	}
 	return true, true
+}
+
+func splitHyphenRange(group string) (left, right string, ok bool) {
+	left, right, ok = strings.Cut(group, " - ")
+	if !ok {
+		return "", "", false
+	}
+	left = strings.TrimSpace(left)
+	right = strings.TrimSpace(right)
+	if left == "" || right == "" {
+		return "", "", false
+	}
+	return left, right, true
+}
+
+func hyphenSatisfies(runtime, left, right, version string) (ok, known bool) {
+	if runtime != "php" {
+		return false, false
+	}
+	lower := normalizeVersion(left)
+	if lower == "" || !comparableVersion(lower) {
+		return false, false
+	}
+	if compareVersions(version, lower) < 0 {
+		return false, true
+	}
+	return composerHyphenUpperBound(right, version)
+}
+
+func composerHyphenUpperBound(right, version string) (ok, known bool) {
+	right = strings.TrimSpace(strings.TrimPrefix(right, "v"))
+	if right == "" {
+		return false, false
+	}
+	parts := strings.Split(right, ".")
+	base := normalizeVersion(right)
+	if base == "" || !comparableVersion(base) {
+		return false, false
+	}
+	if len(parts) >= 3 {
+		return compareVersions(version, base) <= 0, true
+	}
+	major := versionPart(parts, 0)
+	if len(parts) == 1 {
+		return compareVersions(version, formatVersion(major+1, 0, 0)) < 0, true
+	}
+	minor := versionPart(parts, 1)
+	return compareVersions(version, formatVersion(major, minor+1, 0)) < 0, true
 }
 
 func splitConstraints(group string) []string {
@@ -287,7 +338,7 @@ func splitConstraints(group string) []string {
 	return tokens
 }
 
-func constraintSatisfies(token, version string) (ok, known bool) {
+func constraintSatisfies(runtime, token, version string) (ok, known bool) {
 	switch {
 	case strings.HasPrefix(token, ">="):
 		bound := normalizeVersion(strings.TrimSpace(token[2:]))
@@ -301,6 +352,12 @@ func constraintSatisfies(token, version string) (ok, known bool) {
 			return false, false
 		}
 		return compareVersions(version, bound) <= 0, true
+	case strings.HasPrefix(token, "!="), strings.HasPrefix(token, "<>"):
+		bound := normalizeVersion(strings.TrimSpace(token[2:]))
+		if bound == "" {
+			return false, false
+		}
+		return !sameVersion(bound, version), true
 	case strings.HasPrefix(token, ">"):
 		bound := normalizeVersion(strings.TrimSpace(token[1:]))
 		if bound == "" {
@@ -318,11 +375,11 @@ func constraintSatisfies(token, version string) (ok, known bool) {
 	case strings.HasPrefix(token, "~>"):
 		return pessimisticSatisfies(strings.TrimSpace(token[2:]), version)
 	case strings.HasPrefix(token, "~"):
-		return tildeSatisfies(strings.TrimSpace(token[1:]), version)
+		return tildeSatisfies(strings.TrimSpace(token[1:]), version, runtime == "php")
 	case strings.ContainsAny(token, "xX*"):
 		return wildcardSatisfies(token, version)
 	default:
-		if strings.ContainsAny(token, "><^~|") {
+		if strings.ContainsAny(token, "><^~|!") || strings.Contains(token, "-") {
 			return false, false
 		}
 		return sameVersion(token, version), true
@@ -372,7 +429,7 @@ func caretSatisfies(base, version string) (ok, known bool) {
 	}
 }
 
-func tildeSatisfies(raw, version string) (ok, known bool) {
+func tildeSatisfies(raw, version string, composer bool) (ok, known bool) {
 	raw = strings.TrimPrefix(strings.TrimSpace(raw), "v")
 	base := normalizeVersion(raw)
 	if base == "" {
@@ -383,7 +440,8 @@ func tildeSatisfies(raw, version string) (ok, known bool) {
 	}
 	parts := strings.Split(raw, ".")
 	major := versionPart(parts, 0)
-	if len(parts) == 1 {
+	// Composer ~8.1 is >=8.1 <9.0.0. npm ~8.1 is >=8.1.0 <8.2.0.
+	if len(parts) == 1 || (composer && len(parts) == 2) {
 		return compareVersions(version, formatVersion(major+1, 0, 0)) < 0, true
 	}
 	minor := versionPart(parts, 1)
