@@ -214,6 +214,9 @@ func walkJavaTests(root, start string, includeNestedMaven bool) (string, error) 
 			if skipJavaWalkDir(entry.Name()) || entry.Type()&os.ModeSymlink != 0 {
 				return filepath.SkipDir
 			}
+			if isJavaMainSourceDir(path) {
+				return filepath.SkipDir
+			}
 			if path != root && !includeNestedMaven && fileExists(path, "pom.xml") {
 				return filepath.SkipDir
 			}
@@ -248,6 +251,10 @@ func skipJavaWalkDir(name string) bool {
 	default:
 		return false
 	}
+}
+
+func isJavaMainSourceDir(path string) bool {
+	return filepath.Base(path) == "main" && filepath.Base(filepath.Dir(path)) == "src"
 }
 
 func isJavaTestName(name string) bool {

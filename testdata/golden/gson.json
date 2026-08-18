@@ -210,18 +210,6 @@
                   "description": "The command runs the Maven verify lifecycle, which builds artifacts and runs tests."
                 }
               ]
-            },
-            {
-              "capability": "test.run",
-              "confidence": "high",
-              "evidence": [
-                {
-                  "kind": "invocation",
-                  "source": ".github/workflows/build.yml",
-                  "pointer": "/jobs/verify-reproducible-build/steps/3/run#command=1",
-                  "description": "The command runs the Maven verify lifecycle, which builds artifacts and runs tests."
-                }
-              ]
             }
           ],
           "variants": []
@@ -558,7 +546,7 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "extras/pom.xml",
+              "source": "pom.xml",
               "pointer": "/properties/maven.compiler.release"
             }
           ]
@@ -683,7 +671,7 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "gson/pom.xml",
+              "source": "pom.xml",
               "pointer": "/properties/maven.compiler.release"
             }
           ]
@@ -808,7 +796,7 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "metrics/pom.xml",
+              "source": "pom.xml",
               "pointer": "/properties/maven.compiler.release"
             }
           ]
@@ -893,7 +881,7 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "proto/pom.xml",
+              "source": "pom.xml",
               "pointer": "/properties/maven.compiler.release"
             }
           ]
@@ -1018,7 +1006,7 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "test-graal-native-image/pom.xml",
+              "source": "pom.xml",
               "pointer": "/properties/maven.compiler.release"
             }
           ]

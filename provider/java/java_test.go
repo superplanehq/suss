@@ -435,6 +435,19 @@ func TestDetectMavenInfersTestsFromSurefireDefaultNames(t *testing.T) {
 	assertCommand(t, commandsByName(result)["test"], "mvn test", plan.CapabilityTestRun)
 }
 
+func TestDetectDoesNotTreatMainSourcesAsTests(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml": `<project><modelVersion>4.0.0</modelVersion><artifactId>lib</artifactId></project>`,
+		"src/main/java/org/example/TestFinishedEvent.java": "class TestFinishedEvent {}\n",
+	})
+
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("main-source Test*.java was treated as a test file")
+	}
+}
+
 func TestDetectReportsConflictingRuntimePins(t *testing.T) {
 	t.Parallel()
 
