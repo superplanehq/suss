@@ -185,29 +185,11 @@
               "kind": "declaration",
               "source": "composer.json",
               "pointer": "/config/platform/php"
-            }
-          ]
-        },
-        {
-          "kind": "runtime",
-          "name": "php",
-          "version": ">=8.3",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "composer.json",
-              "pointer": "/require/php"
             },
             {
               "kind": "invocation",
               "source": ".github/workflows/lint-backend.yml",
               "pointer": "/jobs/lint/steps/1/with/php-version"
-            },
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/release.yml",
-              "pointer": "/jobs/build/steps/2/with/php-version"
             },
             {
               "kind": "invocation",
@@ -228,6 +210,24 @@
               "kind": "invocation",
               "source": ".github/workflows/test-proxy-auth-e2e.yml",
               "pointer": "/jobs/e2e/steps/1/with/php-version"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "php",
+          "version": ">=8.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require/php"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/build/steps/2/with/php-version"
             }
           ]
         },
