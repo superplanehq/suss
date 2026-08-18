@@ -361,6 +361,20 @@ func TestDetectDjangoTestsPyEmitsManagePyTest(t *testing.T) {
 	assertCommand(t, commandsByName(result)["test"], "python manage.py test", plan.CapabilityTestRun)
 }
 
+func TestDetectDoesNotTreatTestingModuleAsTests(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nname = \"widget\"\ndependencies = [\"django\"]\n",
+		"manage.py":      "#!/usr/bin/env python\n",
+		"testing.py":     "def helper():\n    pass\n",
+	})
+
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("testing.py unexpectedly produced a test command")
+	}
+}
+
 func TestDetectPrefixedPytestCovCitesRequirements(t *testing.T) {
 	t.Parallel()
 

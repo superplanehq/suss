@@ -176,7 +176,8 @@ func isPythonTestName(name string) bool {
 	if !strings.HasSuffix(name, ".py") {
 		return false
 	}
-	return strings.HasPrefix(name, "test") || strings.HasSuffix(name, "_test.py")
+	base := strings.TrimSuffix(name, ".py")
+	return base == "test" || base == "tests" || strings.HasPrefix(base, "test_") || strings.HasSuffix(base, "_test")
 }
 
 func conventionSpec(source, name, run, pointer string, confidence plan.Confidence, description string) commandSpec {

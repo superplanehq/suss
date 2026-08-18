@@ -168,16 +168,6 @@ func hasManager(signals []managerSignal, name string) bool {
 	return false
 }
 
-func lockfileManagers(signals []managerSignal) []string {
-	var names []string
-	for _, signal := range signals {
-		if signal.lockfile != "" {
-			names = append(names, signal.name)
-		}
-	}
-	return names
-}
-
 func uniqueManagerNames(signals []managerSignal) []string {
 	names := make([]string, 0, len(signals))
 	seen := make(map[string]struct{}, len(signals))

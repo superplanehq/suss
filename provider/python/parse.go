@@ -559,12 +559,14 @@ func setupDependencyStrings(contents string) []string {
 		i = skipTOMLSpace(contents, i+1)
 		switch {
 		case i < len(contents) && (contents[i] == '[' || contents[i] == '{' || contents[i] == '('):
-			open, closer := contents[i], contents[i]
-			if open == '[' {
+			open := contents[i]
+			var closer byte
+			switch open {
+			case '[':
 				closer = ']'
-			} else if open == '{' {
+			case '{':
 				closer = '}'
-			} else {
+			default:
 				closer = ')'
 			}
 			body, after := readBalanced(contents, i, open, closer)
