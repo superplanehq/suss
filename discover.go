@@ -30,14 +30,14 @@ var projectManifests = map[string]struct{}{
 }
 
 var skippedDirectories = map[string]struct{}{
-	"node_modules": {},
-	"vendor":       {},
-	"vendor-bin":   {},
-	"_build":       {},
-	"deps":         {},
-	"dist":         {},
-	"target":       {},
-	"tmp":          {},
+	"node_modules":  {},
+	"vendor":        {},
+	"vendor-bin":    {},
+	"_build":        {},
+	"deps":          {},
+	"dist":          {},
+	"target":        {},
+	"tmp":           {},
 	"venv":          {},
 	"virtualenv":    {},
 	"env":           {},

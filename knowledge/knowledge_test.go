@@ -460,11 +460,13 @@ func TestParseScriptStripsPythonWrappers(t *testing.T) {
 func TestParseScriptCapturesUvRunDirectory(t *testing.T) {
 	t.Parallel()
 
-	got := ParseScript(`uv run --directory packages/api pytest && uv run -C packages/web python -m pytest && uv run --directory=packages/cli --locked pytest`)
+	got := ParseScript(`uv run --directory packages/api pytest && uv run -C packages/web python -m pytest && uv run --directory=packages/cli --locked pytest && uv --directory packages/api run pytest && uv -C packages/web tool run ruff`)
 	want := []Invocation{
 		{Executable: "pytest", Directory: "packages/api"},
 		{Executable: "pytest", Directory: "packages/web"},
 		{Executable: "pytest", Directory: "packages/cli"},
+		{Executable: "pytest", Directory: "packages/api"},
+		{Executable: "ruff", Directory: "packages/web"},
 	}
 	if !slices.EqualFunc(got, want, invocationsEqual) {
 		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
@@ -1025,6 +1027,18 @@ func TestIsToolPlumbingCoversVersionProbes(t *testing.T) {
 	}
 	if IsToolPlumbing(Invocation{Executable: "php", Args: []string{"artisan", "test"}}) {
 		t.Fatal("IsToolPlumbing(php artisan test) = true, want false")
+	}
+	if IsToolPlumbing(Invocation{Executable: "pip", Args: []string{"-v", "install", "-r", "requirements.txt"}}) {
+		t.Fatal("IsToolPlumbing(pip -v install) = true, want false; -v is verbose")
+	}
+	if IsToolPlumbing(Invocation{Executable: "uv", Args: []string{"-v", "sync"}}) {
+		t.Fatal("IsToolPlumbing(uv -v sync) = true, want false; -v is verbose")
+	}
+	if IsToolPlumbing(Invocation{Executable: "poetry", Args: []string{"-v", "install"}}) {
+		t.Fatal("IsToolPlumbing(poetry -v install) = true, want false; -v is verbose")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "pip", Args: []string{"--version"}}) {
+		t.Fatal("IsToolPlumbing(pip --version) = false, want true")
 	}
 }
 

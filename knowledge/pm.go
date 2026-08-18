@@ -328,7 +328,10 @@ func IsToolPlumbing(inv Invocation) bool {
 		return isDockerPlumbing(inv.Args)
 	case "docker-compose":
 		return isVersionInfoHelp(inv.Args)
-	case "node", "python", "python3", "ruby", "java", "pip", "pip3", "poetry", "uv", "pipenv", "pdm":
+	case "pip", "pip3", "poetry", "uv":
+		// -v is verbose on these tools, not a version probe.
+		return isPythonManagerVersionHelp(inv.Args)
+	case "node", "python", "python3", "ruby", "java", "pipenv", "pdm":
 		return isFlagVersionHelp(inv.Args)
 	case "php":
 		return isPHPPlumbing(inv.Args)
@@ -458,6 +461,22 @@ func isFlagVersionHelp(args []string) bool {
 			return false
 		}
 		if isVersionHelpFlag(arg) {
+			return true
+		}
+	}
+	return false
+}
+
+func isPythonManagerVersionHelp(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if !strings.HasPrefix(arg, "-") {
+			return false
+		}
+		name, _, _ := strings.Cut(arg, "=")
+		if name == "--version" || name == "-V" || name == "--help" || name == "-h" {
 			return true
 		}
 	}

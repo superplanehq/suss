@@ -438,7 +438,7 @@ func looksLikeRuntimeVersion(runtime, version string) bool {
 		return true
 	}
 	lower := strings.ToLower(version)
-	return strings.HasPrefix(lower, "pypy") || strings.HasPrefix(lower, "lts") || strings.HasPrefix(lower, "python")
+	return strings.HasPrefix(lower, "pypy") || strings.HasPrefix(lower, "graalpy") || strings.HasPrefix(lower, "lts") || strings.HasPrefix(lower, "python")
 }
 
 func runtimeFinding(source, dir, pointer, name, version, description string) plan.Finding {

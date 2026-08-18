@@ -54,17 +54,19 @@ var composeNames = func() map[string]struct{} {
 }()
 
 var skippedDirectories = map[string]struct{}{
-	"node_modules": {},
-	"vendor":       {},
-	"_build":       {},
-	"deps":         {},
-	"dist":         {},
-	"target":       {},
-	"tmp":          {},
-	"venv":         {},
-	"virtualenv":   {},
-	"__pycache__":  {},
-	"htmlcov":      {},
+	"node_modules":  {},
+	"vendor":        {},
+	"_build":        {},
+	"deps":          {},
+	"dist":          {},
+	"target":        {},
+	"tmp":           {},
+	"venv":          {},
+	"virtualenv":    {},
+	"env":           {},
+	"site-packages": {},
+	"__pycache__":   {},
+	"htmlcov":       {},
 }
 
 // Provider detects Docker Compose files at the repository root and below.

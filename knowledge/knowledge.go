@@ -570,14 +570,22 @@ func unwrapOnce(tokens []string) ([]string, string) {
 			return dropLeadingFlags(tokens[2:]), ""
 		}
 	case "uv":
-		if len(tokens) >= 2 && tokens[1] == "run" {
-			rest, dir := takeUVDirectory(tokens[2:])
-			return dropLeadingFlagsWithValues(rest, uvRunValueFlags), dir
+		rest, dir := skipUVGlobals(tokens[1:])
+		if len(rest) >= 1 && rest[0] == "run" {
+			inner, innerDir := takeUVDirectory(rest[1:])
+			if innerDir != "" {
+				dir = innerDir
+			}
+			return dropLeadingFlagsWithValues(inner, uvRunValueFlags), dir
 		}
-		if len(tokens) >= 3 && tokens[1] == "tool" && tokens[2] == "run" {
-			rest, dir := takeUVDirectory(tokens[3:])
-			return dropLeadingFlagsWithValues(rest, uvRunValueFlags), dir
+		if len(rest) >= 2 && rest[0] == "tool" && rest[1] == "run" {
+			inner, innerDir := takeUVDirectory(rest[2:])
+			if innerDir != "" {
+				dir = innerDir
+			}
+			return dropLeadingFlagsWithValues(inner, uvRunValueFlags), dir
 		}
+		return tokens, dir
 	case "python", "python3":
 		if len(tokens) >= 3 && tokens[1] == "-m" {
 			return dropLeadingFlags(tokens[2:]), ""
@@ -599,6 +607,42 @@ func unwrapOnce(tokens []string) ([]string, string) {
 		}
 	}
 	return tokens, ""
+}
+
+var uvGlobalValueFlags = map[string]struct{}{
+	"--directory": {}, "-C": {}, "--project": {},
+	"--config-file": {}, "--cache-dir": {},
+}
+
+func skipUVGlobals(tokens []string) ([]string, string) {
+	dir := ""
+	i := 0
+	for i < len(tokens) && strings.HasPrefix(tokens[i], "-") {
+		name, value, hasValue := strings.Cut(tokens[i], "=")
+		if name == "--" {
+			return tokens[i+1:], dir
+		}
+		if name == "--directory" || name == "-C" {
+			if hasValue {
+				dir = value
+				i++
+				continue
+			}
+			if i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
+				dir = tokens[i+1]
+				i += 2
+				continue
+			}
+			i++
+			continue
+		}
+		if _, ok := uvGlobalValueFlags[name]; ok && !hasValue && i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
+			i += 2
+			continue
+		}
+		i++
+	}
+	return tokens[i:], dir
 }
 
 func takeUVDirectory(tokens []string) ([]string, string) {

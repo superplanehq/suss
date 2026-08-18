@@ -61,7 +61,7 @@ func choosePackageManager(ctx provider.Context, project pythonProject) managerCh
 	default:
 		choice.ambiguities = append(choice.ambiguities, plan.Ambiguity{
 			Subject:    "tool.package-manager",
-			Message:    competingManagerMessage(names),
+			Message:    competingManagerMessage(signals, names),
 			Candidates: managerCandidates(signals),
 		})
 	}
@@ -194,8 +194,27 @@ func uniqueManagerNames(signals []managerSignal) []string {
 	return names
 }
 
-func competingManagerMessage(names []string) string {
-	return fmt.Sprintf("Competing lockfiles support %s and no stronger declaration selects one.", strings.Join(names, " and "))
+func competingManagerMessage(signals []managerSignal, names []string) string {
+	joined := strings.Join(names, " and ")
+	if competingSignalsAllHaveLockfiles(signals, names) {
+		return fmt.Sprintf("Competing lockfiles support %s and no stronger declaration selects one.", joined)
+	}
+	return fmt.Sprintf("Competing package-manager signals support %s and no stronger declaration selects one.", joined)
+}
+
+func competingSignalsAllHaveLockfiles(signals []managerSignal, names []string) bool {
+	locked := make(map[string]struct{}, len(names))
+	for _, signal := range signals {
+		if signal.lockfile != "" {
+			locked[signal.name] = struct{}{}
+		}
+	}
+	for _, name := range names {
+		if _, ok := locked[name]; !ok {
+			return false
+		}
+	}
+	return len(names) > 0
 }
 
 func managerCandidates(signals []managerSignal) []plan.Candidate {

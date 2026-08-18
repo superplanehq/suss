@@ -259,6 +259,35 @@ jobs:
 	}
 }
 
+func TestDetectRetainsVerbosePythonManagerInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: pip -v install -r requirements.txt
+      - run: uv -v sync
+      - run: poetry -v install
+`,
+	})
+
+	found := map[string]bool{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = true
+	}
+	for _, run := range []string{"pip -v install -r requirements.txt", "uv -v sync", "poetry -v install"} {
+		if !found[run] {
+			t.Fatalf("missing %q in %+v", run, result.Findings)
+		}
+	}
+}
+
 func TestDetectAppliesUvDirectoryToCommandDirectory(t *testing.T) {
 	t.Parallel()
 
@@ -269,6 +298,7 @@ jobs:
     steps:
       - run: uv run --directory packages/api pytest
       - run: uv run -C packages/web pytest
+      - run: uv --directory packages/cli run pytest
 `,
 	})
 
@@ -285,6 +315,20 @@ jobs:
 	}
 	if got := found["uv run -C packages/web pytest"]; got != "packages/web" {
 		t.Fatalf("uv -C directory = %q, want packages/web in %+v", got, found)
+	}
+	if got := found["uv --directory packages/cli run pytest"]; got != "packages/cli" {
+		t.Fatalf("uv global --directory directory = %q, want packages/cli in %+v", got, found)
+	}
+	interpreted := false
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil || *item.Command.Run != "uv --directory packages/cli run pytest" {
+			continue
+		}
+		interpreted = commandHasCapability(item.Command, plan.CapabilityTestRun)
+	}
+	if !interpreted {
+		t.Fatal("uv --directory packages/cli run pytest was not interpreted as a test command")
 	}
 }
 
@@ -740,6 +784,25 @@ jobs:
 	}
 }
 
+func TestDetectReadsSetupPythonGraalPyVersionFile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".python-version": "graalpy-24.1\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "python", "graalpy-24.1") {
+		t.Fatalf("missing graalpy-24.1 from .python-version in %+v", result.Findings)
+	}
+}
 
 func TestDetectSkipsRemotePipInstalls(t *testing.T) {
 	t.Parallel()

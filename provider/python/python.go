@@ -54,36 +54,50 @@ func (Provider) Detect(ctx provider.Context) (provider.Result, error) {
 }
 
 func readProject(ctx provider.Context) (pythonProject, bool, error) {
+	var project pythonProject
+	found := false
+
 	if contents, ok, err := readFile(ctx, "pyproject.toml"); err != nil {
 		return pythonProject{}, false, err
 	} else if ok {
-		project := parsePyproject(contents)
-		extras, err := readRequirements(ctx)
-		if err != nil {
-			return pythonProject{}, false, err
-		}
-		addDependencies(&project, "requirements.txt", "", extras)
-		return project, true, nil
+		project = parsePyproject(contents)
+		found = true
 	}
 
 	if contents, ok, err := readFile(ctx, "Pipfile"); err != nil {
 		return pythonProject{}, false, err
 	} else if ok {
-		return parsePipfile(contents), true, nil
+		parsed := parsePipfile(contents)
+		if found {
+			project = mergeProject(project, parsed)
+		} else {
+			project = parsed
+			found = true
+		}
 	}
 
 	if contents, ok, err := readFile(ctx, "setup.py"); err != nil {
 		return pythonProject{}, false, err
 	} else if ok {
-		project := parseSetupPy(contents)
-		extras, err := readRequirements(ctx)
-		if err != nil {
-			return pythonProject{}, false, err
+		parsed := parseSetupPy(contents)
+		if found {
+			project = mergeProject(project, parsed)
+		} else {
+			project = parsed
+			found = true
 		}
-		addDependencies(&project, "requirements.txt", "", extras)
-		return project, true, nil
 	}
-	return pythonProject{}, false, nil
+
+	if !found {
+		return pythonProject{}, false, nil
+	}
+
+	extras, err := readRequirements(ctx)
+	if err != nil {
+		return pythonProject{}, false, err
+	}
+	addDependencies(&project, "requirements.txt", "", extras)
+	return project, true, nil
 }
 
 func readFile(ctx provider.Context, name string) (string, bool, error) {
@@ -196,7 +210,7 @@ func walkSkipDir(name string) bool {
 		return true
 	}
 	switch name {
-	case "venv", "virtualenv", "__pycache__", "node_modules", "vendor", "_build", "deps", "dist", "build", "target", "tmp", "htmlcov", ".eggs":
+	case "venv", "virtualenv", "env", "site-packages", "__pycache__", "node_modules", "vendor", "_build", "deps", "dist", "build", "target", "tmp", "htmlcov", ".eggs":
 		return true
 	default:
 		return strings.HasSuffix(name, ".egg-info")

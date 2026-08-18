@@ -157,6 +157,31 @@ func parseRequirements(contents string) []string {
 	return names
 }
 
+func mergeProject(base, extra pythonProject) pythonProject {
+	if extra.RequiresPython != "" && base.RequiresPython == "" {
+		base.RequiresPython = extra.RequiresPython
+	}
+	if extra.HasProjectTable {
+		base.HasProjectTable = true
+	}
+	if extra.HasPackageTable {
+		base.HasPackageTable = true
+	}
+	for name, dep := range extra.Dependencies {
+		if _, exists := base.Dependencies[name]; exists {
+			continue
+		}
+		base.Dependencies[name] = dep
+	}
+	for name := range extra.ToolTables {
+		base.ToolTables[name] = struct{}{}
+	}
+	for name := range extra.ManagerTables {
+		base.ManagerTables[name] = struct{}{}
+	}
+	return base
+}
+
 func recordToolTable(parsed *pythonProject, rest string) {
 	root, _, _ := strings.Cut(rest, ".")
 	if root != "" {

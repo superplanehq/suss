@@ -238,6 +238,34 @@ blocks:
 	}
 }
 
+func TestDetectAppliesUvDirectoryToCommandDirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"packages/api/.keep": "",
+		"packages/web/.keep": "",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - uv run --directory packages/api pytest
+            - uv --directory packages/web run pytest
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["packages/api"], "uv run --directory packages/api pytest") {
+		t.Fatalf("commands = %v, want uv run under packages/api", commands)
+	}
+	if !slices.Contains(commands["packages/web"], "uv --directory packages/web run pytest") {
+		t.Fatalf("commands = %v, want uv global --directory under packages/web", commands)
+	}
+}
+
 func TestDetectLeavesComplexShellProgramsUninterpreted(t *testing.T) {
 	t.Parallel()
 

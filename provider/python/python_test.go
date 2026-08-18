@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/superplanehq/suss/plan"
@@ -160,6 +161,68 @@ func TestDetectUnittestWithoutPytest(t *testing.T) {
 	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -e .", plan.CapabilityDependenciesInstall)
 }
 
+func TestDetectMergesSetupPyWithBuildSystemOnlyPyproject(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[build-system]\nrequires = [\"setuptools\"]\nbuild-backend = \"setuptools.build_meta\"\n",
+		"setup.py":       "from setuptools import setup\nsetup(name=\"widget\", install_requires=[\"django\"])\n",
+		"manage.py":      "#!/usr/bin/env python\n",
+		"tests.py":       "from django.test import TestCase\n",
+	})
+
+	if !hasProperty(result, plan.PropertyFramework, "django") {
+		t.Fatalf("missing Django from setup.py in %+v", result.Findings)
+	}
+	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -e .", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "python manage.py test", plan.CapabilityTestRun)
+}
+
+func TestDetectMergesPipfileWhenPyprojectIsToolOnly(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[tool.ruff]\nline-length = 88\n",
+		"Pipfile": `
+[packages]
+django = "*"
+
+[dev-packages]
+pytest = "*"
+
+[requires]
+python_version = "3.12"
+`,
+		"manage.py":            "#!/usr/bin/env python\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	if !hasPackageManager(result, "pipenv") {
+		t.Fatalf("missing pipenv in %+v", result.Findings)
+	}
+	if !hasProperty(result, plan.PropertyFramework, "django") {
+		t.Fatalf("missing Django from Pipfile in %+v", result.Findings)
+	}
+	if !hasRuntime(result, "3.12") {
+		t.Fatalf("missing Pipfile Python pin in %+v", result.Findings)
+	}
+	assertCommand(t, commandsByName(result)["install dependencies"], "pipenv install", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+}
+
+func TestDetectIgnoresVirtualenvNamedEnv(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nname = \"widget\"\n",
+		"env/lib/python3.12/site-packages/other/test_other.py": "def test_other():\n    assert True\n",
+	})
+
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("virtualenv tests unexpectedly produced a test command")
+	}
+}
+
 func TestDetectCompetingLockfiles(t *testing.T) {
 	t.Parallel()
 
@@ -172,8 +235,33 @@ func TestDetectCompetingLockfiles(t *testing.T) {
 	if len(result.Ambiguities) != 1 || result.Ambiguities[0].Subject != "tool.package-manager" {
 		t.Fatalf("ambiguities = %+v, want one package-manager ambiguity", result.Ambiguities)
 	}
+	if !strings.Contains(result.Ambiguities[0].Message, "lockfiles") {
+		t.Fatalf("ambiguity = %q, want lockfiles wording", result.Ambiguities[0].Message)
+	}
 	if _, ok := commandsByName(result)["install dependencies"]; ok {
 		t.Fatal("competing lockfiles unexpectedly selected an install command")
+	}
+}
+
+func TestDetectCompetingManagerSignalsDoNotClaimLockfiles(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[tool.poetry]
+name = "widget"
+`,
+		"uv.lock": "version = 1\n",
+	})
+
+	if len(result.Ambiguities) != 1 || result.Ambiguities[0].Subject != "tool.package-manager" {
+		t.Fatalf("ambiguities = %+v, want one package-manager ambiguity", result.Ambiguities)
+	}
+	if strings.Contains(result.Ambiguities[0].Message, "lockfiles") {
+		t.Fatalf("ambiguity = %q, did not want lockfiles wording for a table signal", result.Ambiguities[0].Message)
+	}
+	if !strings.Contains(result.Ambiguities[0].Message, "package-manager signals") {
+		t.Fatalf("ambiguity = %q, want package-manager signals wording", result.Ambiguities[0].Message)
 	}
 }
 
