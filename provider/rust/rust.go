@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
@@ -233,6 +234,10 @@ func stripRustCommentsAndStrings(src string) string {
 			i = skipRustRawString(b, start, hashes)
 			continue
 		}
+		if end, ok := rustCharLiteralEnd(b, i); ok {
+			i = end
+			continue
+		}
 		if start, ok := rustCookedStringStart(b, i); ok {
 			i = skipRustCookedString(b, start)
 			continue
@@ -279,6 +284,71 @@ func skipRustRawString(b []byte, i, hashes int) int {
 		i++
 	}
 	return len(b)
+}
+
+func rustCharLiteralEnd(b []byte, i int) (int, bool) {
+	if !rustTokenStart(b, i) {
+		return 0, false
+	}
+	j := i
+	if j < len(b) && (b[j] == 'b' || b[j] == 'B') {
+		j++
+	}
+	if j >= len(b) || b[j] != '\'' {
+		return 0, false
+	}
+	j++
+	if j >= len(b) {
+		return 0, false
+	}
+	switch b[j] {
+	case '\\':
+		j = skipRustCharEscape(b, j)
+	case '\'':
+		return 0, false
+	default:
+		_, size := utf8.DecodeRune(b[j:])
+		j += size
+	}
+	if j < len(b) && b[j] == '\'' {
+		return j + 1, true
+	}
+	return 0, false
+}
+
+func skipRustCharEscape(b []byte, i int) int {
+	i++
+	if i >= len(b) {
+		return i
+	}
+	switch b[i] {
+	case 'u', 'U':
+		i++
+		if i < len(b) && b[i] == '{' {
+			i++
+			for i < len(b) && b[i] != '}' {
+				i++
+			}
+			if i < len(b) {
+				i++
+			}
+		}
+		return i
+	case 'x', 'X':
+		i++
+		n := 0
+		for n < 2 && i < len(b) && isRustHex(b[i]) {
+			i++
+			n++
+		}
+		return i
+	default:
+		return i + 1
+	}
+}
+
+func isRustHex(c byte) bool {
+	return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
 }
 
 func rustCookedStringStart(b []byte, i int) (content int, ok bool) {

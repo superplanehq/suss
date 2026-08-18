@@ -231,7 +231,7 @@ func rustSetupFindings(ctx provider.Context, source, dir, stepPointer string, st
 		if err != nil {
 			continue
 		}
-		channel := rust.ParseToolchainFile(string(contents))
+		channel := rust.ParseToolchainFile(name, string(contents))
 		if channel == "" {
 			continue
 		}
@@ -296,7 +296,7 @@ func rustToolchainFileFindings(ctx provider.Context, source, dir, stepPointer, f
 	abs := filepath.Join(ctx.RepositoryRoot, filepath.FromSlash(rel))
 	contents, err := os.ReadFile(abs)
 	if err == nil {
-		if version := rust.ParseToolchainFile(string(contents)); version != "" {
+		if version := rust.ParseToolchainFile(file, string(contents)); version != "" {
 			evidence = append(evidence, plan.Evidence{
 				Kind:   plan.EvidenceDeclaration,
 				Source: rel,

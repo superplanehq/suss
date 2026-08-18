@@ -135,6 +135,31 @@ blocks:
 	}
 }
 
+func TestDetectPreservesCargoFlagsWhenManifestDirectoryIsMissing(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - cargo test --manifest-path generated/tool/Cargo.toml
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["."], "cargo test --manifest-path generated/tool/Cargo.toml") {
+		t.Fatalf("commands = %v, want the original manifest-path command when the target directory is absent", commands)
+	}
+	if slices.Contains(commands["."], "cargo test") {
+		t.Fatalf("commands = %v, did not want cargo test rewritten onto the repository root", commands)
+	}
+}
+
 func TestDetectLeavesDynamicCargoManifestPathUnresolved(t *testing.T) {
 	t.Parallel()
 

@@ -1,6 +1,7 @@
 package rust
 
 import (
+	"path"
 	"strings"
 )
 
@@ -106,15 +107,23 @@ func parseCargoTOML(contents string) cargoManifest {
 }
 
 // ParseToolchainFile reads a rust-toolchain or rust-toolchain.toml pin.
-func ParseToolchainFile(contents string) string {
-	return parseToolchainFile(contents).Channel
+// name is the file path or basename; rust-toolchain.toml is always TOML.
+func ParseToolchainFile(name, contents string) string {
+	return parseToolchainFile(name, contents).Channel
 }
 
-func parseToolchainFile(contents string) toolchainFile {
-	if toolchainFileLooksLikeTOML(contents) {
+func parseToolchainFile(name, contents string) toolchainFile {
+	if toolchainFileIsTOML(name, contents) {
 		return toolchainFile{Channel: tomlValueAt(contents, "toolchain.channel")}
 	}
 	return toolchainFile{Channel: firstVersionLine(contents)}
+}
+
+func toolchainFileIsTOML(name, contents string) bool {
+	if strings.EqualFold(path.Base(name), "rust-toolchain.toml") {
+		return true
+	}
+	return toolchainFileLooksLikeTOML(contents)
 }
 
 func toolchainFileLooksLikeTOML(contents string) bool {
@@ -123,7 +132,11 @@ func toolchainFileLooksLikeTOML(contents string) bool {
 		if line == "" {
 			continue
 		}
-		return strings.HasPrefix(line, "[")
+		if strings.HasPrefix(line, "[") {
+			return true
+		}
+		key, _, ok := parseTOMLAssignment(line)
+		return ok && (key == "toolchain" || strings.HasPrefix(key, "toolchain."))
 	}
 	return false
 }
@@ -152,6 +165,11 @@ func tomlValueAt(contents, path string) string {
 				return text
 			}
 			return strings.TrimSpace(value)
+		}
+		if parent, field, ok := strings.Cut(path, "."); ok && fullKey == parent {
+			if text, found := tomlInlineString(value, field); found {
+				return text
+			}
 		}
 	}
 	return ""

@@ -318,7 +318,7 @@ func readToolchainPin(ctx provider.Context) (*runtimePin, error) {
 	if err != nil || !ok {
 		return nil, err
 	}
-	channel := parseToolchainFile(contents).Channel
+	channel := parseToolchainFile(path, contents).Channel
 	if channel == "" {
 		return nil, nil
 	}

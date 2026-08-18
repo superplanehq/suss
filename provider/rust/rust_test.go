@@ -543,6 +543,11 @@ func TestRustSourceHasTestRecognizesSupportedAttributes(t *testing.T) {
 		{src: `const S: &str = "#[test]";`, want: false},
 		{src: "const S: &str = r#\"#[test]\"#;", want: false},
 		{src: "// #[test]\n#[test]\nfn ok() {}", want: true},
+		{src: "const QUOTE: char = '\"';\n#[test]\nfn ok() {}", want: true},
+		{src: "const QUOTE: u8 = b'\"';\n#[test]\nfn ok() {}", want: true},
+		{src: "const ESC: char = '\\'';\n#[test]\nfn ok() {}", want: true},
+		{src: "fn take<'a>(s: &'a str) {}\n#[test]\nfn ok() {}", want: true},
+		{src: "const QUOTE: char = '\"';\nfn ok() {}", want: false},
 	}
 	for _, tt := range tests {
 		if got := rustSourceHasTest(tt.src); got != tt.want {
@@ -554,17 +559,26 @@ func TestRustSourceHasTestRecognizesSupportedAttributes(t *testing.T) {
 func TestParseToolchainFile(t *testing.T) {
 	t.Parallel()
 
-	if got := ParseToolchainFile("[toolchain]\nchannel = \"1.81.0\"\n"); got != "1.81.0" {
+	if got := ParseToolchainFile("rust-toolchain.toml", "[toolchain]\nchannel = \"1.81.0\"\n"); got != "1.81.0" {
 		t.Fatalf("ParseToolchainFile(toml) = %q, want 1.81.0", got)
 	}
-	if got := ParseToolchainFile("1.70.0\n"); got != "1.70.0" {
+	if got := ParseToolchainFile("rust-toolchain", "1.70.0\n"); got != "1.70.0" {
 		t.Fatalf("ParseToolchainFile(plain) = %q, want 1.70.0", got)
 	}
-	if got := ParseToolchainFile("# comment\nstable\n"); got != "stable" {
+	if got := ParseToolchainFile("rust-toolchain", "# comment\nstable\n"); got != "stable" {
 		t.Fatalf("ParseToolchainFile(channel) = %q, want stable", got)
 	}
-	if got := ParseToolchainFile("# SPDX-License-Identifier: MIT\n\n[toolchain]\nchannel = \"1.81.0\"\n"); got != "1.81.0" {
+	if got := ParseToolchainFile("rust-toolchain.toml", "# SPDX-License-Identifier: MIT\n\n[toolchain]\nchannel = \"1.81.0\"\n"); got != "1.81.0" {
 		t.Fatalf("ParseToolchainFile(commented toml) = %q, want 1.81.0", got)
+	}
+	if got := ParseToolchainFile("rust-toolchain.toml", "toolchain.channel = \"1.81.0\"\n"); got != "1.81.0" {
+		t.Fatalf("ParseToolchainFile(dotted toml) = %q, want 1.81.0", got)
+	}
+	if got := ParseToolchainFile("rust-toolchain", "toolchain.channel = \"1.80.0\"\n"); got != "1.80.0" {
+		t.Fatalf("ParseToolchainFile(dotted overlay) = %q, want 1.80.0", got)
+	}
+	if got := ParseToolchainFile("rust-toolchain.toml", "toolchain = { channel = \"1.79.0\" }\n"); got != "1.79.0" {
+		t.Fatalf("ParseToolchainFile(inline table) = %q, want 1.79.0", got)
 	}
 }
 
@@ -579,6 +593,33 @@ func TestDetectReadsToolchainFileWithLeadingComments(t *testing.T) {
 	project := assembleProject(t, ".", result)
 	if len(project.Requirements) != 1 || project.Requirements[0].Version != "1.81.0" {
 		t.Fatalf("requirements = %+v, want rust 1.81.0 from commented toolchain file", project.Requirements)
+	}
+}
+
+func TestDetectReadsDottedToolchainTOML(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml":          "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		"src/lib.rs":          "pub fn ok() {}\n",
+		"rust-toolchain.toml": "toolchain.channel = \"1.81.0\"\n",
+	})
+	project := assembleProject(t, ".", result)
+	if len(project.Requirements) != 1 || project.Requirements[0].Version != "1.81.0" {
+		t.Fatalf("requirements = %+v, want rust 1.81.0 from dotted toolchain.channel", project.Requirements)
+	}
+}
+
+func TestDetectInfersTestsAfterQuoteCharacterLiteral(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml": "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		"src/lib.rs": "const QUOTE: char = '\"';\n#[test]\nfn ok() {}\n",
+	})
+	project := assembleProject(t, ".", result)
+	if commandRuns(project.Commands)["test"] != "cargo test" {
+		t.Fatalf("commands = %+v, want cargo test after a quote character literal", project.Commands)
 	}
 }
 

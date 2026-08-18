@@ -120,7 +120,7 @@ func extractCommands(ctx provider.Context, source, base, pointer string, command
 				if skipSemaphoreStatement(statement) {
 					continue
 				}
-				command, err := observedCommand(source, dir, statementPointer, statement)
+				command, err := observedCommand(source, dir, statementCurrent(currents, dir), statementPointer, statement)
 				if err != nil {
 					return base, nil, err
 				}
@@ -286,16 +286,32 @@ func expandMatrixValue(raw string, matrix map[string][]string) []string {
 	return []string{raw}
 }
 
-func observedCommand(source, directory, pointer string, statement knowledge.Statement) (plan.Command, error) {
+func statementCurrent(currents []string, dir string) string {
+	for _, current := range currents {
+		if current == dir {
+			return dir
+		}
+	}
+	if len(currents) > 0 {
+		return currents[0]
+	}
+	return dir
+}
+
+func observedCommand(source, directory, current, pointer string, statement knowledge.Statement) (plan.Command, error) {
 	id, err := plan.NewCommandID(plan.CommandIdentity{ProjectPath: directory, Provider: providerName, Source: source, Pointer: pointer})
 	if err != nil {
 		return plan.Command{}, err
 	}
 	canonical := knowledge.CanonicalInvocation(statement.Invocation)
+	run := knowledge.RedactAssignmentValues(statement.Raw)
+	if directory != current {
+		run = knowledge.RewriteDirectoryFlags(statement.Raw, statement.Invocation)
+	}
 	return plan.Command{
 		ID:              id,
 		Name:            knowledge.CommandName(canonical),
-		Run:             stringPtr(knowledge.RewriteDirectoryFlags(statement.Raw, statement.Invocation)),
+		Run:             stringPtr(run),
 		Directory:       directory,
 		Scope:           plan.ScopeProject,
 		Origin:          plan.CommandObserved,
