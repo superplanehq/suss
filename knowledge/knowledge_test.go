@@ -530,6 +530,9 @@ func TestStripDirectoryFlagsNormalizesCargoManifestPath(t *testing.T) {
 		{args: []string{"test", "--manifest-path", "./Cargo.toml"}, want: "."},
 		{args: []string{"test", "--manifest-path=./Cargo.toml"}, want: "."},
 		{args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml"}, want: "crates/tool"},
+		{args: []string{"-C", "crates/tool", "test", "--manifest-path", "Cargo.toml"}, want: "crates/tool"},
+		{args: []string{"-C", "crates", "test", "--manifest-path", "tool/Cargo.toml"}, want: "crates/tool"},
+		{args: []string{"-C", "crates/tool", "test", "--manifest-path", "../cli/Cargo.toml"}, want: "crates/cli"},
 	}
 	for _, tt := range tests {
 		dir, got := StripDirectoryFlags(Invocation{Executable: "cargo", Args: tt.args})
@@ -558,6 +561,13 @@ func TestRewriteDirectoryFlagsStripsCargoPaths(t *testing.T) {
 	)
 	if got != "cargo +nightly test" {
 		t.Fatalf("RewriteDirectoryFlags(-C) = %q, want cargo +nightly test", got)
+	}
+	got = RewriteDirectoryFlags(
+		"cargo -C crates/tool test --manifest-path Cargo.toml",
+		Invocation{Executable: "cargo", Args: []string{"-C", "crates/tool", "test", "--manifest-path", "Cargo.toml"}},
+	)
+	if got != "cargo test" {
+		t.Fatalf("RewriteDirectoryFlags(-C and manifest-path) = %q, want cargo test", got)
 	}
 	got = RewriteDirectoryFlags(
 		`cargo test --manifest-path crates/tool/Cargo.toml --features "foo bar"`,

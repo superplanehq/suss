@@ -183,7 +183,7 @@ func findTestFiles(root string) ([]string, error) {
 			return err
 		}
 		rel = filepath.ToSlash(rel)
-		ok, err := isRustTestFile(path, rel, entry.Name())
+		ok, err := isRustTestFile(path, rel)
 		if err != nil {
 			return err
 		}
@@ -195,10 +195,7 @@ func findTestFiles(root string) ([]string, error) {
 	return files, err
 }
 
-func isRustTestFile(abs, rel, name string) (bool, error) {
-	if strings.HasSuffix(name, "_test.rs") {
-		return true, nil
-	}
+func isRustTestFile(abs, rel string) (bool, error) {
 	if strings.HasPrefix(rel, "tests/") || strings.Contains(rel, "/tests/") {
 		return true, nil
 	}

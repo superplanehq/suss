@@ -112,6 +112,32 @@ blocks:
 	}
 }
 
+func TestDetectComposesCargoDirectoryAndManifestPath(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - cargo -C crates/tool test --manifest-path Cargo.toml
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["crates/tool"], "cargo test") {
+		t.Fatalf("commands = %v, want cargo test attached to crates/tool from -C plus a relative manifest path", commands)
+	}
+	if slices.Contains(commands["."], "cargo test") || slices.Contains(commands["."], "cargo -C crates/tool test --manifest-path Cargo.toml") {
+		t.Fatalf("commands = %v, did not want the composed command on the workspace root", commands)
+	}
+}
+
 func TestDetectRewritesCargoDirectoryFlagsThroughRustup(t *testing.T) {
 	t.Parallel()
 

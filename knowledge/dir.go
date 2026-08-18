@@ -1,6 +1,9 @@
 package knowledge
 
-import "strings"
+import (
+	"path"
+	"strings"
+)
 
 // StripDirectoryFlags removes package-manager working-directory flags from an
 // invocation and returns the flag value when present. The original invocation
@@ -160,17 +163,49 @@ func isDynamicPath(path string) bool {
 }
 
 func stripManifestPath(args []string, current string) ([]string, string) {
-	out, dir := stripFlag(args, "--manifest-path", current)
-	if dir == current || dir == "" {
+	out, manifest := stripFlag(args, "--manifest-path", "")
+	if manifest == "" {
 		return out, current
 	}
-	if isDynamicPath(dir) {
+	if isDynamicPath(manifest) {
 		return args, current
 	}
-	if parent, ok := cargoManifestDirectory(dir); ok {
-		return out, parent
+	manifestDir := manifest
+	if parent, ok := cargoManifestDirectory(manifest); ok {
+		manifestDir = parent
 	}
-	return out, dir
+	return out, joinCargoDirectory(current, manifestDir)
+}
+
+func joinCargoDirectory(base, rel string) string {
+	base = normalizeCargoPath(base)
+	rel = normalizeCargoPath(rel)
+	if rel == "" || rel == "." {
+		if base == "" {
+			return "."
+		}
+		return base
+	}
+	if path.IsAbs(rel) {
+		return rel
+	}
+	if base == "" || base == "." {
+		return rel
+	}
+	joined := path.Clean(base + "/" + rel)
+	if joined == "" {
+		return "."
+	}
+	return joined
+}
+
+func normalizeCargoPath(value string) string {
+	value = strings.ReplaceAll(strings.TrimSpace(value), "\\", "/")
+	value = strings.TrimPrefix(value, "./")
+	if value == "" {
+		return ""
+	}
+	return path.Clean(value)
 }
 
 func cargoManifestDirectory(path string) (string, bool) {

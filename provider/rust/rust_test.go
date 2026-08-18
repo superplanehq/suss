@@ -105,6 +105,20 @@ func TestDetectIgnoresTestAttributesInCommentsAndStrings(t *testing.T) {
 	}
 }
 
+func TestDetectIgnoresUnreferencedTestNamedSource(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml":      "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		"src/lib.rs":      "pub fn add(a: i32, b: i32) -> i32 { a + b }\n",
+		"src/old_test.rs": "fn leftover() {}\n",
+	})
+	project := assembleProject(t, ".", result)
+	if _, ok := commandRuns(project.Commands)["test"]; ok {
+		t.Fatalf("commands = %+v, did not want cargo test from an unreferenced _test.rs file", project.Commands)
+	}
+}
+
 func TestDetectOmitsCargoTestWhenNoTestsExist(t *testing.T) {
 	t.Parallel()
 

@@ -170,6 +170,29 @@ jobs:
 	}
 }
 
+func TestDetectComposesCargoDirectoryAndManifestPath(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: cargo -C crates/tool test --manifest-path Cargo.toml
+`,
+	})
+
+	commands := commandByName(result)
+	testCmd := commands["cargo test"]
+	if testCmd.Directory != "crates/tool" {
+		t.Fatalf("directory = %q, want crates/tool from -C plus a relative manifest path", testCmd.Directory)
+	}
+	if deref(testCmd.Run) != "cargo test" {
+		t.Fatalf("run = %q, want cargo test without directory flags", deref(testCmd.Run))
+	}
+}
+
 func TestDetectRewritesCargoDirectoryFlagsThroughRustup(t *testing.T) {
 	t.Parallel()
 
