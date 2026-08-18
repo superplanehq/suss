@@ -276,6 +276,37 @@ func TestParseCargoTOMLReadsPackageWorkspaceAndDependencies(t *testing.T) {
 	}
 }
 
+func TestParseCargoTOMLReadsDottedWorkspaceDeclaration(t *testing.T) {
+	t.Parallel()
+
+	got := parseCargoTOML("" +
+		"workspace.members = [\"crates/tool\"]\n" +
+		"workspace.package.rust-version = \"1.80\"\n")
+	if !got.HasWorkspace {
+		t.Fatalf("parseCargoTOML() = %+v, want a workspace from dotted keys", got)
+	}
+	if got.WorkspaceRustVersion != "1.80" {
+		t.Fatalf("workspace rust-version = %q, want 1.80", got.WorkspaceRustVersion)
+	}
+}
+
+func TestDetectReportsDottedWorkspaceAsOrchestrator(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml":             "workspace.members = [\"crates/tool\"]\n",
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		"crates/tool/src/lib.rs": "#[test]\nfn ok() {}\n",
+	})
+	project := assembleProject(t, ".", result)
+	if !slices.Equal(factValues(project.Facts, "workspace.orchestrator"), []string{"cargo"}) {
+		t.Fatalf("facts = %+v, want workspace.orchestrator=cargo from dotted workspace.members", project.Facts)
+	}
+	if len(project.Commands) == 0 || project.Commands[0].Scope != plan.ScopeRepository {
+		t.Fatalf("commands = %+v, want repository scope on a dotted-key workspace root", project.Commands)
+	}
+}
+
 func TestParseCargoTOMLReadsDottedWorkspaceInheritance(t *testing.T) {
 	t.Parallel()
 

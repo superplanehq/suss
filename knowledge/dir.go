@@ -20,6 +20,9 @@ func StripDirectoryFlags(inv Invocation) (dir string, canonical Invocation) {
 		args, dir = stripFlag(args, "--working-dir", dir)
 		args, dir = stripFlag(args, "-d", dir)
 	case "cargo":
+		if cargoDirectoryFlagIsDynamic(args) {
+			return "", inv
+		}
 		args, dir = stripFlag(args, "-C", dir)
 		args, dir = stripManifestPath(args, dir)
 	}
@@ -65,13 +68,21 @@ func stripCargoDirectoryFlagsFromRun(redacted string) string {
 		i++
 	}
 	rest := tokens[i:]
-	if len(rest) == 0 || canonicalizeExecutable(unquoteShellToken(rest[0])) != "cargo" {
+	cargoAt := -1
+	for j, token := range rest {
+		if canonicalizeExecutable(unquoteShellToken(token)) == "cargo" {
+			cargoAt = j
+			break
+		}
+	}
+	if cargoAt < 0 {
 		return redacted
 	}
-	args := rest[1:]
+	head := rest[:cargoAt+1]
+	args := rest[cargoAt+1:]
 	args = stripFlagQuoted(args, "-C")
 	args = stripFlagQuoted(args, "--manifest-path")
-	out := append(append([]string{}, prefix...), rest[0])
+	out := append(append([]string{}, prefix...), head...)
 	out = append(out, args...)
 	return strings.Join(out, " ")
 }
@@ -134,10 +145,27 @@ func stripFlag(args []string, name, current string) ([]string, string) {
 	return out, dir
 }
 
+func cargoDirectoryFlagIsDynamic(args []string) bool {
+	_, dir := stripFlag(append([]string{}, args...), "-C", "")
+	if isDynamicPath(dir) {
+		return true
+	}
+	_, dir = stripFlag(append([]string{}, args...), "--manifest-path", "")
+	return isDynamicPath(dir)
+}
+
+func isDynamicPath(path string) bool {
+	path = strings.TrimSpace(path)
+	return strings.Contains(path, "${{") || strings.Contains(path, "$")
+}
+
 func stripManifestPath(args []string, current string) ([]string, string) {
 	out, dir := stripFlag(args, "--manifest-path", current)
 	if dir == current || dir == "" {
 		return out, current
+	}
+	if isDynamicPath(dir) {
+		return args, current
 	}
 	if parent, ok := cargoManifestDirectory(dir); ok {
 		return out, parent
@@ -146,6 +174,9 @@ func stripManifestPath(args []string, current string) ([]string, string) {
 }
 
 func cargoManifestDirectory(path string) (string, bool) {
+	if isDynamicPath(path) {
+		return "", false
+	}
 	normalized := strings.ReplaceAll(strings.TrimSpace(path), "\\", "/")
 	normalized = strings.TrimPrefix(normalized, "./")
 	if !strings.HasSuffix(normalized, "Cargo.toml") {

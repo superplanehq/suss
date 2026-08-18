@@ -112,6 +112,55 @@ blocks:
 	}
 }
 
+func TestDetectRewritesCargoDirectoryFlagsThroughRustup(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["crates/tool"], "rustup run nightly cargo test") {
+		t.Fatalf("commands = %v, want rustup-wrapped cargo test on crates/tool without a nested manifest-path", commands)
+	}
+}
+
+func TestDetectLeavesDynamicCargoManifestPathUnresolved(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - cargo test --manifest-path $SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["."], "cargo test --manifest-path $SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml") {
+		t.Fatalf("commands = %v, want the original dynamic manifest-path command on the workspace root", commands)
+	}
+	if slices.Contains(commands["crates/tool"], "cargo test") {
+		t.Fatalf("commands = %v, did not want a rewritten command on crates/tool", commands)
+	}
+}
+
 func TestDetectLeavesComplexShellProgramsUninterpreted(t *testing.T) {
 	t.Parallel()
 

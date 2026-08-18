@@ -574,11 +574,51 @@ func TestRewriteDirectoryFlagsStripsCargoPaths(t *testing.T) {
 		t.Fatalf("RewriteDirectoryFlags(quoted -C) = %q, want quotes preserved", got)
 	}
 	got = RewriteDirectoryFlags(
+		"rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml",
+		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml"}},
+	)
+	if got != "rustup run nightly cargo test" {
+		t.Fatalf("RewriteDirectoryFlags(rustup) = %q, want rustup run nightly cargo test", got)
+	}
+	got = RewriteDirectoryFlags(
+		`cargo test --manifest-path "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"`,
+		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"}},
+	)
+	if got != `cargo test --manifest-path "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"` {
+		t.Fatalf("RewriteDirectoryFlags(dynamic) = %q, want the original run", got)
+	}
+	got = RewriteDirectoryFlags(
 		"yarn --cwd ./packages/app test",
 		Invocation{Executable: "yarn", Args: []string{"--cwd", "./packages/app", "test"}},
 	)
 	if got != "yarn --cwd ./packages/app test" {
 		t.Fatalf("RewriteDirectoryFlags(yarn) = %q, want the original run", got)
+	}
+}
+
+func TestStripDirectoryFlagsLeavesDynamicCargoPaths(t *testing.T) {
+	t.Parallel()
+
+	dir, got := StripDirectoryFlags(Invocation{
+		Executable: "cargo",
+		Args:       []string{"test", "--manifest-path", "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"},
+	})
+	if dir != "" {
+		t.Fatalf("dir = %q, want empty for a variable-valued manifest path", dir)
+	}
+	if !slices.Equal(got.Args, []string{"test", "--manifest-path", "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"}) {
+		t.Fatalf("args = %v, want the original invocation", got.Args)
+	}
+
+	dir, got = StripDirectoryFlags(Invocation{
+		Executable: "cargo",
+		Args:       []string{"-C", "${{ matrix.crate }}", "test"},
+	})
+	if dir != "" {
+		t.Fatalf("dir = %q, want empty for an expression-valued -C", dir)
+	}
+	if !slices.Equal(got.Args, []string{"-C", "${{ matrix.crate }}", "test"}) {
+		t.Fatalf("args = %v, want the original invocation", got.Args)
 	}
 }
 

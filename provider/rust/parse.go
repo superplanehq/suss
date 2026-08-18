@@ -56,6 +56,9 @@ func parseCargoTOML(contents string) cargoManifest {
 		if section != "" {
 			fullKey = section + "." + key
 		}
+		if fullKey == "workspace" || strings.HasPrefix(fullKey, "workspace.") {
+			parsed.HasWorkspace = true
+		}
 
 		switch fullKey {
 		case "package.name":

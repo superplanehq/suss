@@ -170,6 +170,50 @@ jobs:
 	}
 }
 
+func TestDetectRewritesCargoDirectoryFlagsThroughRustup(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml
+`,
+	})
+
+	got := commandByName(result)["cargo test"]
+	if got.Directory != "crates/tool" {
+		t.Fatalf("directory = %q, want crates/tool", got.Directory)
+	}
+	if deref(got.Run) != "rustup run nightly cargo test" {
+		t.Fatalf("run = %q, want rustup run nightly cargo test without a nested manifest-path", deref(got.Run))
+	}
+}
+
+func TestDetectLeavesDynamicCargoManifestPathUnresolved(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: cargo test --manifest-path $SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml
+`,
+	})
+
+	got := commandByName(result)["cargo test"]
+	if got.Directory != "." {
+		t.Fatalf("directory = %q, want . for a variable-valued manifest path", got.Directory)
+	}
+	if deref(got.Run) != "cargo test --manifest-path $SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml" {
+		t.Fatalf("run = %q, want the original command", deref(got.Run))
+	}
+}
+
 func TestDetectAppliesYarnCwdToCommandDirectory(t *testing.T) {
 	t.Parallel()
 
