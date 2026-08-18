@@ -52,6 +52,7 @@ func (s *composeService) UnmarshalYAML(value *yaml.Node) error {
 }
 
 func parseEnvironment(node yaml.Node) []envVar {
+	node = resolveNode(node)
 	if isZeroNode(node) {
 		return nil
 	}
@@ -66,25 +67,60 @@ func parseEnvironment(node yaml.Node) []envVar {
 }
 
 func environmentFromMap(node yaml.Node) []envVar {
-	out := make([]envVar, 0, len(node.Content)/2)
+	var out []envVar
+	seen := make(map[string]int)
 	for i := 0; i+1 < len(node.Content); i += 2 {
-		name := strings.TrimSpace(node.Content[i].Value)
+		key := resolveNode(*node.Content[i])
+		value := resolveNode(*node.Content[i+1])
+		name := strings.TrimSpace(key.Value)
+		if name == "<<" {
+			for _, item := range mergeEnvironment(value) {
+				if _, exists := seen[item.Name]; exists {
+					continue
+				}
+				seen[item.Name] = len(out)
+				out = append(out, item)
+			}
+			continue
+		}
 		if !validEnvName(name) {
 			continue
 		}
-		value := scalarString(node.Content[i+1])
-		out = append(out, envVar{Name: name, HasDefault: value != ""})
+		item := envVar{Name: name, HasDefault: scalarString(&value) != ""}
+		if idx, exists := seen[name]; exists {
+			out[idx] = item
+			continue
+		}
+		seen[name] = len(out)
+		out = append(out, item)
 	}
 	return out
+}
+
+func mergeEnvironment(node yaml.Node) []envVar {
+	node = resolveNode(node)
+	switch node.Kind {
+	case yaml.MappingNode:
+		return parseEnvironment(node)
+	case yaml.SequenceNode:
+		var out []envVar
+		for _, item := range node.Content {
+			out = append(out, parseEnvironment(*item)...)
+		}
+		return out
+	default:
+		return nil
+	}
 }
 
 func environmentFromList(node yaml.Node) []envVar {
 	var out []envVar
 	for _, item := range node.Content {
-		if item.Kind != yaml.ScalarNode || item.Tag == "!!null" {
+		resolved := resolveNode(*item)
+		if resolved.Kind != yaml.ScalarNode || resolved.Tag == "!!null" {
 			continue
 		}
-		name, value, found := strings.Cut(item.Value, "=")
+		name, value, found := strings.Cut(resolved.Value, "=")
 		name = strings.TrimSpace(name)
 		if !validEnvName(name) {
 			continue
@@ -95,11 +131,22 @@ func environmentFromList(node yaml.Node) []envVar {
 	return out
 }
 
+func resolveNode(node yaml.Node) yaml.Node {
+	if node.Kind == yaml.AliasNode && node.Alias != nil {
+		return resolveNode(*node.Alias)
+	}
+	return node
+}
+
 func scalarString(node *yaml.Node) string {
-	if node == nil || node.Kind != yaml.ScalarNode || node.Tag == "!!null" {
+	if node == nil {
 		return ""
 	}
-	return node.Value
+	resolved := resolveNode(*node)
+	if resolved.Kind != yaml.ScalarNode || resolved.Tag == "!!null" {
+		return ""
+	}
+	return resolved.Value
 }
 
 func isZeroNode(node yaml.Node) bool {

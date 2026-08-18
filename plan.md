@@ -144,6 +144,7 @@ Scope:
 Acceptance:
 
 - Golden plan for `plausible/analytics` is substantially correct on the Node/Make/Compose/requirements side (Elixir commands arrive in milestone 6).
+- Extra corpus pin: `knadh/listmonk`. Official setup is `docker compose up -d` (app + postgres). Make, Go, a Node frontend, and `.env.sample` are also present. The `dev/` compose file is the local stack (postgres, mailhog, adminer).
 
 ## Milestone 6 — Elixir provider, Semaphore provider, dogfood
 

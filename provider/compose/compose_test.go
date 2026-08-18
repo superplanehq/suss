@@ -75,6 +75,58 @@ services:
 	}
 }
 
+func TestDetectResolvesComposeAliasesAndMergeKeys(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"docker-compose.yml": `
+x-db-credentials: &db-credentials
+  POSTGRES_USER: &db-user listmonk
+  POSTGRES_PASSWORD: &db-password listmonk
+  POSTGRES_DB: &db-name listmonk
+services:
+  app:
+    image: listmonk/listmonk:latest
+    environment:
+      LISTMONK_db__user: *db-user
+      LISTMONK_db__password: *db-password
+      LISTMONK_db__database: *db-name
+      LISTMONK_db__host: db
+  db:
+    image: postgres:17-alpine
+    environment:
+      <<: *db-credentials
+      POSTGRES_HOST: db
+`,
+	})
+
+	for _, name := range []string{"POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB", "LISTMONK_db__user", "LISTMONK_db__password", "LISTMONK_db__database"} {
+		if !hasEnv(result, name, true) {
+			t.Fatalf("missing %s default in %+v", name, result.Findings)
+		}
+	}
+	if !hasEnv(result, "POSTGRES_HOST", true) {
+		t.Fatalf("missing explicit POSTGRES_HOST after merge in %+v", result.Findings)
+	}
+	if envValueExposed(result) {
+		t.Fatalf("environment values were exposed in %+v", result.Findings)
+	}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Kind != plan.RequirementEnvironment {
+			continue
+		}
+		if item.Requirement.Version != "" {
+			t.Fatalf("environment %s carried a version value %q", item.Requirement.Name, item.Requirement.Version)
+		}
+		for _, evidence := range item.Requirement.Evidence {
+			if strings.Contains(evidence.Description, "listmonk") {
+				t.Fatalf("environment %s evidence leaked an assignment value: %+v", item.Requirement.Name, evidence)
+			}
+		}
+	}
+}
+
 func TestDetectRecordsIncludeLimitationAndSkipsDotDirectories(t *testing.T) {
 	t.Parallel()
 

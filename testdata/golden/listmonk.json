@@ -1,0 +1,1813 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "go",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "go.mod",
+              "pointer": "/module"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [
+        {
+          "name": "provider.make.limitation",
+          "value": "variable-expansion",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile",
+              "description": "Make functions, automatic variables, and predefined variables are not expanded."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "go",
+          "version": "1.26.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "go.mod",
+              "pointer": "/go"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build-sanity.yml",
+              "pointer": "/jobs/build/steps/1/with/go-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/3/with/go-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/goreleaser/steps/2/with/go-version"
+            }
+          ]
+        },
+        {
+          "kind": "tool",
+          "name": "docker",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile"
+            },
+            {
+              "kind": "file",
+              "source": "dev/docker-compose.yml"
+            },
+            {
+              "kind": "file",
+              "source": "docker-compose.yml"
+            }
+          ]
+        },
+        {
+          "kind": "tool",
+          "name": "make",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "adminer",
+          "version": "4.8.1-standalone",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/adminer/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "app",
+          "version": "latest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "backend",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/backend"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "db",
+          "version": "13",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/db/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "db",
+          "version": "17-alpine",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/db/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "front",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/front"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "mailhog",
+          "version": "v1.0.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/mailhog/image"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GH_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/check/steps/1/env/GH_TOKEN"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/13/env/GH_TOKEN"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/6/env/GH_TOKEN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_ADMIN_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_ADMIN_PASSWORD"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_ADMIN_USER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_ADMIN_USER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_API_URL",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/front/environment/LISTMONK_API_URL"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_app__address",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_app__address"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_db__database",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_db__database"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_db__host",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_db__host"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_db__max_idle",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_db__max_idle"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_db__max_lifetime",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_db__max_lifetime"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_db__max_open",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_db__max_open"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_db__password",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_db__password"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_db__port",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_db__port"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_db__ssl_mode",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_db__ssl_mode"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_db__user",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/LISTMONK_db__user"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_DB",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/db/environment/POSTGRES_DB"
+            },
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/db/environment/POSTGRES_DB"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/db/environment/POSTGRES_PASSWORD"
+            },
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/db/environment/POSTGRES_PASSWORD"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_USER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/db/environment/POSTGRES_USER"
+            },
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/db/environment/POSTGRES_USER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "TZ",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/TZ"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_2a49c08cb6e05e972cef3f77ec5e790e",
+          "name": "start services",
+          "run": "docker compose up -d",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "docker-compose.yml"
+            },
+            {
+              "kind": "convention",
+              "source": "compose",
+              "pointer": "up",
+              "description": "Docker Compose services are started with docker compose up -d."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3c33ddd10248e94f1b03d746409efbc8",
+          "name": "download dependencies",
+          "run": "go mod download",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "dependencies",
+              "description": "Go modules conventionally download dependencies with go mod download."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_d7ddedce157a004437ad13dc2511de6d",
+          "name": "start services",
+          "run": "docker compose up -d",
+          "directory": "dev",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "dev/docker-compose.yml"
+            },
+            {
+              "kind": "convention",
+              "source": "compose",
+              "pointer": "up",
+              "description": "Docker Compose services are started with docker compose up -d."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_0460d01949e38fbc0aee4b785ba7e958",
+          "name": "docker buildx",
+          "run": "docker buildx imagetools create -t ghcr.io/knadh/listmonk:nightly    ghcr.io/knadh/listmonk:nightly-amd64    ghcr.io/knadh/listmonk:nightly-arm64v8    ghcr.io/knadh/listmonk:nightly-armv6    ghcr.io/knadh/listmonk:nightly-armv7",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/11/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1a1f8ba98a220180f6f4b9618fe90e30",
+          "name": "rm-dev-docker",
+          "run": "make rm-dev-docker",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/rm-dev-docker",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1e93c68f940507eeeed17eb8cc79c0f9",
+          "name": "docker version",
+          "run": "docker version",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/goreleaser/steps/6/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_33ea7880db7215ba824b1d1e1c00996f",
+          "name": "build-frontend",
+          "run": "make build-frontend",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/build-frontend"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_393419b7ccb49a94ad5f061d75fa5f80",
+          "name": "docker push",
+          "run": "docker push listmonk/listmonk:nightly-armv7",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/10/run#command=3"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_559c1395e84610742615b4ee33f6618e",
+          "name": "docker buildx",
+          "run": "docker buildx imagetools create -t listmonk/listmonk:nightly    listmonk/listmonk:nightly-amd64    listmonk/listmonk:nightly-arm64v8    listmonk/listmonk:nightly-armv6    listmonk/listmonk:nightly-armv7",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/11/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7460333797ec821ca7b516cd13c47437",
+          "name": "docker push",
+          "run": "docker push ghcr.io/knadh/listmonk:nightly-amd64",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/10/run#command=4"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_771e916f311f45ac53eeb33ca2ee8376",
+          "name": "vet",
+          "run": "go vet ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "vet",
+              "description": "Go modules conventionally run go vet ./... to check packages."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "vet"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_90f4f9c54c5edb83be030acdeb40d8be",
+          "name": "test",
+          "run": "make test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test",
+              "description": "The target recipe invokes go."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/test",
+                  "description": "The command runs Go tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_912cfaeadf2d776e403b930297feadb4",
+          "name": "build",
+          "run": "go build ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "build",
+              "description": "Go modules conventionally compile packages with go build ./...."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_918dd092fd84ed71705985ad5ebb59eb",
+          "name": "docker push",
+          "run": "docker push listmonk/listmonk:nightly-arm64v8",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/10/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_95d323039b20bd22322911fc3c2d8e18",
+          "name": "init-dev-docker",
+          "run": "make init-dev-docker",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/init-dev-docker",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9a0d29a21b00265af2c407dc9b2eb990",
+          "name": "docker push",
+          "run": "docker push listmonk/listmonk:nightly-amd64",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/10/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9bbd1b829beddf879fb12cbc8e3907ad",
+          "name": "run-frontend",
+          "run": "make run-frontend",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/run-frontend",
+              "description": "The target recipe invokes export and yarn."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a32b5d461a4a0e309785763d721373d2",
+          "name": "docker push",
+          "run": "docker push ghcr.io/knadh/listmonk:nightly-armv6",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/10/run#command=6"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a3723781265b9851156d0d85a233df68",
+          "name": "docker push",
+          "run": "docker push listmonk/listmonk:nightly-armv6",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/10/run#command=2"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ac35f95f02b7228259d6feff5f97c18a",
+          "name": "docker buildx",
+          "run": "docker buildx imagetools inspect ghcr.io/knadh/listmonk:nightly",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/12/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b696c6fe65f864c2d066c9ef491c3053",
+          "name": "pip install",
+          "run": "pip install mkdocs-material",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/github-pages.yml",
+              "pointer": "/jobs/deploy/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b7fad643fc958761bc4120b635cb88e7",
+          "name": "build-email-builder",
+          "run": "make build-email-builder",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/build-email-builder"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_bfaa4925ea47dbad085c7ff128de03c2",
+          "name": "run",
+          "run": "make run",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/run",
+              "description": "The target recipe invokes go."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c265d908972535af33094f89bee3bd99",
+          "name": "docker run",
+          "run": "docker run --rm    -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}    -e LLM_API_KEY=${{ secrets.LLM_API_KEY }}    ghcr.io/mr-karan/hodor:0.3.4    \"https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}\"    --model \"${{ vars.HODOR_MODEL || 'gpt-5.2' }}\"    --post",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/hodor-review.yml",
+              "pointer": "/jobs/review/steps/0/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d224205e91a39805c2cee4a4e87fef26",
+          "name": "run-backend-docker",
+          "run": "make run-backend-docker",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/run-backend-docker",
+              "description": "The target recipe invokes go."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d4bbd499d438f50b475676558731b23f",
+          "name": "build",
+          "run": "make build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_db02c7f566506883b69cc0f59c834c64",
+          "name": "pack-bin",
+          "run": "make pack-bin",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/pack-bin",
+              "description": "The target recipe invokes stuffbin."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_de41aa9d36ff280732743bfb67904468",
+          "name": "docker push",
+          "run": "docker push ghcr.io/knadh/listmonk:nightly-arm64v8",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/10/run#command=5"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e28d8881d237a8a238c7f7b43cf69861",
+          "name": "hugo docs/site",
+          "run": "hugo -s docs/site -d ../publish --gc --minify",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/github-pages.yml",
+              "pointer": "/jobs/deploy/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e57173b45a4166b27d07466c28b1d379",
+          "name": "dist",
+          "run": "make dist",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dist"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make dist",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/build-sanity.yml",
+                  "pointer": "/jobs/build/steps/2/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/nightly.yml",
+                  "pointer": "/jobs/nightly/steps/8/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/release.yml",
+                  "pointer": "/jobs/goreleaser/steps/5/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_ea907aaaca9e24d854c11598f95e520f",
+          "name": "release",
+          "run": "make release",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/release",
+              "description": "The target recipe invokes goreleaser."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ecb8aeb1c618e22a86a0d73ff696a09b",
+          "name": "dev-docker",
+          "run": "make dev-docker",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev-docker",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f1a81139d0286bff0b085eaf4b212c2b",
+          "name": "docker buildx",
+          "run": "docker buildx imagetools inspect listmonk/listmonk:nightly",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/12/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f324206b2ea63452e4355fe342e92ff2",
+          "name": "gh release",
+          "run": "gh release delete nightly --yes --cleanup-tag 2>/dev/null",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/6/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f5e4fef0f31e42c3ce5701c6102a6ddf",
+          "name": "release-dry",
+          "run": "make release-dry",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/release-dry",
+              "description": "The target recipe invokes goreleaser."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f8e92cbea78b5d478f284c37dd91fb77",
+          "name": "mkdocs build",
+          "run": "mkdocs build -f docs/docs/mkdocs.yml -d ../publish/docs",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/github-pages.yml",
+              "pointer": "/jobs/deploy/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fdaa3190a69bdf30df3f0400e4ac3a77",
+          "name": "docker push",
+          "run": "docker push ghcr.io/knadh/listmonk:nightly-armv7",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/nightly.yml",
+              "pointer": "/jobs/nightly/steps/10/run#command=7"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ffda58b1d845bbf365c866016d990e6b",
+          "name": "build-dev-docker",
+          "run": "make build-dev-docker",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/build-dev-docker",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "frontend",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "frontend/vite.config.js"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "frontend/yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "frontend/.eslintrc.js"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "frontend/vite.config.js"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "environment",
+          "name": "LISTMONK_API_URL",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/.env.sample",
+              "pointer": "/LISTMONK_API_URL"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_FRONTEND_PORT",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/.env.sample",
+              "pointer": "/LISTMONK_FRONTEND_PORT"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_6f1c5c51f37a3e2ed42ad9629c2c083f",
+          "name": "install dependencies",
+          "run": "yarn install --frozen-lockfile",
+          "directory": "frontend",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "frontend/yarn.lock"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "yarn-frozen"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "yarn-frozen"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_3a8362559dc1c1976fbf4b5c088c0684",
+          "name": "serve",
+          "run": "yarn run serve",
+          "directory": "frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/scripts/serve"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "frontend/package.json",
+                  "pointer": "/scripts/serve",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_5713f2545daa3f1265ec7521e33472d3",
+          "name": "build",
+          "run": "yarn run build",
+          "directory": "frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "frontend/package.json",
+                  "pointer": "/scripts/build",
+                  "description": "The script invokes vite build."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_7e0ceeb538517577e4ac2cd54e297f9a",
+          "name": "postinstall",
+          "run": "yarn run postinstall",
+          "directory": "frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/scripts/postinstall"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a70719170983f888d079996f52ed00e0",
+          "name": "dev",
+          "run": "yarn run dev",
+          "directory": "frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "frontend/package.json",
+                  "pointer": "/scripts/dev",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_d0de05ddd41b1e93c906a0d25b76d008",
+          "name": "prebuild",
+          "run": "yarn run prebuild",
+          "directory": "frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/scripts/prebuild"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "frontend/package.json",
+                  "pointer": "/scripts/prebuild",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_d4ce552ab6b68db28da86d7cf8c08744",
+          "name": "lint",
+          "run": "yarn run lint",
+          "directory": "frontend",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "frontend/package.json",
+                  "pointer": "/scripts/lint",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "frontend/email-builder",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/email-builder/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/email-builder/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "frontend/email-builder/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "frontend/email-builder/vite.config.ts"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "yarn",
+          "version": "1.22.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/email-builder/package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "frontend/email-builder/yarn.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "frontend/email-builder/.eslintrc.cjs"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "frontend/email-builder/tsconfig.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "frontend/email-builder/vite.config.ts"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_4583786548e8828535facc18ee2f7fd0",
+          "name": "install dependencies",
+          "run": "yarn install --frozen-lockfile",
+          "directory": "frontend/email-builder",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/email-builder/package.json",
+              "pointer": "/packageManager"
+            },
+            {
+              "kind": "file",
+              "source": "frontend/email-builder/yarn.lock"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "yarn-frozen"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "yarn-frozen"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_0e8f313bebaf256e85f3ab7d8e03013c",
+          "name": "preview",
+          "run": "yarn run preview",
+          "directory": "frontend/email-builder",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/email-builder/package.json",
+              "pointer": "/scripts/preview"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "frontend/email-builder/package.json",
+                  "pointer": "/scripts/preview",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_194cf1dcdab5676e211e98f6c1c6255d",
+          "name": "build",
+          "run": "yarn run build",
+          "directory": "frontend/email-builder",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/email-builder/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "frontend/email-builder/package.json",
+                  "pointer": "/scripts/build",
+                  "description": "The script invokes vite build."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_5e0cea5956a1a7855e0d9d4533d2bf2e",
+          "name": "dev",
+          "run": "yarn run dev",
+          "directory": "frontend/email-builder",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "frontend/email-builder/package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "frontend/email-builder/package.json",
+                  "pointer": "/scripts/dev",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

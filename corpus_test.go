@@ -80,6 +80,12 @@ var corpus = []corpusEntry{
 		commit: "54d8af8ecfab4943cc29852ce2fc072746799307",
 		golden: "plausible.json",
 	},
+	{
+		name:   "listmonk",
+		gitURL: "https://github.com/knadh/listmonk.git",
+		commit: "670c01717d48647093335cc23a6be6f4b79c3b6b",
+		golden: "listmonk.json",
+	},
 }
 
 func TestCorpusSnapshots(t *testing.T) {
