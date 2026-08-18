@@ -551,21 +551,21 @@ func unwrapOnce(tokens []string) ([]string, string) {
 		if rest[0] == "exec" {
 			unwrapped := skipComposerGlobalOptions(rest[1:])
 			if len(unwrapped) > 0 && unwrapped[0] == "--" {
-				return unwrapped[1:]
+				return unwrapped[1:], ""
 			}
-			return unwrapped
+			return unwrapped, ""
 		}
-		return append([]string{"composer"}, rest...)
+		return append([]string{"composer"}, rest...), ""
 	case "php":
 		rest := skipPHPCLIOptions(tokens[1:])
 		if len(rest) == 0 {
 			break
 		}
 		if isVendorBinPath(rest[0]) {
-			return rest
+			return rest, ""
 		}
-		return append([]string{"php"}, rest...)
-	case "poetry", "pipenv":
+		return append([]string{"php"}, rest...), ""
+	case "poetry", "pipenv", "pdm":
 		if len(tokens) >= 2 && tokens[1] == "run" {
 			return dropLeadingFlags(tokens[2:]), ""
 		}
@@ -924,8 +924,10 @@ func dropLeadingFlags(tokens []string) []string {
 
 var uvRunValueFlags = map[string]struct{}{
 	"--directory": {}, "-C": {}, "--project": {}, "--package": {},
-	"--python": {}, "--group": {}, "--extra": {}, "--with": {},
-	"--index": {}, "--default-index": {},
+	"--python": {}, "-p": {}, "--group": {}, "--no-group": {}, "--only-group": {},
+	"--extra": {}, "--no-extra": {}, "--with": {}, "--with-editable": {},
+	"--with-requirements": {}, "--env-file": {}, "--index": {}, "--default-index": {},
+	"--config-file": {}, "--cache-dir": {}, "--keyring-provider": {},
 }
 
 func dropLeadingFlagsWithValues(tokens []string, valueFlags map[string]struct{}) []string {

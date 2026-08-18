@@ -88,6 +88,7 @@ func TestDetectUvLockfileSelectsUvSync(t *testing.T) {
 		t.Fatalf("missing uv in %+v", result.Findings)
 	}
 	assertCommand(t, commandsByName(result)["install dependencies"], "uv sync", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "uv run python -m unittest", plan.CapabilityTestRun)
 }
 
 func TestDetectPoetryProject(t *testing.T) {
@@ -121,8 +122,8 @@ pytest = "^8.0"
 	}
 	commands := commandsByName(result)
 	assertCommand(t, commands["install dependencies"], "poetry install", plan.CapabilityDependenciesInstall)
-	assertCommand(t, commands["test"], "pytest", plan.CapabilityTestRun)
-	assertCommand(t, commands["server"], "flask run", plan.CapabilityApplicationRun)
+	assertCommand(t, commands["test"], "poetry run pytest", plan.CapabilityTestRun)
+	assertCommand(t, commands["server"], "poetry run flask run", plan.CapabilityApplicationRun)
 }
 
 func TestDetectFlaskDependencyWithoutAppDoesNotInferServer(t *testing.T) {
@@ -206,8 +207,15 @@ python_version = "3.12"
 	if !hasRuntime(result, "3.12") {
 		t.Fatalf("missing Pipfile Python pin in %+v", result.Findings)
 	}
+	sources := requirementSources(result, "python", "3.12")
+	if !slices.Contains(sources, "Pipfile") {
+		t.Fatalf("Python 3.12 evidence sources = %v, want Pipfile", sources)
+	}
+	if slices.Contains(sources, "pyproject.toml") {
+		t.Fatalf("Python 3.12 evidence sources = %v, did not want pyproject.toml", sources)
+	}
 	assertCommand(t, commandsByName(result)["install dependencies"], "pipenv install", plan.CapabilityDependenciesInstall)
-	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+	assertCommand(t, commandsByName(result)["test"], "pipenv run pytest", plan.CapabilityTestRun)
 }
 
 func TestDetectIgnoresVirtualenvNamedEnv(t *testing.T) {
@@ -334,7 +342,7 @@ python_version = "3.12"
 		t.Fatalf("missing Pipfile Python pin in %+v", result.Findings)
 	}
 	assertCommand(t, commandsByName(result)["install dependencies"], "pipenv install", plan.CapabilityDependenciesInstall)
-	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+	assertCommand(t, commandsByName(result)["test"], "pipenv run pytest", plan.CapabilityTestRun)
 }
 
 func TestParsePyprojectExtractsDjangoExtras(t *testing.T) {
@@ -499,7 +507,7 @@ test = ["pytest", "ruff"]
 	if !hasPackageManager(result, "pdm") {
 		t.Fatalf("missing pdm in %+v", result.Findings)
 	}
-	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+	assertCommand(t, commandsByName(result)["test"], "pdm run pytest", plan.CapabilityTestRun)
 	tools := configuredToolValues(result)
 	for _, tool := range []string{"pytest", "ruff"} {
 		if !slices.Contains(tools, tool) {
@@ -634,6 +642,21 @@ func propertySources(result provider.Result, kind plan.PropertyKind, name string
 		}
 		sources := make([]string, 0, len(item.Property.Evidence))
 		for _, evidence := range item.Property.Evidence {
+			sources = append(sources, evidence.Source)
+		}
+		return sources
+	}
+	return nil
+}
+
+func requirementSources(result provider.Result, name, version string) []string {
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != name || item.Requirement.Version != version {
+			continue
+		}
+		sources := make([]string, 0, len(item.Requirement.Evidence))
+		for _, evidence := range item.Requirement.Evidence {
 			sources = append(sources, evidence.Source)
 		}
 		return sources

@@ -814,6 +814,7 @@ jobs:
     steps:
       - run: pip install ruff pytest
       - run: python -m pip install coveralls
+      - run: pip install -c constraints.txt tox
 `,
 	})
 

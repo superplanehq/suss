@@ -351,7 +351,7 @@
         {
           "id": "cmd_770660407a8685d170e55f4b111a6110",
           "name": "server",
-          "run": "python src/manage.py runserver",
+          "run": "uv run python src/manage.py runserver",
           "directory": ".",
           "scope": "project",
           "origin": "inferred",
@@ -369,7 +369,7 @@
               "kind": "convention",
               "source": "python-ecosystem",
               "pointer": "server",
-              "description": "Django applications conventionally start the development server with manage.py runserver."
+              "description": "Django applications conventionally start the development server with uv run python src/manage.py runserver."
             }
           ],
           "interpretations": [
@@ -445,7 +445,7 @@
         {
           "id": "cmd_a7e0bfbfa93d758a55acc76c9ce6d4fa",
           "name": "test",
-          "run": "pytest",
+          "run": "uv run pytest",
           "directory": ".",
           "scope": "project",
           "origin": "inferred",
@@ -478,7 +478,7 @@
               "kind": "convention",
               "source": "python-ecosystem",
               "pointer": "test",
-              "description": "Python projects with pytest conventionally run tests with pytest."
+              "description": "Python projects with pytest conventionally run tests with uv run pytest."
             }
           ],
           "interpretations": [

@@ -323,7 +323,7 @@
         {
           "id": "cmd_a7e0bfbfa93d758a55acc76c9ce6d4fa",
           "name": "test",
-          "run": "pytest",
+          "run": "uv run pytest",
           "directory": ".",
           "scope": "project",
           "origin": "inferred",
@@ -356,7 +356,7 @@
               "kind": "convention",
               "source": "python-ecosystem",
               "pointer": "test",
-              "description": "Python projects with pytest conventionally run tests with pytest."
+              "description": "Python projects with pytest conventionally run tests with uv run pytest."
             }
           ],
           "interpretations": [

@@ -201,7 +201,7 @@
               "kind": "convention",
               "source": "python-ecosystem",
               "pointer": "server",
-              "description": "Django applications conventionally start the development server with manage.py runserver."
+              "description": "Django applications conventionally start the development server with python manage.py runserver."
             }
           ],
           "interpretations": [

@@ -224,8 +224,17 @@ func IsRemotePipInstall(inv Invocation) bool {
 	for i := 0; i < len(rest); i++ {
 		arg := rest[i]
 		name, _, _ := strings.Cut(arg, "=")
-		if name == "-r" || name == "--requirement" || name == "-c" || name == "--constraint" {
+		if name == "-r" || name == "--requirement" {
 			hasRequirement = true
+			if !strings.Contains(arg, "=") && i+1 < len(rest) {
+				i++
+			}
+			continue
+		}
+		if name == "-c" || name == "--constraint" {
+			if !strings.Contains(arg, "=") && i+1 < len(rest) {
+				i++
+			}
 			continue
 		}
 		if name == "-e" || name == "--editable" {

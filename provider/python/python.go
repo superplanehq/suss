@@ -37,7 +37,7 @@ func (Provider) Detect(ctx provider.Context) (provider.Result, error) {
 		Findings:    projectFindings(ctx, project, choice),
 		Ambiguities: choice.ambiguities,
 	}
-	runtimes, conflicts, err := runtimeFindings(ctx, project.RequiresPython)
+	runtimes, conflicts, err := runtimeFindings(ctx, project)
 	if err != nil {
 		return provider.Result{}, err
 	}

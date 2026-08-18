@@ -16,7 +16,8 @@ type runtimePin struct {
 	evidence plan.Evidence
 }
 
-func runtimeFindings(ctx provider.Context, requiresPython string) ([]plan.Finding, []plan.Conflict, error) {
+func runtimeFindings(ctx provider.Context, project pythonProject) ([]plan.Finding, []plan.Conflict, error) {
+	requiresPython := project.RequiresPython
 	var pins []runtimePin
 	pythonVersion, err := readAncestorPythonVersion(ctx)
 	if err != nil {
@@ -42,7 +43,7 @@ func runtimeFindings(ctx provider.Context, requiresPython string) ([]plan.Findin
 			assertions = append(assertions, plan.Candidate{Value: pin.version, Evidence: []plan.Evidence{pin.evidence}})
 			evidence := []plan.Evidence{pin.evidence}
 			if pin.version == requiresPython {
-				evidence = append(evidence, requiresPythonEvidence(ctx))
+				evidence = append(evidence, requiresPythonEvidence(ctx, project))
 				requiresMerged = true
 			}
 			findings = append(findings, runtimeFinding(ctx, pin.version, plan.ConfidenceMedium, evidence))
@@ -58,14 +59,14 @@ func runtimeFindings(ctx provider.Context, requiresPython string) ([]plan.Findin
 			evidence = append(evidence, pin.evidence)
 		}
 		if pins[0].version == requiresPython {
-			evidence = append(evidence, requiresPythonEvidence(ctx))
+			evidence = append(evidence, requiresPythonEvidence(ctx, project))
 			requiresMerged = true
 		}
 		findings = append(findings, runtimeFinding(ctx, pins[0].version, plan.ConfidenceHigh, evidence))
 	}
 
 	if requiresPython != "" && !requiresMerged {
-		findings = append(findings, runtimeFinding(ctx, requiresPython, plan.ConfidenceHigh, []plan.Evidence{requiresPythonEvidence(ctx)}))
+		findings = append(findings, runtimeFinding(ctx, requiresPython, plan.ConfidenceHigh, []plan.Evidence{requiresPythonEvidence(ctx, project)}))
 	}
 	return findings, conflicts, nil
 }
@@ -149,15 +150,19 @@ func pinsDisagree(pins []runtimePin) bool {
 	return false
 }
 
-func requiresPythonEvidence(ctx provider.Context) plan.Evidence {
-	source := "pyproject.toml"
-	if fileExists(ctx.ProjectDir(), "Pipfile") && !fileExists(ctx.ProjectDir(), "pyproject.toml") {
-		source = "Pipfile"
+func requiresPythonEvidence(ctx provider.Context, project pythonProject) plan.Evidence {
+	source := project.RequiresPythonSource
+	if source == "" {
+		source = project.Manifest
+	}
+	pointer := project.RequiresPythonPointer
+	if pointer == "" {
+		pointer = "/requires-python"
 	}
 	return plan.Evidence{
 		Kind:    plan.EvidenceDeclaration,
 		Source:  ctx.SourcePath(source),
-		Pointer: "/requires-python",
+		Pointer: pointer,
 	}
 }
 

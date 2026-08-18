@@ -24,7 +24,7 @@ func commandFindings(ctx provider.Context, project pythonProject, choice manager
 		specs = append(specs, installSpec(ctx, project, choice))
 	}
 
-	testSpec, ok, err := testCommandSpec(ctx, project)
+	testSpec, ok, err := testCommandSpec(ctx, project, choice)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func commandFindings(ctx provider.Context, project pythonProject, choice manager
 		specs = append(specs, testSpec)
 	}
 
-	if spec, ok, err := serverCommandSpec(ctx, project); err != nil {
+	if spec, ok, err := serverCommandSpec(ctx, project, choice); err != nil {
 		return nil, err
 	} else if ok {
 		specs = append(specs, spec)
@@ -67,7 +67,7 @@ func installSpec(ctx provider.Context, project pythonProject, choice managerChoi
 	return spec
 }
 
-func testCommandSpec(ctx provider.Context, project pythonProject) (commandSpec, bool, error) {
+func testCommandSpec(ctx provider.Context, project pythonProject, choice managerChoice) (commandSpec, bool, error) {
 	testFile, err := firstPythonTest(ctx.ProjectDir())
 	if err != nil || testFile == "" {
 		return commandSpec{}, false, err
@@ -76,7 +76,8 @@ func testCommandSpec(ctx provider.Context, project pythonProject) (commandSpec, 
 	testEvidence := plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)}
 
 	if pytestEvidence := pytestEvidence(ctx, project); len(pytestEvidence) > 0 {
-		spec := conventionSpec(source, "test", "pytest", "/#test", plan.ConfidenceHigh, "Python projects with pytest conventionally run tests with pytest.")
+		run := managerRun(choice.selected, "pytest")
+		spec := conventionSpec(source, "test", run, "/#test", plan.ConfidenceHigh, fmt.Sprintf("Python projects with pytest conventionally run tests with %s.", run))
 		spec.evidence = addEvidenceAfterManifest(spec.evidence, append([]plan.Evidence{testEvidence}, pytestEvidence...)...)
 		return spec, true, nil
 	}
@@ -84,36 +85,53 @@ func testCommandSpec(ctx provider.Context, project pythonProject) (commandSpec, 
 	if managePy, err := firstManagePy(ctx.ProjectDir()); err != nil {
 		return commandSpec{}, false, err
 	} else if managePy != "" && hasDependency(project, "django") {
-		run := "python " + managePy + " test"
-		spec := conventionSpec(source, "test", run, "/#test", plan.ConfidenceHigh, "Django applications with test files conventionally run them with manage.py test.")
+		run := managerRun(choice.selected, "python "+managePy+" test")
+		spec := conventionSpec(source, "test", run, "/#test", plan.ConfidenceHigh, fmt.Sprintf("Django applications with test files conventionally run them with %s.", run))
 		spec.evidence = addEvidenceAfterManifest(spec.evidence, testEvidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(managePy)})
 		return spec, true, nil
 	}
 
-	spec := conventionSpec(source, "test", "python -m unittest", "/#test", plan.ConfidenceMedium, "Python projects with test files and no pytest signal conventionally run unittest.")
+	run := managerRun(choice.selected, "python -m unittest")
+	spec := conventionSpec(source, "test", run, "/#test", plan.ConfidenceMedium, fmt.Sprintf("Python projects with test files and no pytest signal conventionally run %s.", run))
 	spec.evidence = addEvidenceAfterManifest(spec.evidence, testEvidence)
 	return spec, true, nil
 }
 
-func serverCommandSpec(ctx provider.Context, project pythonProject) (commandSpec, bool, error) {
+func serverCommandSpec(ctx provider.Context, project pythonProject, choice managerChoice) (commandSpec, bool, error) {
 	source := ctx.SourcePath(project.Manifest)
 	if managePy, err := firstManagePy(ctx.ProjectDir()); err != nil {
 		return commandSpec{}, false, err
 	} else if managePy != "" && hasDependency(project, "django") {
-		run := "python " + managePy + " runserver"
-		spec := conventionSpec(source, "server", run, "/#server", plan.ConfidenceMedium, "Django applications conventionally start the development server with manage.py runserver.")
+		run := managerRun(choice.selected, "python "+managePy+" runserver")
+		spec := conventionSpec(source, "server", run, "/#server", plan.ConfidenceMedium, fmt.Sprintf("Django applications conventionally start the development server with %s.", run))
 		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(managePy)})
 		return spec, true, nil
 	}
 
 	if hasDependency(project, "flask") {
 		if app := flaskApplicationFile(ctx); app != "" {
-			spec := conventionSpec(source, "server", "flask run", "/#server", plan.ConfidenceMedium, "Flask applications conventionally start the development server with flask run.")
+			run := managerRun(choice.selected, "flask run")
+			spec := conventionSpec(source, "server", run, "/#server", plan.ConfidenceMedium, fmt.Sprintf("Flask applications conventionally start the development server with %s.", run))
 			spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(app)})
 			return spec, true, nil
 		}
 	}
 	return commandSpec{}, false, nil
+}
+
+func managerRun(manager, command string) string {
+	switch manager {
+	case "uv":
+		return "uv run " + command
+	case "poetry":
+		return "poetry run " + command
+	case "pipenv":
+		return "pipenv run " + command
+	case "pdm":
+		return "pdm run " + command
+	default:
+		return command
+	}
 }
 
 func pytestEvidence(ctx provider.Context, project pythonProject) []plan.Evidence {

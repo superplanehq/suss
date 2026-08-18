@@ -443,7 +443,7 @@ func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
 func TestParseScriptStripsPythonWrappers(t *testing.T) {
 	t.Parallel()
 
-	got := ParseScript("poetry run pytest -q && uv run --locked --group dev tox run && python -m pytest && python src/manage.py test && uv run python -m pytest && poetry run python -m pytest")
+	got := ParseScript("poetry run pytest -q && uv run --locked --group dev tox run && python -m pytest && python src/manage.py test && uv run python -m pytest && poetry run python -m pytest && pdm run pytest && pipenv run flask run")
 	want := []Invocation{
 		{Executable: "pytest", Args: []string{"-q"}},
 		{Executable: "tox", Args: []string{"run"}},
@@ -451,6 +451,8 @@ func TestParseScriptStripsPythonWrappers(t *testing.T) {
 		{Executable: "python", Args: []string{"manage.py", "test"}},
 		{Executable: "pytest"},
 		{Executable: "pytest"},
+		{Executable: "pytest"},
+		{Executable: "flask", Args: []string{"run"}},
 	}
 	if !slices.EqualFunc(got, want, invocationsEqual) {
 		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
@@ -460,13 +462,15 @@ func TestParseScriptStripsPythonWrappers(t *testing.T) {
 func TestParseScriptCapturesUvRunDirectory(t *testing.T) {
 	t.Parallel()
 
-	got := ParseScript(`uv run --directory packages/api pytest && uv run -C packages/web python -m pytest && uv run --directory=packages/cli --locked pytest && uv --directory packages/api run pytest && uv -C packages/web tool run ruff`)
+	got := ParseScript(`uv run --directory packages/api pytest && uv run -C packages/web python -m pytest && uv run --directory=packages/cli --locked pytest && uv --directory packages/api run pytest && uv -C packages/web tool run ruff && uv run --env-file .env pytest && uv run --with-requirements extras.txt pytest`)
 	want := []Invocation{
 		{Executable: "pytest", Directory: "packages/api"},
 		{Executable: "pytest", Directory: "packages/web"},
 		{Executable: "pytest", Directory: "packages/cli"},
 		{Executable: "pytest", Directory: "packages/api"},
 		{Executable: "ruff", Directory: "packages/web"},
+		{Executable: "pytest"},
+		{Executable: "pytest"},
 	}
 	if !slices.EqualFunc(got, want, invocationsEqual) {
 		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
@@ -516,6 +520,9 @@ func TestIsRemotePipInstall(t *testing.T) {
 	}
 	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "packages/widget"}}) {
 		t.Fatal("IsRemotePipInstall(relative package path) = true, want false")
+	}
+	if !IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "-c", "constraints.txt", "tox"}}) {
+		t.Fatal("IsRemotePipInstall(constraint plus named package) = false, want true")
 	}
 }
 

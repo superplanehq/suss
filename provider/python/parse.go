@@ -7,13 +7,15 @@ import (
 )
 
 type pythonProject struct {
-	Manifest        string
-	RequiresPython  string
-	Dependencies    map[string]depDeclaration
-	ToolTables      map[string]struct{}
-	ManagerTables   map[string]struct{}
-	HasProjectTable bool
-	HasPackageTable bool
+	Manifest              string
+	RequiresPython        string
+	RequiresPythonSource  string
+	RequiresPythonPointer string
+	Dependencies          map[string]depDeclaration
+	ToolTables            map[string]struct{}
+	ManagerTables         map[string]struct{}
+	HasProjectTable       bool
+	HasPackageTable       bool
 }
 
 type depDeclaration struct {
@@ -56,7 +58,7 @@ func parsePyproject(contents string) pythonProject {
 
 	if project, ok := doc["project"]; ok {
 		parsed.HasProjectTable = true
-		parsed.RequiresPython = project.scalars["requires-python"]
+		setRequiresPython(&parsed, project.scalars["requires-python"], "pyproject.toml", "/requires-python")
 		addDependencies(&parsed, "pyproject.toml", "/project/dependencies", project.arrays["dependencies"])
 	}
 	for name, section := range doc {
@@ -80,9 +82,7 @@ func parsePyproject(contents string) pythonProject {
 	}
 
 	if poetry, ok := doc["tool.poetry.dependencies"]; ok {
-		if version := poetryScalar(poetry, "python"); version != "" && parsed.RequiresPython == "" {
-			parsed.RequiresPython = version
-		}
+		setRequiresPython(&parsed, poetryScalar(poetry, "python"), "pyproject.toml", "/tool/poetry/dependencies/python")
 		for _, name := range poetry.keys {
 			if name != "python" {
 				addDependency(&parsed, "pyproject.toml", "/tool/poetry/dependencies", name)
@@ -111,7 +111,11 @@ func parsePipfile(contents string) pythonProject {
 		ManagerTables: map[string]struct{}{"pipenv": {}},
 	}
 	if requires, ok := doc["requires"]; ok {
-		parsed.RequiresPython = firstNonEmpty(requires.scalars["python_version"], requires.scalars["python_full_version"])
+		if version := requires.scalars["python_version"]; version != "" {
+			setRequiresPython(&parsed, version, "Pipfile", "/requires/python_version")
+		} else {
+			setRequiresPython(&parsed, requires.scalars["python_full_version"], "Pipfile", "/requires/python_full_version")
+		}
 	}
 	for _, table := range []string{"packages", "dev-packages"} {
 		section, ok := doc[table]
@@ -160,6 +164,8 @@ func parseRequirements(contents string) []string {
 func mergeProject(base, extra pythonProject) pythonProject {
 	if extra.RequiresPython != "" && base.RequiresPython == "" {
 		base.RequiresPython = extra.RequiresPython
+		base.RequiresPythonSource = extra.RequiresPythonSource
+		base.RequiresPythonPointer = extra.RequiresPythonPointer
 	}
 	if extra.HasProjectTable {
 		base.HasProjectTable = true
@@ -180,6 +186,15 @@ func mergeProject(base, extra pythonProject) pythonProject {
 		base.ManagerTables[name] = struct{}{}
 	}
 	return base
+}
+
+func setRequiresPython(parsed *pythonProject, version, source, pointer string) {
+	if version == "" || parsed.RequiresPython != "" {
+		return
+	}
+	parsed.RequiresPython = version
+	parsed.RequiresPythonSource = source
+	parsed.RequiresPythonPointer = pointer
 }
 
 func recordToolTable(parsed *pythonProject, rest string) {
