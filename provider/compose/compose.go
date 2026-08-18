@@ -63,11 +63,10 @@ func (Provider) Detect(ctx provider.Context) (provider.Result, error) {
 	}
 
 	var result provider.Result
-	result.Findings = append(result.Findings, dockerToolFinding(files))
-
 	byDir := groupByDirectory(files)
 	for _, dir := range sortedKeys(byDir) {
 		dirFiles := byDir[dir]
+		result.Findings = append(result.Findings, dockerToolFinding(dir, dirFiles))
 		for _, rel := range dirFiles {
 			extracted, err := extractFile(ctx, dir, rel)
 			if err != nil {
@@ -107,6 +106,8 @@ func extractFile(ctx provider.Context, dir, rel string) ([]plan.Finding, error) 
 		svc := file.Services[name]
 		findings = append(findings, serviceFinding(dir, rel, name, svc))
 		findings = append(findings, environmentFindings(dir, rel, name, svc.Environment)...)
+		findings = append(findings, interpolationFindings(dir, rel, jsonPointer("services", name, "image"), svc.ImageVars)...)
+		findings = append(findings, interpolationFindings(dir, rel, jsonPointer("services", name, "environment"), svc.ValueVars)...)
 	}
 	return findings, nil
 }
@@ -132,6 +133,29 @@ func serviceFinding(dir, source, name string, svc composeService) plan.Finding {
 			}},
 		},
 	}
+}
+
+func interpolationFindings(dir, source, pointer string, env []envVar) []plan.Finding {
+	findings := make([]plan.Finding, 0, len(env))
+	for _, item := range env {
+		findings = append(findings, plan.RequirementFinding{
+			ProjectPath: dir,
+			Detector:    providerName,
+			Requirement: plan.Requirement{
+				Kind:       plan.RequirementEnvironment,
+				Name:       item.Name,
+				IsRequired: boolPtr(true),
+				HasDefault: boolPtr(item.HasDefault),
+				Confidence: plan.ConfidenceHigh,
+				Evidence: []plan.Evidence{{
+					Kind:    plan.EvidenceDeclaration,
+					Source:  source,
+					Pointer: pointer,
+				}},
+			},
+		})
+	}
+	return findings
 }
 
 func environmentFindings(dir, source, service string, env []envVar) []plan.Finding {
@@ -197,7 +221,7 @@ func composeUpCommand(dir string, files []string) (plan.Command, error) {
 	}, nil
 }
 
-func dockerToolFinding(files []string) plan.Finding {
+func dockerToolFinding(dir string, files []string) plan.Finding {
 	evidence := make([]plan.Evidence, 0, len(files))
 	for _, file := range files {
 		evidence = append(evidence, plan.Evidence{
@@ -206,7 +230,7 @@ func dockerToolFinding(files []string) plan.Finding {
 		})
 	}
 	return plan.RequirementFinding{
-		ProjectPath: directoryOf(files[0]),
+		ProjectPath: dir,
 		Detector:    providerName,
 		Requirement: plan.Requirement{
 			Kind:       plan.RequirementTool,
@@ -330,7 +354,28 @@ func splitImage(image string) (string, string) {
 	if digest != "" {
 		return repoName, digest
 	}
+	if strings.Contains(tag, "$") {
+		if def := interpolationDefault(tag); def != "" && !strings.Contains(def, "$") {
+			return repoName, def
+		}
+		return repoName, ""
+	}
 	return repoName, tag
+}
+
+func interpolationDefault(value string) string {
+	value = strings.TrimSpace(value)
+	if !strings.HasPrefix(value, "${") || !strings.HasSuffix(value, "}") {
+		return ""
+	}
+	inner := value[2 : len(value)-1]
+	for _, sep := range []string{":-", "-", ":="} {
+		_, def, found := strings.Cut(inner, sep)
+		if found {
+			return def
+		}
+	}
+	return ""
 }
 
 func jsonPointer(parts ...string) string {

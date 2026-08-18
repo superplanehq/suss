@@ -132,6 +132,62 @@ services:
 	}
 }
 
+func TestDetectExtractsComposeInterpolationNames(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"compose.yaml": `
+services:
+  db:
+    image: postgres:${POSTGRES_VERSION:-16}
+    environment:
+      APP_PASSWORD: ${DB_PASSWORD}
+      DATABASE_URL: postgres://app@db/app
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementService, "db", "16") {
+		t.Fatalf("missing db 16 from interpolation default in %+v", result.Findings)
+	}
+	if !hasEnv(result, "DB_PASSWORD", false) {
+		t.Fatalf("missing interpolated DB_PASSWORD in %+v", result.Findings)
+	}
+	if !hasEnv(result, "POSTGRES_VERSION", true) {
+		t.Fatalf("missing POSTGRES_VERSION with default in %+v", result.Findings)
+	}
+	if envValueExposed(result) {
+		t.Fatalf("interpolation values were exposed in %+v", result.Findings)
+	}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Kind != plan.RequirementEnvironment {
+			continue
+		}
+		if item.Requirement.Version != "" {
+			t.Fatalf("environment %s carried a value %q", item.Requirement.Name, item.Requirement.Version)
+		}
+		for _, evidence := range item.Requirement.Evidence {
+			if strings.Contains(evidence.Description, "secret") || strings.Contains(evidence.Pointer, "app@") {
+				t.Fatalf("interpolation evidence leaked a value: %+v", evidence)
+			}
+		}
+	}
+}
+
+func TestDetectEmitsDockerRequirementPerComposeDirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"frontend/compose.yaml": "services:\n  web:\n    image: node:22\n",
+		"backend/compose.yaml":  "services:\n  api:\n    image: golang:1.26\n",
+	})
+
+	dirs := dockerRequirementDirs(result)
+	if !slices.Equal(dirs, []string{"backend", "frontend"}) {
+		t.Fatalf("docker requirement dirs = %v, want backend and frontend", dirs)
+	}
+}
+
 func TestDetectRecordsIncludeLimitationAndSkipsDotDirectories(t *testing.T) {
 	t.Parallel()
 
@@ -199,6 +255,19 @@ func commandByName(result provider.Result) map[string]plan.Command {
 		out[item.Command.Name] = item.Command
 	}
 	return out
+}
+
+func dockerRequirementDirs(result provider.Result) []string {
+	var dirs []string
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Kind != plan.RequirementTool || item.Requirement.Name != "docker" {
+			continue
+		}
+		dirs = append(dirs, item.ProjectPath)
+	}
+	slices.Sort(dirs)
+	return dirs
 }
 
 func hasRequirement(result provider.Result, kind plan.RequirementKind, name, version string) bool {

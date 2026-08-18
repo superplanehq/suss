@@ -146,6 +146,13 @@ Acceptance:
 - Golden plan for `plausible/analytics` is substantially correct on the Node/Make/Compose/requirements side (Elixir commands arrive in milestone 6).
 - Extra corpus pin: `knadh/listmonk`. Official setup is `docker compose up -d` (app + postgres). Make, Go, a Node frontend, and `.env.sample` are also present. The `dev/` compose file is the local stack (postgres, mailhog, adminer).
 
+Status: review fixes applied; awaiting approval. `plausible/analytics` at the pinned SHA ships no Compose file and no `.env.example`, so Compose / env-file acceptance is carried by `knadh/listmonk`. Notable decisions from the milestone 5 review:
+
+- Declared wrappers win over inferred convention commands of the same capability (`make test` drops `go test ./...`). This is `reconcile.PreferDeclared`, not provider logic. idea.md: conventions fill gaps when explicit evidence is absent.
+- Any command interpreted as `dependencies.install` is preparation, regardless of detector or origin. The previous `Detector == "make"` special case is gone. `docker compose up` remains preparation.
+- Tool version/info/help probes (`docker version`, `docker info`, `docker compose version`, `node --version`, and the same for npm/pnpm/yarn/bun/python/ruby/java) are CI plumbing, matching the milestone 4 `go version` / `go env` rule. `make version` is not plumbing: it is a repository target.
+- Renderer polish (command directory when it differs from the project path; requirement kind on each line) is in this milestone, not deferred.
+
 ## Milestone 6 — Elixir provider, Semaphore provider, dogfood
 
 Close the loop on our own repositories.

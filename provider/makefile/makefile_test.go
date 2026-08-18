@@ -117,6 +117,38 @@ func TestDetectPrefersGNUmakefileAndReportsDocker(t *testing.T) {
 	}
 }
 
+func TestDetectPreservesUnresolvedVariablesAsLimitations(t *testing.T) {
+	t.Parallel()
+
+	parsed := parseMakefile("build:\n\t$(CC) -o app main.c\n")
+	if len(parsed.targets) != 1 || parsed.targets[0].Recipe != "$(CC) -o app main.c" {
+		t.Fatalf("recipe = %+v, want $(CC) preserved rather than erased", parsed.targets)
+	}
+	if !slices.Contains(parsed.limitations, "variable-expansion") {
+		t.Fatalf("limitations = %v, want variable-expansion for unresolved $(CC)", parsed.limitations)
+	}
+
+	result := detectFiles(t, map[string]string{"Makefile": "build:\n\t$(CC) -o app main.c\n"})
+	if !slices.Contains(factValues(result, "provider.make.limitation"), "variable-expansion") {
+		t.Fatalf("limitations = %v, want variable-expansion", factValues(result, "provider.make.limitation"))
+	}
+}
+
+func TestDetectCapturesInlineRecipes(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Makefile": "test: ; go test ./...\n",
+	})
+	commands := commandByName(result)
+	if !hasCapability(commands["test"], plan.CapabilityTestRun) {
+		t.Fatalf("inline test = %+v, want test.run from the inline recipe", commands["test"])
+	}
+	if commands["test"].Evidence[0].Description == "" {
+		t.Fatalf("inline recipe produced no evidence: %+v", commands["test"])
+	}
+}
+
 func TestDetectIgnoresMakeFunctionStatements(t *testing.T) {
 	t.Parallel()
 

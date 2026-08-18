@@ -1,6 +1,7 @@
 package reconcile
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/superplanehq/suss/plan"
@@ -76,6 +77,32 @@ func TestApplyLinksGoTestFlagsAsAVariantAndRaisesConfidence(t *testing.T) {
 	}
 	if len(got[0].Commands[0].Evidence) < 2 {
 		t.Fatalf("evidence = %+v, want convention plus CI invocation", got[0].Commands[0].Evidence)
+	}
+}
+
+func TestPreferDeclaredDropsInferredConventionCommands(t *testing.T) {
+	t.Parallel()
+
+	declared := command(t, "make", ".", "/targets/test", "test", "make test", plan.CommandDeclared, plan.CapabilityTestRun)
+	inferred := command(t, "go", ".", "/#test", "test", "go test ./...", plan.CommandInferred, plan.CapabilityTestRun)
+	vet := command(t, "go", ".", "/#vet", "vet", "go vet ./...", plan.CommandInferred, plan.CapabilityCodeLint)
+
+	root := plan.NewProjectPlan(".")
+	root.Commands = []plan.Command{declared, inferred, vet}
+	got := PreferDeclared(root)
+
+	var names []string
+	for _, command := range got.Commands {
+		names = append(names, deref(command.Run))
+	}
+	if !slices.Contains(names, "make test") {
+		t.Fatalf("commands = %v, want make test kept", names)
+	}
+	if slices.Contains(names, "go test ./...") {
+		t.Fatalf("commands = %v, did not want inferred go test beside make test", names)
+	}
+	if !slices.Contains(names, "go vet ./...") {
+		t.Fatalf("commands = %v, want inferred go vet when no declared lint exists", names)
 	}
 }
 

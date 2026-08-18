@@ -49,6 +49,20 @@ NOT_A_NAME
 	}
 }
 
+func TestDetectStripsTrailingDotenvCommentsBeforeDefaults(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".env.example": "API_TOKEN= # supplied at runtime\nDATABASE_URL=postgres://localhost\n",
+	})
+	if !hasEnv(result, "API_TOKEN", false) {
+		t.Fatalf("API_TOKEN = missing or treated as having a default: %+v", result.Findings)
+	}
+	if !hasEnv(result, "DATABASE_URL", true) {
+		t.Fatalf("DATABASE_URL = missing or lost its default: %+v", result.Findings)
+	}
+}
+
 func TestDetectMergesSampleAndExampleFiles(t *testing.T) {
 	t.Parallel()
 

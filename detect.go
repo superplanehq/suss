@@ -69,7 +69,7 @@ func Detect(root string) (plan.Document, error) {
 		if err != nil {
 			return plan.Document{}, fmt.Errorf("detect %s: %w", path, err)
 		}
-		projects = append(projects, project)
+		projects = append(projects, reconcile.PreferDeclared(project))
 	}
 
 	repo, err := detectRepository(absolute)

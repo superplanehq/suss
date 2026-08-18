@@ -94,6 +94,11 @@ func parseMakefile(contents string) makefile {
 			parsed.applyAssignment(key, value, op)
 		case lineRule:
 			current = parsed.addTargets(key)
+			if inline := inlineRecipe(key); inline != "" {
+				for _, index := range current {
+					parsed.targets[index].Recipe = appendRecipe(parsed.targets[index].Recipe, inline)
+				}
+			}
 		}
 	}
 
@@ -273,7 +278,26 @@ func (m *makefile) expandRef(name string, depth int) string {
 	if value, ok := m.rawVars[name]; ok {
 		return m.expandDepth(value, depth+1)
 	}
-	return ""
+	m.addLimitation("variable-expansion")
+	if len(name) == 1 {
+		return "$" + name
+	}
+	return "$(" + name + ")"
+}
+
+func inlineRecipe(header string) string {
+	_, rest, found := strings.Cut(header, ":")
+	if !found {
+		return ""
+	}
+	if strings.HasPrefix(rest, ":") {
+		rest = rest[1:]
+	}
+	_, recipe, found := strings.Cut(rest, ";")
+	if !found {
+		return ""
+	}
+	return stripRecipePrefix(strings.TrimSpace(recipe))
 }
 
 func readRef(input string, start int, open, closer byte) (string, int, bool) {

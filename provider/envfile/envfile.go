@@ -109,6 +109,7 @@ func parseEnvFile(contents string) []envVar {
 		if !found || !validEnvName(name) {
 			continue
 		}
+		value = stripDotenvComment(value)
 		if _, ok := seen[name]; ok {
 			continue
 		}
@@ -119,6 +120,27 @@ func parseEnvFile(contents string) []envVar {
 		})
 	}
 	return out
+}
+
+func stripDotenvComment(value string) string {
+	inSingle, inDouble := false, false
+	for i := 0; i < len(value); i++ {
+		switch value[i] {
+		case '\'':
+			if !inDouble {
+				inSingle = !inSingle
+			}
+		case '"':
+			if !inSingle {
+				inDouble = !inDouble
+			}
+		case '#':
+			if !inSingle && !inDouble {
+				return strings.TrimRight(value[:i], " \t")
+			}
+		}
+	}
+	return value
 }
 
 func unquote(value string) string {

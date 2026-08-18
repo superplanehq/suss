@@ -141,6 +141,58 @@ func IsGoPlumbing(inv Invocation) bool {
 	}
 }
 
+// IsToolPlumbing reports whether inv is a version/info/help probe of a
+// toolchain (the milestone 4 `go version` / `go env` precedent) rather than
+// a repository command.
+func IsToolPlumbing(inv Invocation) bool {
+	if IsGoPlumbing(inv) {
+		return true
+	}
+	switch inv.Executable {
+	case "docker":
+		return isDockerPlumbing(inv.Args)
+	case "docker-compose":
+		return isVersionInfoHelp(inv.Args)
+	case "node", "npm", "pnpm", "yarn", "bun", "python", "python3", "ruby", "java":
+		return isVersionInfoHelp(inv.Args)
+	default:
+		return false
+	}
+}
+
+func isDockerPlumbing(args []string) bool {
+	rest := dropLeadingFlags(args)
+	if len(rest) == 0 {
+		return false
+	}
+	if rest[0] == "compose" {
+		return isVersionInfoHelp(rest[1:])
+	}
+	return isVersionInfoHelp(rest)
+}
+
+func isVersionInfoHelp(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if strings.HasPrefix(arg, "-") {
+			name, _, _ := strings.Cut(arg, "=")
+			if name == "--version" || name == "-v" || name == "--help" || name == "-h" {
+				return true
+			}
+			continue
+		}
+		switch arg {
+		case "version", "info", "help":
+			return true
+		default:
+			return false
+		}
+	}
+	return false
+}
+
 func isGlobalInstall(args []string) bool {
 	for _, arg := range args {
 		if arg == "--" {

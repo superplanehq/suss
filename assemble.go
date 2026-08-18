@@ -28,14 +28,13 @@ func assemble(path string, result provider.Result) plan.ProjectPlan {
 	return project
 }
 
+// shouldPrepare reports whether a command is preparation rather than a
+// regular project command. The rule is capability-based, not detector-based:
+// anything interpreted as dependencies.install (declared Make target, npm
+// script, inferred go mod download, …) and any `docker compose up` belongs
+// in preparation. Origin does not matter.
 func shouldPrepare(item plan.CommandFinding) bool {
-	if isComposeUpCommand(item.Command) {
-		return true
-	}
-	if !hasCapability(item.Command, plan.CapabilityDependenciesInstall) {
-		return false
-	}
-	return item.Command.Origin == plan.CommandInferred || item.Detector == "make"
+	return isComposeUpCommand(item.Command) || hasCapability(item.Command, plan.CapabilityDependenciesInstall)
 }
 
 func isComposeUpCommand(command plan.Command) bool {

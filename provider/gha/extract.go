@@ -55,7 +55,7 @@ func extractJob(ctx provider.Context, source, workflowDir, jobID string, job job
 
 	var findings []plan.Finding
 	findings = append(findings, envFindings(source, jobPointer+"/env", envDir, job.Env, false)...)
-	findings = append(findings, serviceFindings(source, jobPointer, envDir, job.Services)...)
+	findings = append(findings, serviceFindings(source, jobPointer, envDir, job.Services, matrix)...)
 
 	for i, step := range job.Steps {
 		stepPointer := jobPointer + jsonPointer("steps", strconv.Itoa(i))
@@ -418,7 +418,10 @@ func skipStatement(stmt knowledge.Statement) bool {
 	if knowledge.IsGlobalInstall(stmt.Invocation) {
 		return true
 	}
-	if knowledge.IsRemoteGoInstall(stmt.Invocation) || knowledge.IsGoPlumbing(stmt.Invocation) {
+	if knowledge.IsRemoteGoInstall(stmt.Invocation) || knowledge.IsToolPlumbing(stmt.Invocation) {
+		return true
+	}
+	if knowledge.HasUnclosedGHAExpression(raw) {
 		return true
 	}
 	_, skip := skippedExecutables[name]
@@ -539,29 +542,76 @@ func isSecretValue(value string) bool {
 	}
 }
 
-func serviceFindings(source, jobPointer, dir string, services map[string]service) []plan.Finding {
+func serviceFindings(source, jobPointer, dir string, services map[string]service, matrix map[string][]string) []plan.Finding {
 	var findings []plan.Finding
 	for _, name := range sortedKeys(services) {
 		svc := services[name]
 		imagePointer := jobPointer + jsonPointer("services", name, "image")
-		serviceName, version := splitImage(svc.Image)
-		if serviceName == "" {
-			serviceName = name
+		images := resolveServiceImages(svc.Image, matrix)
+		if len(images) == 0 {
+			findings = append(findings, matrixServiceFact(source, imagePointer, dir, name, svc.Image))
+		} else {
+			for _, image := range images {
+				serviceName, version := splitImage(image)
+				if serviceName == "" || strings.Contains(serviceName, "${{") {
+					findings = append(findings, matrixServiceFact(source, imagePointer, dir, name, image))
+					continue
+				}
+				findings = append(findings, requirementFinding(dir, plan.Requirement{
+					Kind:       plan.RequirementService,
+					Name:       serviceName,
+					Version:    version,
+					Confidence: plan.ConfidenceHigh,
+					Evidence: []plan.Evidence{{
+						Kind:    plan.EvidenceInvocation,
+						Source:  source,
+						Pointer: imagePointer,
+					}},
+				}))
+			}
 		}
-		findings = append(findings, requirementFinding(dir, plan.Requirement{
-			Kind:       plan.RequirementService,
-			Name:       serviceName,
-			Version:    version,
+		findings = append(findings, envFindings(source, jobPointer+jsonPointer("services", name, "env"), dir, svc.Env, false)...)
+	}
+	return findings
+}
+
+func resolveServiceImages(image string, matrix map[string][]string) []string {
+	image = strings.TrimSpace(image)
+	if image == "" {
+		return nil
+	}
+	if axis, ok := matrixAxis(image); ok {
+		if values := matrix[axis]; len(values) > 0 {
+			return values
+		}
+		return nil
+	}
+	if strings.Contains(image, "${{") {
+		return nil
+	}
+	return []string{image}
+}
+
+func matrixServiceFact(source, pointer, dir, service, image string) plan.Finding {
+	value := strings.TrimSpace(image)
+	if axis, ok := matrixAxis(image); ok {
+		value = axis
+	}
+	return plan.PropertyFinding{
+		ProjectPath: dir,
+		Detector:    providerName,
+		Property: plan.Property{
+			Kind:       plan.PropertyFact,
+			Name:       "ci.matrix." + service,
+			Value:      value,
 			Confidence: plan.ConfidenceHigh,
 			Evidence: []plan.Evidence{{
 				Kind:    plan.EvidenceInvocation,
 				Source:  source,
-				Pointer: imagePointer,
+				Pointer: pointer,
 			}},
-		}))
-		findings = append(findings, envFindings(source, jobPointer+jsonPointer("services", name, "env"), dir, svc.Env, false)...)
+		},
 	}
-	return findings
 }
 
 func splitImage(image string) (string, string) {
