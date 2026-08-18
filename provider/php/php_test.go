@@ -174,6 +174,85 @@ func TestDetectSymfonyFrameworkWithoutInferredServer(t *testing.T) {
 	}
 }
 
+func TestComposerBinaryResolvesConfiguredDirectories(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		binDir    string
+		vendorDir string
+		want      string
+	}{
+		{want: "vendor/bin/phpunit"},
+		{binDir: "bin", want: "bin/phpunit"},
+		{vendorDir: "libs", want: "libs/bin/phpunit"},
+		{binDir: "{$vendor-dir}/tools", vendorDir: "libs", want: "libs/tools/phpunit"},
+		{binDir: "{$home}/bin", want: "composer exec phpunit"},
+	}
+	for _, tt := range tests {
+		manifest := composerManifest{Config: composerConfig{}}
+		if tt.binDir != "" {
+			manifest.Config.BinDir = []byte(`"` + tt.binDir + `"`)
+		}
+		if tt.vendorDir != "" {
+			manifest.Config.VendorDir = []byte(`"` + tt.vendorDir + `"`)
+		}
+		if got := composerBinary(manifest, "phpunit"); got != tt.want {
+			t.Fatalf("composerBinary(bin=%q vendor=%q) = %q, want %q", tt.binDir, tt.vendorDir, got, tt.want)
+		}
+	}
+}
+
+func TestDetectHonorsComposerBinDirForInferredPHPUnit(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "require": {"php": "^8.2"},
+  "require-dev": {"phpunit/phpunit": "^11.0"},
+  "config": {"bin-dir": "bin"}
+}`,
+		"phpunit.xml.dist":     "<phpunit></phpunit>\n",
+		"tests/ParserTest.php": "<?php\nclass ParserTest {}\n",
+	})
+	command := commandsByName(result)["test"]
+	assertCommand(t, command, "bin/phpunit", plan.CommandInferred, plan.CapabilityTestRun)
+	if !hasEvidencePointer(command.Evidence, "composer.json", "/config/bin-dir") {
+		t.Fatalf("evidence = %+v, want /config/bin-dir", command.Evidence)
+	}
+}
+
+func TestDetectHonorsComposerVendorDirForInferredPest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "require-dev": {"pestphp/pest": "^3.0"},
+  "config": {"vendor-dir": "libs"}
+}`,
+		"tests/Pest.php":    "<?php\n",
+		"tests/example.php": "<?php\nit('works');\n",
+	})
+	command := commandsByName(result)["test"]
+	assertCommand(t, command, "libs/bin/pest", plan.CommandInferred, plan.CapabilityTestRun)
+	if !hasEvidencePointer(command.Evidence, "composer.json", "/config/vendor-dir") {
+		t.Fatalf("evidence = %+v, want /config/vendor-dir", command.Evidence)
+	}
+}
+
+func TestDetectFallsBackToComposerExecWhenBinDirIsUnevaluable(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "require-dev": {"phpunit/phpunit": "^11.0"},
+  "config": {"bin-dir": "{$home}/bin"}
+}`,
+		"phpunit.xml.dist":     "<phpunit></phpunit>\n",
+		"tests/ParserTest.php": "<?php\nclass ParserTest {}\n",
+	})
+	assertCommand(t, commandsByName(result)["test"], "composer exec phpunit", plan.CommandInferred, plan.CapabilityTestRun)
+}
+
 func TestDetectReportsConflictingRuntimePins(t *testing.T) {
 	t.Parallel()
 
@@ -464,6 +543,15 @@ func assertCommand(t *testing.T, command plan.Command, run string, origin plan.C
 		}
 	}
 	t.Fatalf("command interpretations = %+v, want %s", command.Interpretations, capability)
+}
+
+func hasEvidencePointer(evidence []plan.Evidence, source, pointer string) bool {
+	for _, item := range evidence {
+		if item.Source == source && item.Pointer == pointer {
+			return true
+		}
+	}
+	return false
 }
 
 func factValues(result provider.Result, name string) []string {

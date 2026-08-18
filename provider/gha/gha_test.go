@@ -462,12 +462,17 @@ jobs:
       matrix:
         dir: [packages/app, packages/lib]
     steps:
-      - run: cd ${{ matrix.dir }} && composer test
+      - run: |
+          cd ${{ matrix.dir }}
+          composer test
+          composer phpstan
 `,
 	})
-	dirs := commandDirectories(result, "test")
-	if !slices.Equal(sortedCopy(dirs), []string{"packages/app", "packages/lib"}) {
-		t.Fatalf("directories = %v, want packages/app and packages/lib", dirs)
+	for _, name := range []string{"test", "phpstan"} {
+		dirs := commandDirectories(result, name)
+		if !slices.Equal(sortedCopy(dirs), []string{"packages/app", "packages/lib"}) {
+			t.Fatalf("%s directories = %v, want packages/app and packages/lib", name, dirs)
+		}
 	}
 }
 

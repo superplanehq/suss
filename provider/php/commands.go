@@ -121,11 +121,17 @@ func testCommandSpec(ctx provider.Context, manifest composerManifest) (commandSp
 	}
 
 	if hasPest(manifest) || pestConfigured(ctx) {
-		spec := conventionSpec(source, "test", "vendor/bin/pest", "/#test", plan.ConfidenceHigh, "PHP projects with Pest conventionally run tests with vendor/bin/pest.")
+		run := composerBinary(manifest, "pest")
+		spec := conventionSpec(source, "test", run, "/#test", plan.ConfidenceHigh, "PHP projects with Pest conventionally run tests with "+run+".")
+		var extra []plan.Evidence
 		if testFile != "" {
-			spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
+			extra = append(extra, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
 		} else if pestFile := pestConfigFile(ctx); pestFile != "" {
-			spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(pestFile)})
+			extra = append(extra, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(pestFile)})
+		}
+		extra = append(extra, composerBinEvidence(source, manifest)...)
+		if len(extra) > 0 {
+			spec.evidence = addEvidenceAfterManifest(spec.evidence, extra...)
 		}
 		return spec, true, nil
 	}
@@ -133,9 +139,15 @@ func testCommandSpec(ctx provider.Context, manifest composerManifest) (commandSp
 	if testFile == "" && !phpunitConfigured(ctx) {
 		return commandSpec{}, false, nil
 	}
-	spec := conventionSpec(source, "test", "vendor/bin/phpunit", "/#test", plan.ConfidenceHigh, "Composer PHP projects with PHPUnit tests conventionally run them with vendor/bin/phpunit.")
+	run := composerBinary(manifest, "phpunit")
+	spec := conventionSpec(source, "test", run, "/#test", plan.ConfidenceHigh, "Composer PHP projects with PHPUnit tests conventionally run them with "+run+".")
+	var extra []plan.Evidence
 	if testFile != "" {
-		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
+		extra = append(extra, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
+	}
+	extra = append(extra, composerBinEvidence(source, manifest)...)
+	if len(extra) > 0 {
+		spec.evidence = addEvidenceAfterManifest(spec.evidence, extra...)
 	}
 	return spec, true, nil
 }
