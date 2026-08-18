@@ -551,15 +551,75 @@ services:
 	}
 }
 
+func TestDetectPreservesQuotingWhenNormalizingMappings(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"compose.yaml": `
+services:
+  web:
+    environment:
+      - 'TOKEN=${LITERAL}'
+      - KEEP=${KEEP_ENV}
+    build:
+      args:
+        - 'TOKEN=${LITERAL}'
+        - KEEP=${KEEP_ARG}
+    volumes:
+      - '${DATA_DIR}:/data'
+`,
+		"compose.override.yaml": `
+services:
+  web:
+    environment:
+      OTHER: x
+    build:
+      args:
+        OTHER: x
+    volumes:
+      - target: /data
+        read_only: true
+`,
+	})
+
+	if hasEnvName(result, "LITERAL") {
+		t.Fatalf("quoted TOKEN=${LITERAL} was interpolated after mapping normalization: %+v", result.Findings)
+	}
+	if !hasEnv(result, "KEEP_ENV", false) {
+		t.Fatalf("missing KEEP_ENV from the unquoted environment entry in %+v", result.Findings)
+	}
+	if !hasEnv(result, "KEEP_ARG", false) {
+		t.Fatalf("missing KEEP_ARG from the unquoted build arg in %+v", result.Findings)
+	}
+	if hasEnvName(result, "DATA_DIR") {
+		t.Fatalf("quoted volume was interpolated after unique-resource merge: %+v", result.Findings)
+	}
+}
+
 func TestDetectRejectsInvalidComposeShape(t *testing.T) {
 	t.Parallel()
 
-	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "compose.yaml"), "services: hello\n")
+	tests := []struct {
+		name    string
+		content string
+	}{
+		{name: "services scalar", content: "services: hello\n"},
+		{name: "image sequence", content: "services:\n  db:\n    image: [postgres:16]\n"},
+		{name: "environment scalar", content: "services:\n  db:\n    image: postgres:16\n    environment: not-a-map\n"},
+	}
 
-	_, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "."})
-	if err == nil {
-		t.Fatal("Detect() error = nil, want invalid compose structure")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "compose.yaml"), tt.content)
+
+			_, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "."})
+			if err == nil {
+				t.Fatal("Detect() error = nil, want invalid compose structure")
+			}
+		})
 	}
 }
 

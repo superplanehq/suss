@@ -95,6 +95,24 @@ func validateCompose(doc sourcedNode) error {
 		if pair.value.Kind != yaml.MappingNode {
 			return fmt.Errorf("service %s must be a mapping", name)
 		}
+		if err := validateServiceFields(name, pair.value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateServiceFields(name string, service sourcedNode) error {
+	image := mappingValue(service, "image")
+	if !isZeroSourced(image) && image.Kind != yaml.ScalarNode {
+		return fmt.Errorf("service %s image must be a string", name)
+	}
+	environment := mappingValue(service, "environment")
+	if isZeroSourced(environment) {
+		return nil
+	}
+	if environment.Kind != yaml.MappingNode && environment.Kind != yaml.SequenceNode {
+		return fmt.Errorf("service %s environment must be a mapping or sequence", name)
 	}
 	return nil
 }
