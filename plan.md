@@ -108,7 +108,7 @@ Status: completed and approved after two review iterations. The reconciliation m
 - Leading `NAME=value` prefixes in observed run text are redacted to `NAME=$NAME` so command text never carries assignment values.
 - Reusable workflows and local composite actions are detected but not expanded, recorded as `provider.github-actions.limitation` facts.
 
-## Milestone 4 — Go provider and convention inference
+## Milestone 4 — Go provider and convention inference — DONE
 
 The opposite evidence regime: few declared tasks, strong conventions.
 
@@ -121,6 +121,14 @@ Scope:
 Acceptance:
 
 - Golden plans for `spf13/cobra` and `caddyserver/caddy` are correct, including inferred commands marked as inferred and CI cross-confirmation raising confidence.
+
+Status: completed. The Go provider and cobra/caddy goldens are in. Inferred commands stay `origin: inferred` with `go-ecosystem` convention evidence; CI confirmation attaches a variant and raises confidence. Notable decisions:
+
+- `go test ./...` is inferred only when `*_test.go` files exist (high confidence). `go build ./...` and `go vet ./...` are inferred from `go.mod` alone at medium; `go mod download` is inferred preparation at medium.
+- `go.work` is a `workspace.orchestrator=go` fact. golangci-lint config is `tool.configured`, not an inferred command; `golangci/golangci-lint-action` is an observed `golangci-lint run`.
+- Non-package-manager matching ignores flags, so `go test ./...` links to `go test -race ./...`. Test files under a nested `go.mod` do not count for the parent module.
+- Remote `go install`, `go env`/`go version`, and `env`/`ssh`/`rsync` are CI plumbing, not plan commands.
+- Cobra's `make richtest` is reported uninterpreted (Make is milestone 5). Caddy's `go test -short -race ./...` is a CI variant of the inferred test command.
 
 ## Milestone 5 — Make, Compose, and requirements
 
