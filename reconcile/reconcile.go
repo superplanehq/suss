@@ -32,8 +32,9 @@
 //     recorded as a conflicting assertion, not as a second command.
 //
 //  4. Unrelated. Anything else remains origin=observed on the assigned
-//     project. Install-capable observations go to preparation; others to
-//     commands. No interpretation is invented beyond the knowledge base.
+//     project. Install-capable observations and `docker compose up` go to
+//     preparation; others to commands. No interpretation is invented beyond
+//     the knowledge base.
 //
 //  5. Ambiguity. If several existing commands satisfy the variant rule, the
 //     declared command wins over inferred, then the one with identical extra
@@ -63,6 +64,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/superplanehq/suss/knowledge"
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
 )
@@ -110,7 +112,7 @@ func applyCommand(projects []plan.ProjectPlan, observed plan.Command) []plan.Pro
 		project.Conflicts = append(project.Conflicts, packageManagerConflict(outcome.command, observed))
 	default:
 		observed.Scope = projectScope(*project)
-		if isInstall(observed) {
+		if isPreparation(observed) {
 			project.Preparation = append(project.Preparation, observed)
 		} else {
 			project.Commands = append(project.Commands, observed)
@@ -336,9 +338,25 @@ func deref(value *string) string {
 	return *value
 }
 
+func isPreparation(command plan.Command) bool {
+	return isInstall(command) || isComposeUp(command)
+}
+
 func isInstall(command plan.Command) bool {
 	for _, interpretation := range command.Interpretations {
 		if interpretation.Capability == plan.CapabilityDependenciesInstall {
+			return true
+		}
+	}
+	return false
+}
+
+func isComposeUp(command plan.Command) bool {
+	if command.Run == nil {
+		return false
+	}
+	for _, inv := range knowledge.ParseScript(*command.Run) {
+		if knowledge.IsComposeUp(inv) {
 			return true
 		}
 	}

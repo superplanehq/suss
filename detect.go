@@ -10,8 +10,11 @@ import (
 
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
+	"github.com/superplanehq/suss/provider/compose"
+	"github.com/superplanehq/suss/provider/envfile"
 	"github.com/superplanehq/suss/provider/gha"
 	"github.com/superplanehq/suss/provider/golang"
+	"github.com/superplanehq/suss/provider/makefile"
 	"github.com/superplanehq/suss/provider/node"
 	"github.com/superplanehq/suss/reconcile"
 )
@@ -19,10 +22,13 @@ import (
 var projectProviders = []provider.Provider{
 	node.Provider{},
 	golang.Provider{},
+	makefile.Provider{},
+	envfile.Provider{},
 }
 
 var repositoryProviders = []provider.Provider{
 	gha.Provider{},
+	compose.Provider{},
 }
 
 // Providers returns the names of detectors that run during Detect.

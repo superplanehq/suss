@@ -141,6 +141,18 @@ func requirementLines(requirements []plan.Requirement) []string {
 		if requirement.Version != "" {
 			line += " " + requirement.Version
 		}
+		if requirement.Kind == plan.RequirementEnvironment {
+			var notes []string
+			if requirement.IsRequired != nil && *requirement.IsRequired {
+				notes = append(notes, "required")
+			}
+			if requirement.HasDefault != nil && *requirement.HasDefault {
+				notes = append(notes, "default present")
+			}
+			if len(notes) > 0 {
+				line += " (" + strings.Join(notes, ", ") + ")"
+			}
+		}
 		lines = append(lines, line)
 	}
 	return lines

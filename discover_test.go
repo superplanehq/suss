@@ -180,6 +180,96 @@ jobs:
 	}
 }
 
+func TestDetectAssemblesMakeComposeAndEnvRequirements(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "go.mod"), "module example.com/app\n\ngo 1.26\n")
+	writeFile(t, filepath.Join(root, "Makefile"), ""+
+		".PHONY: test install\n"+
+		"\n"+
+		"install:\n"+
+		"\tgo mod download\n"+
+		"\n"+
+		"test:\n"+
+		"\tgo test ./...\n")
+	writeFile(t, filepath.Join(root, "compose.yaml"), ""+
+		"services:\n"+
+		"  postgres:\n"+
+		"    image: postgres:16\n"+
+		"    environment:\n"+
+		"      DATABASE_URL: postgres://app@postgres/app\n")
+	writeFile(t, filepath.Join(root, ".env.example"), "DATABASE_URL=\nAPI_SECRET=changeme\n")
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if len(document.Projects) != 1 {
+		t.Fatalf("len(projects) = %d, want 1", len(document.Projects))
+	}
+	project := document.Projects[0]
+
+	if !hasRequirement(project, plan.RequirementService, "postgres", "16") {
+		t.Fatalf("requirements = %+v, want postgres 16", project.Requirements)
+	}
+	if !hasEnv(project, "DATABASE_URL", true, true) {
+		t.Fatalf("DATABASE_URL = %+v, want required with a default from compose", project.Requirements)
+	}
+	if !hasEnv(project, "API_SECRET", true, true) {
+		t.Fatalf("API_SECRET = %+v, want required with a default from .env.example", project.Requirements)
+	}
+
+	var sawMakeTest, sawComposeUp, sawMakeInstall bool
+	for _, command := range project.Commands {
+		if command.Name == "test" && derefRun(command.Run) == "make test" {
+			sawMakeTest = true
+		}
+	}
+	for _, command := range project.Preparation {
+		if derefRun(command.Run) == "docker compose up -d" {
+			sawComposeUp = true
+		}
+		if command.Name == "install" && derefRun(command.Run) == "make install" {
+			sawMakeInstall = true
+		}
+	}
+	if !sawMakeTest {
+		t.Fatalf("commands = %+v, want make test", project.Commands)
+	}
+	if !sawComposeUp || !sawMakeInstall {
+		t.Fatalf("preparation = %+v, want make install and docker compose up -d", project.Preparation)
+	}
+}
+
+func hasRequirement(project plan.ProjectPlan, kind plan.RequirementKind, name, version string) bool {
+	for _, requirement := range project.Requirements {
+		if requirement.Kind == kind && requirement.Name == name && requirement.Version == version {
+			return true
+		}
+	}
+	return false
+}
+
+func hasEnv(project plan.ProjectPlan, name string, required, hasDefault bool) bool {
+	for _, requirement := range project.Requirements {
+		if requirement.Kind != plan.RequirementEnvironment || requirement.Name != name {
+			continue
+		}
+		gotRequired := requirement.IsRequired != nil && *requirement.IsRequired
+		gotDefault := requirement.HasDefault != nil && *requirement.HasDefault
+		return gotRequired == required && gotDefault == hasDefault
+	}
+	return false
+}
+
+func derefRun(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
+
 func TestDetectRejectsAFilePath(t *testing.T) {
 	t.Parallel()
 

@@ -215,6 +215,21 @@
       "capabilities": ["code.lint"],
       "confidence": "high",
       "description": "The command runs golangci-lint."
+    },
+    {
+      "id": "gofmt",
+      "executable": "gofmt",
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The command formats Go source with gofmt."
+    },
+    {
+      "id": "go-get",
+      "executable": "go",
+      "argsPrefix": ["get"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command fetches Go dependencies with go get."
     }
   ]
 }

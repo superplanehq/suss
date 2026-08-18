@@ -79,6 +79,43 @@ func TestApplyLinksGoTestFlagsAsAVariantAndRaisesConfidence(t *testing.T) {
 	}
 }
 
+func TestApplyPutsComposeUpInPreparation(t *testing.T) {
+	t.Parallel()
+
+	observed := command(t, "github-actions", ".", "/jobs/test/steps/0/run", "docker compose", "docker compose up -d", plan.CommandObserved, "")
+	root := plan.NewProjectPlan(".")
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{plan.CommandFinding{Command: observed}},
+	})
+
+	if len(got[0].Preparation) != 1 || deref(got[0].Preparation[0].Run) != "docker compose up -d" {
+		t.Fatalf("preparation = %+v, want observed docker compose up -d", got[0].Preparation)
+	}
+	if len(got[0].Commands) != 0 {
+		t.Fatalf("commands = %+v, did not want compose up as a regular command", got[0].Commands)
+	}
+}
+
+func TestApplyLinksCIComposeUpAsAVariant(t *testing.T) {
+	t.Parallel()
+
+	inferred := command(t, "compose", ".", "/#up", "start services", "docker compose up -d", plan.CommandInferred, "")
+	observed := command(t, "github-actions", ".", "/jobs/test/steps/0/run", "docker compose", "docker compose up -d postgres", plan.CommandObserved, "")
+
+	root := plan.NewProjectPlan(".")
+	root.Preparation = []plan.Command{inferred}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{plan.CommandFinding{Command: observed}},
+	})
+
+	if len(got[0].Preparation) != 1 || len(got[0].Preparation[0].Variants) != 1 {
+		t.Fatalf("preparation = %+v, want inferred compose up with a CI variant", got[0].Preparation)
+	}
+	if got[0].Preparation[0].Variants[0].Run != "docker compose up -d postgres" {
+		t.Fatalf("variant run = %q, want docker compose up -d postgres", got[0].Preparation[0].Variants[0].Run)
+	}
+}
+
 func TestApplyKeepsUnrelatedCICommandsObserved(t *testing.T) {
 	t.Parallel()
 

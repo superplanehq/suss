@@ -158,6 +158,29 @@
           ]
         },
         {
+          "kind": "tool",
+          "name": "docker",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "docker-compose.yml"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "excalidraw",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/excalidraw"
+            }
+          ]
+        },
+        {
           "kind": "environment",
           "name": "GH_TOKEN",
           "isRequired": true,
@@ -168,6 +191,20 @@
               "kind": "invocation",
               "source": ".github/workflows/semantic-pr-title.yml",
               "pointer": "/jobs/label-scope/steps/0/env/GH_TOKEN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "NODE_ENV",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/excalidraw/environment/NODE_ENV"
             }
           ]
         },
@@ -229,6 +266,29 @@
         }
       ],
       "preparation": [
+        {
+          "id": "cmd_2a49c08cb6e05e972cef3f77ec5e790e",
+          "name": "start services",
+          "run": "docker compose up -d",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "docker-compose.yml"
+            },
+            {
+              "kind": "convention",
+              "source": "compose",
+              "pointer": "up",
+              "description": "Docker Compose services are started with docker compose up -d."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
         {
           "id": "cmd_ae21e52c391ccef56f7107de041061bb",
           "name": "install dependencies",

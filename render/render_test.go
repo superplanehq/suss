@@ -109,6 +109,17 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		}},
 	}}
 
+	required := true
+	hasDefault := true
+	project.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementEnvironment,
+		Name:       "API_TOKEN",
+		IsRequired: &required,
+		HasDefault: &hasDefault,
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: ".env.example", Pointer: "/API_TOKEN"}},
+	}}
+
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
 	for _, want := range []string{
 		"Providers: node",
@@ -117,6 +128,7 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		"npm ci",
 		"npm test",
 		"ci  npm test --coverage",
+		"API_TOKEN (required, default present)",
 		"eslint is configured. No command interpreted as code.lint was found.",
 		"package.json",
 		"eslint.config.js",

@@ -228,6 +228,23 @@ func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	}
 }
 
+func TestIsComposeUp(t *testing.T) {
+	t.Parallel()
+
+	if !IsComposeUp(Invocation{Executable: "docker", Args: []string{"compose", "up", "-d", "postgres"}}) {
+		t.Fatal("IsComposeUp(docker compose up -d) = false, want true")
+	}
+	if !IsComposeUp(Invocation{Executable: "docker-compose", Args: []string{"up", "-d"}}) {
+		t.Fatal("IsComposeUp(docker-compose up -d) = false, want true")
+	}
+	if IsComposeUp(Invocation{Executable: "docker", Args: []string{"compose", "ps"}}) {
+		t.Fatal("IsComposeUp(docker compose ps) = true, want false")
+	}
+	if IsComposeUp(Invocation{Executable: "docker", Args: []string{"run", "postgres"}}) {
+		t.Fatal("IsComposeUp(docker run) = true, want false")
+	}
+}
+
 func TestInterpretMatchesGoToolchainInvocations(t *testing.T) {
 	t.Parallel()
 
@@ -241,6 +258,8 @@ func TestInterpretMatchesGoToolchainInvocations(t *testing.T) {
 		{inv: Invocation{Executable: "go", Args: []string{"vet", "./..."}}, want: []plan.Capability{plan.CapabilityCodeLint}},
 		{inv: Invocation{Executable: "go", Args: []string{"mod", "download"}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
 		{inv: Invocation{Executable: "golangci-lint", Args: []string{"run", "--verbose"}}, want: []plan.Capability{plan.CapabilityCodeLint}},
+		{inv: Invocation{Executable: "gofmt", Args: []string{"-l", "."}}, want: []plan.Capability{plan.CapabilityCodeFormat}},
+		{inv: Invocation{Executable: "go", Args: []string{"get", "-v", "./..."}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
 	}
 	for _, tt := range tests {
 		got := capabilities(Interpret(tt.inv))
