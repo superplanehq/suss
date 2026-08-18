@@ -148,7 +148,11 @@ func extractProject(ctx provider.Context, dir string, rels []string) ([]plan.Fin
 
 	file := parsed[0]
 	if len(parsed) > 1 {
-		file = mergeCompose(parsed[0], parsed[1])
+		merged, err := mergeCompose(parsed[0], parsed[1])
+		if err != nil {
+			return nil, fmt.Errorf("merge %s and %s: %w", rels[0], rels[1], err)
+		}
+		file = merged
 	}
 
 	var findings []plan.Finding

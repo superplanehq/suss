@@ -1,6 +1,7 @@
 package compose
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -39,17 +40,23 @@ func parseCompose(contents []byte, source string) (composeFile, error) {
 	if err := yaml.Unmarshal(contents, &root); err != nil {
 		return composeFile{}, err
 	}
-	return extractCompose(yamlToSourced(root, source, "")), nil
+	return extractCompose(resolveMergeKeys(yamlToSourced(root, source, "")))
 }
 
-func mergeCompose(base, override composeFile) composeFile {
-	merged := extractCompose(mergeSourced(base.Root, override.Root, nil))
+func mergeCompose(base, override composeFile) (composeFile, error) {
+	merged, err := extractCompose(resolveMergeKeys(mergeSourced(base.Root, override.Root, nil)))
+	if err != nil {
+		return composeFile{}, err
+	}
 	merged.HasInclude = base.HasInclude || override.HasInclude
-	return merged
+	return merged, nil
 }
 
-func extractCompose(root sourcedNode) composeFile {
+func extractCompose(root sourcedNode) (composeFile, error) {
 	doc := unwrapDocument(root)
+	if err := validateCompose(doc); err != nil {
+		return composeFile{}, err
+	}
 	services := map[string]composeService{}
 	for _, pair := range mappingPairs(mappingValue(doc, "services")) {
 		name := strings.TrimSpace(pair.key.Value)
@@ -63,7 +70,33 @@ func extractCompose(root sourcedNode) composeFile {
 		Services:       services,
 		Interpolations: interpolationsFromSourced(root, ""),
 		Root:           root,
+	}, nil
+}
+
+func validateCompose(doc sourcedNode) error {
+	if isZeroSourced(doc) {
+		return nil
 	}
+	if doc.Kind != yaml.MappingNode {
+		return fmt.Errorf("compose file must be a mapping")
+	}
+	services := mappingValue(doc, "services")
+	if isZeroSourced(services) {
+		return nil
+	}
+	if services.Kind != yaml.MappingNode {
+		return fmt.Errorf("services must be a mapping")
+	}
+	for _, pair := range mappingPairs(services) {
+		name := strings.TrimSpace(pair.key.Value)
+		if isZeroSourced(pair.value) {
+			continue
+		}
+		if pair.value.Kind != yaml.MappingNode {
+			return fmt.Errorf("service %s must be a mapping", name)
+		}
+	}
+	return nil
 }
 
 func serviceFromNode(node sourcedNode) composeService {
@@ -85,6 +118,7 @@ func interpolationsFromSourced(node sourcedNode, pointer string) []locatedVar {
 		}
 		return interpolationsFromSourced(node.Content[0], pointer)
 	case yaml.MappingNode:
+		node = flattenMapping(node)
 		var out []locatedVar
 		for i := 0; i+1 < len(node.Content); i += 2 {
 			key := node.Content[i]
@@ -262,23 +296,16 @@ func parseEnvironment(node sourcedNode) []envVar {
 
 func environmentFromMap(node sourcedNode) []envVar {
 	var out []envVar
-	seen := make(map[string]int)
 	for _, pair := range mappingPairs(node) {
 		name := strings.TrimSpace(pair.key.Value)
 		if !validEnvName(name) {
 			continue
 		}
-		item := envVar{
+		out = append(out, envVar{
 			Name:       name,
 			HasDefault: sourcedScalar(pair.value) != "",
 			Source:     firstNonEmpty(pair.value.Source, pair.key.Source),
-		}
-		if idx, exists := seen[name]; exists {
-			out[idx] = item
-			continue
-		}
-		seen[name] = len(out)
-		out = append(out, item)
+		})
 	}
 	return out
 }

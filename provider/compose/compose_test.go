@@ -475,6 +475,94 @@ services:
 	}
 }
 
+func TestDetectPreservesYAMLMergeKeyPrecedence(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"compose.yaml": `
+x-first: &first
+  SHARED:
+  ONLY_FIRST: from-first
+x-second: &second
+  SHARED: from-second
+  ONLY_FIRST: from-second
+  ONLY_SECOND: from-second
+services:
+  earlier:
+    image: nginx:latest
+    environment:
+      <<: [*first, *second]
+  explicit:
+    image: nginx:latest
+    environment:
+      SHARED: kept-explicit
+      <<: [*first, *second]
+`,
+	})
+
+	if !hasEnv(result, "SHARED", false) {
+		t.Fatalf("SHARED from << sequence = %+v, want the earlier mapping (no default)", result.Findings)
+	}
+	if !hasEnv(result, "SHARED", true) {
+		t.Fatalf("explicit SHARED lost to a trailing merge key in %+v", result.Findings)
+	}
+	if !hasEnv(result, "ONLY_FIRST", true) {
+		t.Fatalf("ONLY_FIRST = %+v, want the earlier merge mapping", result.Findings)
+	}
+	if !hasEnv(result, "ONLY_SECOND", true) {
+		t.Fatalf("missing ONLY_SECOND from the later merge mapping in %+v", result.Findings)
+	}
+}
+
+func TestDetectMergesMappingShapedBuildArgs(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"compose.yaml": `
+services:
+  web:
+    build:
+      context: .
+      args:
+        TOKEN: ${BUILD_TOKEN}
+        KEEP: ${KEEP_ARG}
+    extra_hosts:
+      - "db:${DB_IP}"
+`,
+		"compose.override.yaml": `
+services:
+  web:
+    build:
+      args:
+        - TOKEN=literal
+    extra_hosts:
+      db: 127.0.0.1
+`,
+	})
+
+	if hasEnvName(result, "BUILD_TOKEN") {
+		t.Fatalf("BUILD_TOKEN survived after override replaced the same build arg: %+v", result.Findings)
+	}
+	if !hasEnv(result, "KEEP_ARG", false) {
+		t.Fatalf("missing KEEP_ARG from the unmerged build arg in %+v", result.Findings)
+	}
+	if hasEnvName(result, "DB_IP") {
+		t.Fatalf("DB_IP survived after override replaced extra_hosts db: %+v", result.Findings)
+	}
+}
+
+func TestDetectRejectsInvalidComposeShape(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "compose.yaml"), "services: hello\n")
+
+	_, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "."})
+	if err == nil {
+		t.Fatal("Detect() error = nil, want invalid compose structure")
+	}
+}
+
 func TestDetectScansNestedAndQuotedInterpolations(t *testing.T) {
 	t.Parallel()
 
