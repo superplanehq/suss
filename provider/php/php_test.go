@@ -94,6 +94,64 @@ func TestDetectLaravelMinitestWithoutDeclaredTestScript(t *testing.T) {
 	assertCommand(t, commands["server"], "php artisan serve", plan.CommandInferred, plan.CapabilityApplicationRun)
 }
 
+func TestDetectLaravel6InfersPHPUnitInsteadOfArtisanTest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "require": {"laravel/framework": "^6.0"},
+  "require-dev": {"phpunit/phpunit": "^8.0"}
+}`,
+		"artisan":                    "#!/usr/bin/env php\n",
+		"phpunit.xml":                "<phpunit></phpunit>\n",
+		"tests/Unit/ExampleTest.php": "<?php\nclass ExampleTest {}\n",
+	})
+
+	commands := commandsByName(result)
+	assertCommand(t, commands["test"], "vendor/bin/phpunit", plan.CommandInferred, plan.CapabilityTestRun)
+	assertCommand(t, commands["server"], "php artisan serve", plan.CommandInferred, plan.CapabilityApplicationRun)
+}
+
+func TestDetectDoesNotInferArtisanTestForUnevaluableLaravelConstraint(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "require": {"laravel/framework": "*"},
+  "require-dev": {"phpunit/phpunit": "^8.0"}
+}`,
+		"artisan":                    "#!/usr/bin/env php\n",
+		"tests/Unit/ExampleTest.php": "<?php\nclass ExampleTest {}\n",
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "vendor/bin/phpunit", plan.CommandInferred, plan.CapabilityTestRun)
+}
+
+func TestLaravelSupportsArtisanTest(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		constraint string
+		want       bool
+	}{
+		{constraint: "^11.0", want: true},
+		{constraint: "^7.0", want: true},
+		{constraint: ">=7.0", want: true},
+		{constraint: "^6.0", want: false},
+		{constraint: "6.20.0", want: false},
+		{constraint: ">=6.0", want: false},
+		{constraint: "^6.0 || ^8.0", want: false},
+		{constraint: "*", want: false},
+		{constraint: "", want: false},
+	}
+	for _, tt := range tests {
+		manifest := composerManifest{Require: map[string]string{"laravel/framework": tt.constraint}}
+		if got := laravelSupportsArtisanTest(manifest); got != tt.want {
+			t.Fatalf("laravelSupportsArtisanTest(%q) = %t, want %t", tt.constraint, got, tt.want)
+		}
+	}
+}
+
 func TestDetectLaravelPackageWithoutArtisanDoesNotInferArtisanCommands(t *testing.T) {
 	t.Parallel()
 
@@ -438,6 +496,20 @@ func TestDetectDoesNotInterpretPHPPlaceholderInsideScriptAlias(t *testing.T) {
 	if len(command.Interpretations) != 0 {
 		t.Fatalf("interpretations = %+v, want none for @phpartisan", command.Interpretations)
 	}
+}
+
+func TestDetectInterpretsComposerInstallAliasInDeclaredScript(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "require": {"php": "^8.2"},
+  "scripts": {
+    "deps": "composer i"
+  }
+}`,
+	})
+	assertCommand(t, commandsByName(result)["deps"], "composer run-script deps", plan.CommandDeclared, plan.CapabilityDependenciesInstall)
 }
 
 func TestDetectInterpretsPHPCLIOptionsInDeclaredTestScript(t *testing.T) {

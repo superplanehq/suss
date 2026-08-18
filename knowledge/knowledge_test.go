@@ -211,6 +211,7 @@ func TestInterpretMatchesPHPInvocations(t *testing.T) {
 		capability plan.Capability
 	}{
 		{invocation: Invocation{Executable: "composer", Args: []string{"install"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "composer", Args: []string{"i"}}, capability: plan.CapabilityDependenciesInstall},
 		{invocation: Invocation{Executable: "phpunit"}, capability: plan.CapabilityTestRun},
 		{invocation: Invocation{Executable: "simple-phpunit"}, capability: plan.CapabilityTestRun},
 		{invocation: Invocation{Executable: "pest"}, capability: plan.CapabilityTestRun},

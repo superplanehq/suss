@@ -397,6 +397,14 @@
       "description": "The command installs Composer dependencies."
     },
     {
+      "id": "composer-i",
+      "executable": "composer",
+      "argsPrefix": ["i"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs Composer dependencies."
+    },
+    {
       "id": "phpunit",
       "executable": "phpunit",
       "capabilities": ["test.run"],

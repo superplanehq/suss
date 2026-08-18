@@ -83,6 +83,21 @@ func TestDetectInterpretsComposerInstallWithGlobalOptions(t *testing.T) {
 	}
 }
 
+func TestDetectInterpretsComposerInstallAlias(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Makefile": "" +
+			"install:\n" +
+			"\tcomposer i\n",
+	})
+
+	commands := commandByName(result)
+	if !hasCapability(commands["install"], plan.CapabilityDependenciesInstall) {
+		t.Fatalf("install interpretations = %+v, want dependencies.install for composer i", commands["install"].Interpretations)
+	}
+}
+
 func TestDetectExpandsSimpleVariablesAndRecordsLimitations(t *testing.T) {
 	t.Parallel()
 

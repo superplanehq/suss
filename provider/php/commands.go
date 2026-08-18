@@ -110,7 +110,7 @@ func testCommandSpec(ctx provider.Context, manifest composerManifest) (commandSp
 		return commandSpec{}, false, nil
 	}
 
-	if applicationEvidence := laravelApplicationEvidence(ctx, manifest); len(applicationEvidence) > 0 {
+	if applicationEvidence := laravelApplicationEvidence(ctx, manifest); len(applicationEvidence) > 0 && laravelSupportsArtisanTest(manifest) {
 		spec := conventionSpec(source, "test", "php artisan test", "/#test", plan.ConfidenceHigh, "Laravel applications with tests conventionally run them with php artisan test.")
 		evidence := applicationEvidence
 		if testFile != "" {
@@ -160,6 +160,63 @@ func phpTestRunner(manifest composerManifest) (name, pointer string, ok bool) {
 		return "simple-phpunit", pointer, true
 	}
 	return "", "", false
+}
+
+func laravelFrameworkConstraint(manifest composerManifest) string {
+	if version := strings.TrimSpace(manifest.Require["laravel/framework"]); version != "" {
+		return version
+	}
+	return strings.TrimSpace(manifest.RequireDev["laravel/framework"])
+}
+
+// laravelSupportsArtisanTest reports whether the declared laravel/framework
+// constraint is known to include only versions that ship `php artisan test`
+// (Laravel 7+). Older pins and unevaluable ranges fall through to PHPUnit.
+func laravelSupportsArtisanTest(manifest composerManifest) bool {
+	constraint := laravelFrameworkConstraint(manifest)
+	if constraint == "" {
+		return false
+	}
+	for _, group := range strings.Split(strings.ReplaceAll(constraint, "||", "|"), "|") {
+		if !laravelConstraintAtLeastMajor(strings.TrimSpace(group), 7) {
+			return false
+		}
+	}
+	return true
+}
+
+func laravelConstraintAtLeastMajor(group string, minMajor int) bool {
+	if group == "" || strings.ContainsAny(group, "*xX") {
+		return false
+	}
+	fields := strings.Fields(strings.ReplaceAll(group, ",", " "))
+	if len(fields) == 0 {
+		return false
+	}
+	major, ok := constraintMajor(fields[0])
+	return ok && major >= minMajor
+}
+
+func constraintMajor(token string) (int, bool) {
+	token = strings.TrimSpace(token)
+	for _, prefix := range []string{">=", "<=", "!=", "<>", ">", "<", "^", "~", "="} {
+		if strings.HasPrefix(token, prefix) {
+			token = strings.TrimSpace(token[len(prefix):])
+			break
+		}
+	}
+	token = strings.TrimPrefix(token, "v")
+	if token == "" || token[0] < '0' || token[0] > '9' {
+		return 0, false
+	}
+	major := 0
+	for _, r := range token {
+		if r < '0' || r > '9' {
+			break
+		}
+		major = major*10 + int(r-'0')
+	}
+	return major, true
 }
 
 func laravelApplicationEvidence(ctx provider.Context, manifest composerManifest) []plan.Evidence {
