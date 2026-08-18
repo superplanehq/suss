@@ -225,12 +225,24 @@ func TestInterpretMatchesPHPInvocations(t *testing.T) {
 		{invocation: Invocation{Executable: "pint", Args: []string{"app", "--test"}}, capability: plan.CapabilityCodeLint},
 		{invocation: Invocation{Executable: "php-cs-fixer", Args: []string{"fix"}}, capability: plan.CapabilityCodeFormat},
 		{invocation: Invocation{Executable: "php-cs-fixer", Args: []string{"fix", "--dry-run", "--diff"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "php-cs-fixer", Args: []string{"check"}}, capability: plan.CapabilityCodeLint},
 		{invocation: Invocation{Executable: "phpcs"}, capability: plan.CapabilityCodeLint},
 	}
 	for _, tt := range tests {
 		matches := Interpret(tt.invocation)
 		if len(matches) != 1 || matches[0].Capability != tt.capability {
 			t.Fatalf("Interpret(%+v) = %+v, want %s", tt.invocation, matches, tt.capability)
+		}
+	}
+}
+
+func TestInterpretLeavesPHPCsFixerInspectionCommandsUnmatched(t *testing.T) {
+	t.Parallel()
+
+	for _, args := range [][]string{{"describe", "psr2"}, {"list-files"}, {"list"}} {
+		inv := Invocation{Executable: "php-cs-fixer", Args: args}
+		if matches := Interpret(inv); len(matches) != 0 {
+			t.Fatalf("Interpret(%+v) = %+v, want no fabricated code.format", inv, matches)
 		}
 	}
 }

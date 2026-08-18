@@ -57,6 +57,10 @@ func TestVersionSatisfiesComposerTildeHyphenAndInequality(t *testing.T) {
 		{constraint: "==8.3.0", version: "8.3.0", want: true, known: true},
 		{constraint: "= 8.3.0", version: "8.3.0", want: true, known: true},
 		{constraint: "=8.3", version: "8.3.0", want: true, known: true},
+		{constraint: "8.3", version: "8.3.0", want: true, known: true},
+		{constraint: "8.3", version: "8.2.0", want: false, known: true},
+		{constraint: ">=8.1@dev", version: "8.2", want: true, known: true},
+		{constraint: ">=8.1@dev", version: "8.0", want: false, known: true},
 	}
 	for _, tt := range tests {
 		got, known := versionSatisfies("php", tt.constraint, tt.version)

@@ -88,7 +88,7 @@ func extractJob(ctx provider.Context, source, base, pointer string, job job) ([]
 }
 
 func extractCommands(ctx provider.Context, source, base, pointer string, commands []string, matrix map[string][]string) (string, []plan.Finding, error) {
-	current := base
+	currents := []string{base}
 	var findings []plan.Finding
 	for commandIndex, script := range commands {
 		if isComplexShellScript(script) {
@@ -101,33 +101,88 @@ func extractCommands(ctx provider.Context, source, base, pointer string, command
 			if len(statements) > 1 {
 				statementPointer += "#command=" + strconv.Itoa(statementIndex)
 			}
+			dirs := expandStatementDirectories(ctx.RepositoryRoot, currents, statement, matrix)
 			if statement.Chdir != "" {
-				current = resolveDirectory(ctx.RepositoryRoot, current, statement.Chdir)
+				if len(dirs) > 0 {
+					currents = dirs
+				}
 				continue
 			}
-			dir := current
-			if statement.WorkingDir != "" {
-				dir = resolveDirectory(ctx.RepositoryRoot, current, statement.WorkingDir)
+			for _, dir := range dirs {
+				if statement.Invocation.Executable == "sem-version" {
+					findings = append(findings, versionEvidence(source, dir, statementPointer, statement.Invocation, matrix)...)
+					continue
+				}
+				if statement.Invocation.Executable == "sem-service" {
+					findings = append(findings, serviceEvidence(source, dir, statementPointer, statement.Invocation, matrix)...)
+					continue
+				}
+				if skipSemaphoreStatement(statement) {
+					continue
+				}
+				command, err := observedCommand(source, dir, statementPointer, statement)
+				if err != nil {
+					return base, nil, err
+				}
+				findings = append(findings, plan.CommandFinding{ProjectPath: dir, Detector: providerName, Command: command})
 			}
-			if statement.Invocation.Executable == "sem-version" {
-				findings = append(findings, versionEvidence(source, dir, statementPointer, statement.Invocation, matrix)...)
-				continue
-			}
-			if statement.Invocation.Executable == "sem-service" {
-				findings = append(findings, serviceEvidence(source, dir, statementPointer, statement.Invocation, matrix)...)
-				continue
-			}
-			if skipSemaphoreStatement(statement) {
-				continue
-			}
-			command, err := observedCommand(source, dir, statementPointer, statement)
-			if err != nil {
-				return base, nil, err
-			}
-			findings = append(findings, plan.CommandFinding{ProjectPath: dir, Detector: providerName, Command: command})
 		}
 	}
-	return current, findings, nil
+	if len(currents) == 0 {
+		return base, findings, nil
+	}
+	return currents[0], findings, nil
+}
+
+func expandStatementDirectories(repo string, currents []string, stmt knowledge.Statement, matrix map[string][]string) []string {
+	rel := stmt.Chdir
+	if rel == "" {
+		rel = stmt.WorkingDir
+	}
+	if rel == "" {
+		return append([]string{}, currents...)
+	}
+	var dirs []string
+	seen := make(map[string]struct{}, len(currents))
+	for _, current := range currents {
+		for _, dir := range expandSemaphoreDirectories(repo, current, rel, matrix) {
+			if _, ok := seen[dir]; ok {
+				continue
+			}
+			seen[dir] = struct{}{}
+			dirs = append(dirs, dir)
+		}
+	}
+	return dirs
+}
+
+func expandSemaphoreDirectories(repo, base, rel string, matrix map[string][]string) []string {
+	rel = strings.TrimSpace(rel)
+	if rel == "" {
+		return []string{base}
+	}
+	if isSemaphoreVar(rel) {
+		values := expandMatrixValue(rel, matrix)
+		if len(values) == 0 {
+			return []string{base}
+		}
+		dirs := make([]string, 0, len(values))
+		for _, value := range values {
+			if isSemaphoreVar(value) {
+				continue
+			}
+			dirs = append(dirs, resolveDirectory(repo, base, value))
+		}
+		if len(dirs) == 0 {
+			return []string{base}
+		}
+		return dirs
+	}
+	return []string{resolveDirectory(repo, base, rel)}
+}
+
+func isSemaphoreVar(raw string) bool {
+	return strings.HasPrefix(strings.TrimSpace(raw), "$")
 }
 
 // A command containing shell functions, conditionals, subshells, or

@@ -474,14 +474,24 @@
     {
       "id": "php-cs-fixer-dry-run",
       "executable": "php-cs-fixer",
+      "argsPrefix": ["fix"],
       "argsContains": ["--dry-run"],
       "capabilities": ["code.lint"],
       "confidence": "high",
       "description": "The command checks PHP formatting with PHP-CS-Fixer without writing files."
     },
     {
-      "id": "php-cs-fixer",
+      "id": "php-cs-fixer-check",
       "executable": "php-cs-fixer",
+      "argsPrefix": ["check"],
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command checks PHP formatting with PHP-CS-Fixer without writing files."
+    },
+    {
+      "id": "php-cs-fixer-fix",
+      "executable": "php-cs-fixer",
+      "argsPrefix": ["fix"],
       "capabilities": ["code.format"],
       "confidence": "high",
       "description": "The command formats PHP with PHP-CS-Fixer."

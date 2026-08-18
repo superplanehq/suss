@@ -219,7 +219,15 @@ func runtimeConflict(declared, observed plan.Requirement) plan.Conflict {
 }
 
 func sameVersion(a, b string) bool {
-	return normalizeVersion(a) == normalizeVersion(b) && a != "" && b != ""
+	a = normalizeVersion(a)
+	b = normalizeVersion(b)
+	if a == "" || b == "" {
+		return false
+	}
+	if a == b {
+		return true
+	}
+	return comparableVersion(a) && comparableVersion(b) && compareVersions(a, b) == 0
 }
 
 func inequalitySatisfies(raw, version string) (ok, known bool) {
@@ -261,10 +269,20 @@ func equalitySatisfies(raw, version string) (ok, known bool) {
 
 func normalizeVersion(version string) string {
 	version = strings.TrimSpace(version)
+	version, _, _ = strings.Cut(version, "@")
+	version = strings.TrimSpace(version)
 	version = strings.TrimPrefix(version, "v")
 	version = strings.TrimSuffix(version, ".x")
 	version = strings.TrimSuffix(version, ".X")
 	return version
+}
+
+func constraintBound(raw string) (string, bool) {
+	bound := normalizeVersion(raw)
+	if bound == "" || !comparableVersion(bound) {
+		return "", false
+	}
+	return bound, true
 }
 
 func versionSatisfies(runtime, declared, version string) (ok, known bool) {
@@ -378,14 +396,14 @@ func splitConstraints(group string) []string {
 func constraintSatisfies(runtime, token, version string) (ok, known bool) {
 	switch {
 	case strings.HasPrefix(token, ">="):
-		bound := normalizeVersion(strings.TrimSpace(token[2:]))
-		if bound == "" {
+		bound, ok := constraintBound(token[2:])
+		if !ok {
 			return false, false
 		}
 		return compareVersions(version, bound) >= 0, true
 	case strings.HasPrefix(token, "<="):
-		bound := normalizeVersion(strings.TrimSpace(token[2:]))
-		if bound == "" {
+		bound, ok := constraintBound(token[2:])
+		if !ok {
 			return false, false
 		}
 		return compareVersions(version, bound) <= 0, true
@@ -394,14 +412,14 @@ func constraintSatisfies(runtime, token, version string) (ok, known bool) {
 	case strings.HasPrefix(token, "="):
 		return equalitySatisfies(strings.TrimLeft(strings.TrimSpace(token), "="), version)
 	case strings.HasPrefix(token, ">"):
-		bound := normalizeVersion(strings.TrimSpace(token[1:]))
-		if bound == "" {
+		bound, ok := constraintBound(token[1:])
+		if !ok {
 			return false, false
 		}
 		return compareVersions(version, bound) > 0, true
 	case strings.HasPrefix(token, "<"):
-		bound := normalizeVersion(strings.TrimSpace(token[1:]))
-		if bound == "" {
+		bound, ok := constraintBound(token[1:])
+		if !ok {
 			return false, false
 		}
 		return compareVersions(version, bound) < 0, true
@@ -417,7 +435,7 @@ func constraintSatisfies(runtime, token, version string) (ok, known bool) {
 		if strings.ContainsAny(token, "><^~|!") || strings.Contains(token, "-") {
 			return false, false
 		}
-		return sameVersion(token, version), true
+		return equalitySatisfies(token, version)
 	}
 }
 

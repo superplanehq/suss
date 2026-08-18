@@ -183,6 +183,36 @@ after_pipeline:
 	}
 }
 
+func TestDetectExpandsMatrixComposerWorkingDir(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"app/.keep": "",
+		"lib/.keep": "",
+		".semaphore/semaphore.yml": `version: v1.0
+name: Matrix
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Packages
+          commands:
+            - composer --working-dir=$PROJECT test
+          matrix:
+            - env_var: PROJECT
+              values: [app, lib]
+`,
+	})
+
+	runs := commandRuns(result)
+	if !slices.Contains(runs["app"], "composer --working-dir=$PROJECT test") || !slices.Contains(runs["lib"], "composer --working-dir=$PROJECT test") {
+		t.Fatalf("commands = %v, want composer test in app and lib", runs)
+	}
+	if slices.Contains(runs["."], "composer --working-dir=$PROJECT test") {
+		t.Fatalf("commands = %v, did not want the matrix command on the root", runs)
+	}
+}
+
 func TestDetectExpandsJobMatrixForVersionsAndServices(t *testing.T) {
 	t.Parallel()
 

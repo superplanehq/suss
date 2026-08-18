@@ -186,25 +186,71 @@ func laravelSupportsArtisanTest(manifest composerManifest) bool {
 }
 
 func laravelConstraintAtLeastMajor(group string, minMajor int) bool {
+	group = strings.TrimSpace(group)
 	if group == "" || strings.ContainsAny(group, "*xX") {
 		return false
 	}
-	fields := strings.Fields(strings.ReplaceAll(group, ",", " "))
-	if len(fields) == 0 {
-		return false
+	if left, right, ok := strings.Cut(group, " - "); ok {
+		left = strings.TrimSpace(left)
+		right = strings.TrimSpace(right)
+		if left == "" || right == "" {
+			return false
+		}
+		major, ok := constraintMajor(left)
+		return ok && major >= minMajor
 	}
-	major, ok := constraintMajor(fields[0])
-	return ok && major >= minMajor
+	proven := false
+	for _, token := range laravelConstraintTokens(group) {
+		op, major, ok := laravelBound(token)
+		if !ok {
+			return false
+		}
+		switch op {
+		case "^", "~", ">=", "==", "=", "":
+			if major < minMajor {
+				return false
+			}
+			proven = true
+		case "<", "<=", "!=", "<>", ">":
+			// Upper bounds and exclusions do not prove a lower bound of 7+.
+		default:
+			return false
+		}
+	}
+	return proven
+}
+
+func laravelConstraintTokens(group string) []string {
+	fields := strings.Fields(strings.ReplaceAll(group, ",", " "))
+	var tokens []string
+	for i := 0; i < len(fields); i++ {
+		field := fields[i]
+		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "!=" || field == "<>" || field == "==" || field == "=" || field == "^" || field == "~" {
+			if i+1 < len(fields) {
+				tokens = append(tokens, field+fields[i+1])
+				i++
+			}
+			continue
+		}
+		tokens = append(tokens, field)
+	}
+	return tokens
+}
+
+func laravelBound(token string) (op string, major int, ok bool) {
+	token = strings.TrimSpace(token)
+	for _, prefix := range []string{">=", "<=", "!=", "<>", "==", ">", "<", "^", "~", "="} {
+		if strings.HasPrefix(token, prefix) {
+			major, ok = constraintMajor(token[len(prefix):])
+			return prefix, major, ok
+		}
+	}
+	major, ok = constraintMajor(token)
+	return "", major, ok
 }
 
 func constraintMajor(token string) (int, bool) {
 	token = strings.TrimSpace(token)
-	for _, prefix := range []string{">=", "<=", "!=", "<>", ">", "<", "^", "~", "="} {
-		if strings.HasPrefix(token, prefix) {
-			token = strings.TrimSpace(token[len(prefix):])
-			break
-		}
-	}
 	token = strings.TrimPrefix(token, "v")
 	if token == "" || token[0] < '0' || token[0] > '9' {
 		return 0, false
