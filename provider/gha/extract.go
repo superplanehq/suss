@@ -145,6 +145,8 @@ func usesFindings(ctx provider.Context, source, dir, stepPointer string, step st
 			}
 		}
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "ruby", step.With, matrix, []string{"ruby-version"})
+	case "shivammathur/setup-php":
+		return setupRuntimeFindings(ctx, source, dir, stepPointer, "php", step.With, matrix, []string{"php-version", "php-version-file"})
 	case "golangci/golangci-lint-action":
 		return golangciActionFindings(source, dir, stepPointer, step)
 	default:

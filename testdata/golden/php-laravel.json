@@ -1,0 +1,282 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "php",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "laravel",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require/laravel~1framework",
+              "description": "The composer.json require list declares laravel."
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "composer",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json"
+            },
+            {
+              "kind": "declaration",
+              "source": "composer.lock"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "phpstan",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require-dev/phpstan~1phpstan"
+            },
+            {
+              "kind": "configuration",
+              "source": "phpstan.neon"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "phpunit",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require-dev/phpunit~1phpunit"
+            },
+            {
+              "kind": "configuration",
+              "source": "phpunit.xml"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "pint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require-dev/laravel~1pint"
+            },
+            {
+              "kind": "configuration",
+              "source": "pint.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "php",
+          "version": "8.3.6",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".php-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/1/with/php-version"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "php",
+          "version": "^8.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/require/php"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_7baa24c815715f192fde7c735329181b",
+          "name": "install dependencies",
+          "run": "composer install",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/2/run"
+            },
+            {
+              "kind": "file",
+              "source": "composer.json"
+            },
+            {
+              "kind": "convention",
+              "source": "php-ecosystem",
+              "pointer": "dependencies",
+              "description": "Composer-managed PHP projects conventionally install dependencies with composer install."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "php-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Composer dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "composer install --no-interaction",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/2/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_b300022086fc8b45567337e3e2c0c581",
+          "name": "test",
+          "run": "composer run-script test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "composer.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "composer.json",
+                  "pointer": "/scripts/test",
+                  "description": "The command runs Laravel tests through Artisan."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "composer test",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/3/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_ba00824925f94b82bf4c1292435c1dd2",
+          "name": "server",
+          "run": "php artisan serve",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "artisan"
+            },
+            {
+              "kind": "file",
+              "source": "bootstrap/app.php"
+            },
+            {
+              "kind": "file",
+              "source": "composer.json"
+            },
+            {
+              "kind": "convention",
+              "source": "php-ecosystem",
+              "pointer": "server",
+              "description": "Laravel applications conventionally start the development server with php artisan serve."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "php-ecosystem",
+                  "pointer": "server",
+                  "description": "The command starts the Laravel development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

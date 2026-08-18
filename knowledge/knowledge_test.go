@@ -203,6 +203,73 @@ func TestInterpretMatchesRubyInvocations(t *testing.T) {
 	}
 }
 
+func TestInterpretMatchesPHPInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		invocation Invocation
+		capability plan.Capability
+	}{
+		{invocation: Invocation{Executable: "composer", Args: []string{"install"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "phpunit"}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "pest"}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "php", Args: []string{"artisan", "test"}}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "php", Args: []string{"artisan", "serve"}}, capability: plan.CapabilityApplicationRun},
+		{invocation: Invocation{Executable: "phpstan", Args: []string{"analyse"}}, capability: plan.CapabilityCodeTypecheck},
+		{invocation: Invocation{Executable: "psalm"}, capability: plan.CapabilityCodeTypecheck},
+		{invocation: Invocation{Executable: "pint"}, capability: plan.CapabilityCodeFormat},
+		{invocation: Invocation{Executable: "phpcs"}, capability: plan.CapabilityCodeLint},
+	}
+	for _, tt := range tests {
+		matches := Interpret(tt.invocation)
+		if len(matches) != 1 || matches[0].Capability != tt.capability {
+			t.Fatalf("Interpret(%+v) = %+v, want %s", tt.invocation, matches, tt.capability)
+		}
+	}
+}
+
+func TestParseScriptStripsComposerExecAndPHPVendorBin(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("composer exec phpunit -- testdox && php vendor/bin/phpstan analyse")
+	want := []Invocation{
+		{Executable: "phpunit", Args: []string{"--", "testdox"}},
+		{Executable: "phpstan", Args: []string{"analyse"}},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
+	t.Parallel()
+
+	install, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{"install", "--no-interaction"}})
+	if !ok || !install.Install || install.Script != "" {
+		t.Fatalf("ClassifyManager(composer install) = %+v, ok=%v", install, ok)
+	}
+
+	script, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{"run-script", "test", "--", "--parallel"}})
+	if !ok || script.Script != "test" || !slices.Equal(script.Args, []string{"--", "--parallel"}) {
+		t.Fatalf("ClassifyManager(composer run-script test) = %+v, ok=%v", script, ok)
+	}
+
+	bare, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{"test", "--parallel"}})
+	if !ok || bare.Script != "test" || !slices.Equal(bare.Args, []string{"--parallel"}) {
+		t.Fatalf("ClassifyManager(composer test) = %+v, ok=%v", bare, ok)
+	}
+
+	phpstan, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{"phpstan"}})
+	if !ok || phpstan.Script != "phpstan" {
+		t.Fatalf("ClassifyManager(composer phpstan) = %+v, ok=%v", phpstan, ok)
+	}
+
+	update, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{"update"}})
+	if !ok || update.Install || update.Script != "" {
+		t.Fatalf("ClassifyManager(composer update) = %+v, ok=%v", update, ok)
+	}
+}
+
 func TestIsRemoteGemInstall(t *testing.T) {
 	t.Parallel()
 

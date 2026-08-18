@@ -250,6 +250,48 @@ jobs:
 	}
 }
 
+func TestDetectReadsSetupPHPMatrixVersions(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        php: ["8.3", "8.4"]
+    steps:
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+`,
+	})
+
+	if got := sortedCopy(runtimeRequirementVersions(result, "php")); !slices.Equal(got, []string{"8.3", "8.4"}) {
+		t.Fatalf("PHP versions = %v, want matrix pins", got)
+	}
+}
+
+func TestDetectReadsSetupPHPVersionFileInput(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".php-version": "8.3.6\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version-file: .php-version
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "php", "8.3.6") {
+		t.Fatalf("missing PHP 8.3.6 from .php-version in %+v", result.Findings)
+	}
+}
+
 func TestDetectSkipsRemoteGemInstalls(t *testing.T) {
 	t.Parallel()
 

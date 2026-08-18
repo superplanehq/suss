@@ -16,6 +16,7 @@ var projectManifests = map[string]struct{}{
 	"go.mod":        {},
 	"mix.exs":       {},
 	"Gemfile":       {},
+	"composer.json": {},
 	"GNUmakefile":   {},
 	"Makefile":      {},
 	"makefile":      {},
@@ -27,6 +28,7 @@ var projectManifests = map[string]struct{}{
 var skippedDirectories = map[string]struct{}{
 	"node_modules": {},
 	"vendor":       {},
+	"vendor-bin":   {},
 	"_build":       {},
 	"deps":         {},
 	"dist":         {},

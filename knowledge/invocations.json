@@ -387,6 +387,95 @@
       "capabilities": ["code.typecheck"],
       "confidence": "high",
       "description": "The command type-checks Ruby with Sorbet."
+    },
+    {
+      "id": "composer-install",
+      "executable": "composer",
+      "argsPrefix": ["install"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs Composer dependencies."
+    },
+    {
+      "id": "phpunit",
+      "executable": "phpunit",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs PHPUnit tests."
+    },
+    {
+      "id": "pest",
+      "executable": "pest",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Pest tests."
+    },
+    {
+      "id": "php-artisan-test",
+      "executable": "php",
+      "argsPrefix": ["artisan", "test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Laravel tests through Artisan."
+    },
+    {
+      "id": "artisan-test",
+      "executable": "artisan",
+      "argsPrefix": ["test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Laravel tests through Artisan."
+    },
+    {
+      "id": "php-artisan-serve",
+      "executable": "php",
+      "argsPrefix": ["artisan", "serve"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts the Laravel development server."
+    },
+    {
+      "id": "artisan-serve",
+      "executable": "artisan",
+      "argsPrefix": ["serve"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts the Laravel development server."
+    },
+    {
+      "id": "phpstan",
+      "executable": "phpstan",
+      "capabilities": ["code.typecheck"],
+      "confidence": "high",
+      "description": "The command runs PHPStan."
+    },
+    {
+      "id": "psalm",
+      "executable": "psalm",
+      "capabilities": ["code.typecheck"],
+      "confidence": "high",
+      "description": "The command runs Psalm."
+    },
+    {
+      "id": "php-cs-fixer",
+      "executable": "php-cs-fixer",
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The command formats PHP with PHP-CS-Fixer."
+    },
+    {
+      "id": "phpcs",
+      "executable": "phpcs",
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command checks PHP style with PHP_CodeSniffer."
+    },
+    {
+      "id": "pint",
+      "executable": "pint",
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The command formats PHP with Laravel Pint."
     }
   ]
 }

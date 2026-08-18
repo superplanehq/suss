@@ -11,14 +11,40 @@ type ManagerInvocation struct {
 	Install bool
 }
 
-// ClassifyManager reports whether inv is an npm, pnpm, yarn, or bun command.
+// ClassifyManager reports whether inv is an npm, pnpm, yarn, bun, or composer command.
 func ClassifyManager(inv Invocation) (ManagerInvocation, bool) {
 	switch inv.Executable {
 	case "npm", "pnpm", "yarn", "bun":
 		return classifyManager(inv.Executable, inv.Args), true
+	case "composer":
+		return classifyComposer(inv.Args), true
 	default:
 		return ManagerInvocation{}, false
 	}
+}
+
+func classifyComposer(args []string) ManagerInvocation {
+	_, rest := takeLeadingFlags(args)
+	if len(rest) == 0 {
+		return ManagerInvocation{Manager: "composer"}
+	}
+
+	switch rest[0] {
+	case "install", "i":
+		return ManagerInvocation{Manager: "composer", Install: true}
+	case "run-script", "run":
+		script, scriptArgs := takeScriptName(rest[1:])
+		if script == "" {
+			return ManagerInvocation{Manager: "composer"}
+		}
+		return ManagerInvocation{Manager: "composer", Script: script, Args: scriptArgs}
+	case "test":
+		return ManagerInvocation{Manager: "composer", Script: "test", Args: rest[1:]}
+	}
+	if isComposerBuiltin(rest[0]) {
+		return ManagerInvocation{Manager: "composer"}
+	}
+	return ManagerInvocation{Manager: "composer", Script: rest[0], Args: rest[1:]}
 }
 
 func classifyManager(manager string, args []string) ManagerInvocation {
@@ -93,7 +119,7 @@ func skipManagerFlag(args []string, i int) int {
 
 func managerFlagTakesValue(name string) bool {
 	switch name {
-	case "--filter", "--dir", "-C", "--prefix", "--cwd", "--reporter", "--loglevel":
+	case "--filter", "--dir", "-C", "--prefix", "--cwd", "--reporter", "--loglevel", "--working-dir":
 		return true
 	default:
 		return false
@@ -198,7 +224,7 @@ func IsToolPlumbing(inv Invocation) bool {
 		return isDockerPlumbing(inv.Args)
 	case "docker-compose":
 		return isVersionInfoHelp(inv.Args)
-	case "node", "python", "python3", "ruby", "java":
+	case "node", "python", "python3", "ruby", "java", "php", "composer":
 		return isFlagVersionHelp(inv.Args)
 	case "npm", "pnpm", "yarn", "bun":
 		// `npm version` / `yarn version` bump the package version; only
@@ -310,6 +336,23 @@ var pnpmBuiltins = map[string]struct{}{
 	"rebuild": {}, "recursive": {}, "remove": {}, "root": {}, "run": {},
 	"server": {}, "setup": {}, "store": {}, "uninstall": {}, "unlink": {},
 	"update": {}, "upgrade": {}, "why": {},
+}
+
+func isComposerBuiltin(name string) bool {
+	_, ok := composerBuiltins[name]
+	return ok
+}
+
+var composerBuiltins = map[string]struct{}{
+	"about": {}, "archive": {}, "audit": {}, "browse": {}, "bump": {},
+	"check-platform-reqs": {}, "clear-cache": {}, "clearcache": {}, "config": {},
+	"create-project": {}, "depends": {}, "diagnose": {}, "dump-autoload": {},
+	"dumpautoload": {}, "exec": {}, "fund": {}, "global": {}, "help": {},
+	"home": {}, "init": {}, "install": {}, "licenses": {}, "list": {},
+	"outdated": {}, "prohibits": {}, "reinstall": {}, "remove": {}, "require": {},
+	"run": {}, "run-script": {}, "search": {}, "self-update": {}, "selfupdate": {},
+	"show": {}, "status": {}, "suggests": {}, "update": {}, "validate": {},
+	"why": {}, "why-not": {},
 }
 
 var bunBuiltins = map[string]struct{}{

@@ -1,0 +1,197 @@
+package php
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/superplanehq/suss/plan"
+	"github.com/superplanehq/suss/provider"
+)
+
+type runtimePin struct {
+	version  string
+	evidence plan.Evidence
+}
+
+func runtimeFindings(ctx provider.Context, manifest composerManifest) ([]plan.Finding, []plan.Conflict, error) {
+	var pins []runtimePin
+	phpVersion, err := readAncestorPHPVersion(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	if phpVersion != nil {
+		pins = append(pins, *phpVersion)
+	}
+	toolVersion, err := readAncestorToolVersion(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	if toolVersion != nil {
+		pins = append(pins, *toolVersion)
+	}
+
+	requireVersion := requirePHP(manifest)
+	platformVersion := platformPHP(manifest)
+
+	findings := make([]plan.Finding, 0, len(pins)+2)
+	var conflicts []plan.Conflict
+	requireMerged := false
+	platformMerged := false
+	if pinsDisagree(pins) {
+		assertions := make([]plan.Candidate, 0, len(pins))
+		for _, pin := range pins {
+			assertions = append(assertions, plan.Candidate{Value: pin.version, Evidence: []plan.Evidence{pin.evidence}})
+			evidence := []plan.Evidence{pin.evidence}
+			if pin.version == requireVersion {
+				evidence = append(evidence, requirePHPEvidence(ctx))
+				requireMerged = true
+			}
+			if pin.version == platformVersion {
+				evidence = append(evidence, platformPHPEvidence(ctx))
+				platformMerged = true
+			}
+			findings = append(findings, runtimeFinding(ctx, pin.version, plan.ConfidenceMedium, evidence))
+		}
+		conflicts = append(conflicts, plan.Conflict{
+			Subject:    "runtime.php.version",
+			Message:    ".php-version and .tool-versions pin different PHP versions.",
+			Assertions: assertions,
+		})
+	} else if len(pins) > 0 {
+		evidence := make([]plan.Evidence, 0, len(pins)+2)
+		for _, pin := range pins {
+			evidence = append(evidence, pin.evidence)
+		}
+		if pins[0].version == requireVersion {
+			evidence = append(evidence, requirePHPEvidence(ctx))
+			requireMerged = true
+		}
+		if pins[0].version == platformVersion {
+			evidence = append(evidence, platformPHPEvidence(ctx))
+			platformMerged = true
+		}
+		findings = append(findings, runtimeFinding(ctx, pins[0].version, plan.ConfidenceHigh, evidence))
+	}
+
+	if requireVersion != "" && !requireMerged {
+		findings = append(findings, runtimeFinding(ctx, requireVersion, plan.ConfidenceHigh, []plan.Evidence{requirePHPEvidence(ctx)}))
+	}
+	if platformVersion != "" && !platformMerged && platformVersion != requireVersion {
+		findings = append(findings, runtimeFinding(ctx, platformVersion, plan.ConfidenceHigh, []plan.Evidence{platformPHPEvidence(ctx)}))
+	}
+	return findings, conflicts, nil
+}
+
+func readAncestorPHPVersion(ctx provider.Context) (*runtimePin, error) {
+	path, contents, ok, err := readAncestorFile(ctx, ".php-version")
+	if err != nil || !ok {
+		return nil, err
+	}
+	version := firstVersionLine(contents)
+	version = strings.TrimPrefix(version, "php-")
+	version = strings.TrimPrefix(version, "php ")
+	if version == "" {
+		return nil, nil
+	}
+	return &runtimePin{version: version, evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path}}, nil
+}
+
+func readAncestorToolVersion(ctx provider.Context) (*runtimePin, error) {
+	path, contents, ok, err := readAncestorFile(ctx, ".tool-versions")
+	if err != nil || !ok {
+		return nil, err
+	}
+	scanner := bufio.NewScanner(strings.NewReader(contents))
+	for scanner.Scan() {
+		line, _, _ := strings.Cut(scanner.Text(), "#")
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && fields[0] == "php" {
+			return &runtimePin{
+				version:  fields[1],
+				evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path, Pointer: "/php"},
+			}, nil
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("parse %s: %w", path, err)
+	}
+	return nil, nil
+}
+
+func readAncestorFile(ctx provider.Context, name string) (string, string, bool, error) {
+	dir := ctx.ProjectDir()
+	for {
+		path := filepath.Join(dir, name)
+		contents, err := os.ReadFile(path)
+		switch {
+		case err == nil:
+			relative, relErr := filepath.Rel(ctx.RepositoryRoot, path)
+			if relErr != nil {
+				return "", "", false, fmt.Errorf("resolve %s source: %w", name, relErr)
+			}
+			return filepath.ToSlash(relative), string(contents), true, nil
+		case !os.IsNotExist(err):
+			return "", "", false, fmt.Errorf("read %s: %w", path, err)
+		}
+		if dir == ctx.RepositoryRoot || !strings.HasPrefix(dir, ctx.RepositoryRoot+string(filepath.Separator)) {
+			return "", "", false, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", "", false, nil
+		}
+		dir = parent
+	}
+}
+
+func firstVersionLine(contents string) string {
+	for _, line := range strings.Split(contents, "\n") {
+		line, _, _ = strings.Cut(line, "#")
+		if version := strings.TrimSpace(line); version != "" {
+			return version
+		}
+	}
+	return ""
+}
+
+func pinsDisagree(pins []runtimePin) bool {
+	for index := 1; index < len(pins); index++ {
+		if pins[index].version != pins[0].version {
+			return true
+		}
+	}
+	return false
+}
+
+func requirePHPEvidence(ctx provider.Context) plan.Evidence {
+	return plan.Evidence{
+		Kind:    plan.EvidenceDeclaration,
+		Source:  ctx.SourcePath("composer.json"),
+		Pointer: "/require/php",
+	}
+}
+
+func platformPHPEvidence(ctx provider.Context) plan.Evidence {
+	return plan.Evidence{
+		Kind:    plan.EvidenceDeclaration,
+		Source:  ctx.SourcePath("composer.json"),
+		Pointer: "/config/platform/php",
+	}
+}
+
+func runtimeFinding(ctx provider.Context, version string, confidence plan.Confidence, evidence []plan.Evidence) plan.Finding {
+	return plan.RequirementFinding{
+		ProjectPath: ctx.ProjectPath,
+		Detector:    providerName,
+		Requirement: plan.Requirement{
+			Kind:       plan.RequirementRuntime,
+			Name:       "php",
+			Version:    version,
+			Confidence: confidence,
+			Evidence:   evidence,
+		},
+	}
+}

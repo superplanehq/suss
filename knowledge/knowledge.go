@@ -453,6 +453,14 @@ func dropWrappers(tokens []string) []string {
 		if len(tokens) >= 2 && tokens[1] == "exec" {
 			return dropLeadingFlags(tokens[2:])
 		}
+	case "composer":
+		if len(tokens) >= 2 && tokens[1] == "exec" {
+			return dropLeadingFlags(tokens[2:])
+		}
+	case "php":
+		if len(tokens) >= 2 && isVendorBinPath(tokens[1]) {
+			return tokens[1:]
+		}
 	case "npm", "pnpm", "yarn":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
 			return dropLeadingFlags(tokens[2:])
@@ -463,6 +471,11 @@ func dropWrappers(tokens []string) []string {
 		}
 	}
 	return tokens
+}
+
+func isVendorBinPath(value string) bool {
+	value = strings.ReplaceAll(value, "\\", "/")
+	return strings.HasPrefix(value, "vendor/bin/") || strings.Contains(value, "/vendor/bin/")
 }
 
 func dropLeadingFlags(tokens []string) []string {
