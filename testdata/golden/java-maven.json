@@ -105,6 +105,10 @@
               "source": "pom.xml"
             },
             {
+              "kind": "file",
+              "source": "src/main/java/com/example/DemoApplication.java"
+            },
+            {
               "kind": "convention",
               "source": "java-ecosystem",
               "pointer": "server",

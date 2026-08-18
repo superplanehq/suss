@@ -1299,46 +1299,6 @@
             }
           ],
           "variants": []
-        },
-        {
-          "id": "cmd_e3b5ad2bcdb0bdc0903c91765564fc23",
-          "name": "test",
-          "run": "mvn test",
-          "directory": "test-shrinker",
-          "scope": "project",
-          "origin": "inferred",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "file",
-              "source": "test-shrinker/pom.xml"
-            },
-            {
-              "kind": "file",
-              "source": "test-shrinker/src/test/java/com/google/gson/it/ShrinkingIT.java"
-            },
-            {
-              "kind": "convention",
-              "source": "java-ecosystem",
-              "pointer": "test",
-              "description": "Maven projects conventionally run tests with mvn test."
-            }
-          ],
-          "interpretations": [
-            {
-              "capability": "test.run",
-              "confidence": "high",
-              "evidence": [
-                {
-                  "kind": "convention",
-                  "source": "java-ecosystem",
-                  "pointer": "test",
-                  "description": "The command runs Maven tests."
-                }
-              ]
-            }
-          ],
-          "variants": []
         }
       ],
       "ambiguities": [],

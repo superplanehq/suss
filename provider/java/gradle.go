@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/superplanehq/suss/plan"
@@ -13,6 +14,7 @@ import (
 type gradleProject struct {
 	Source            string
 	SettingsFile      string
+	Members           []string
 	MultiProject      bool
 	JavaVersion       string
 	JavaVersionPtr    string
@@ -26,12 +28,19 @@ type gradleProject struct {
 }
 
 func readGradle(ctx provider.Context) (*gradleProject, error) {
-	source, contents, ok, err := readFirstFile(ctx.ProjectDir(), []string{"build.gradle.kts", "build.gradle", "settings.gradle.kts", "settings.gradle"})
-	if err != nil || !ok {
-		return nil, err
-	}
 	settings, settingsContents, hasSettings, err := readFirstFile(ctx.ProjectDir(), []string{"settings.gradle.kts", "settings.gradle"})
 	if err != nil {
+		return nil, err
+	}
+	if !hasSettings {
+		included, includedErr := includedByAncestorSettings(ctx)
+		if includedErr != nil || included {
+			return nil, includedErr
+		}
+	}
+
+	source, contents, ok, err := readFirstFile(ctx.ProjectDir(), []string{"build.gradle.kts", "build.gradle", "settings.gradle.kts", "settings.gradle"})
+	if err != nil || !ok {
 		return nil, err
 	}
 
@@ -47,11 +56,13 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 		}
 	}
 
+	members := SettingsIncludes(settingsContents)
 	stripped := stripGradleComments(buildContents)
 	project := &gradleProject{
 		Source:       source,
 		SettingsFile: settings,
-		MultiProject: hasSettings && hasGradleIncludes(settingsContents+"\n"+buildContents),
+		Members:      members,
+		MultiProject: hasSettings && len(members) > 0,
 		Plugins:      gradlePlugins(stripped),
 	}
 	project.JavaVersion, project.JavaVersionPtr = gradleJavaVersion(stripped)
@@ -75,11 +86,85 @@ func readFirstFile(dir string, names []string) (string, string, bool, error) {
 	return "", "", false, nil
 }
 
-func hasGradleIncludes(contents string) bool {
-	if strings.Contains(contents, "include(") {
-		return true
+func includedByAncestorSettings(ctx provider.Context) (bool, error) {
+	if ctx.ProjectPath == "." || ctx.ProjectPath == "" {
+		return false, nil
 	}
-	return regexp.MustCompile(`(?m)^\s*include\s+['"]`).MatchString(contents)
+	projectDir := ctx.ProjectDir()
+	dir := filepath.Dir(projectDir)
+	for {
+		var contents strings.Builder
+		for _, name := range []string{"settings.gradle.kts", "settings.gradle"} {
+			data, err := os.ReadFile(filepath.Join(dir, name))
+			if err == nil {
+				contents.Write(data)
+				contents.WriteByte('\n')
+				continue
+			}
+			if !os.IsNotExist(err) {
+				return false, err
+			}
+		}
+		if contents.Len() > 0 {
+			rel, err := filepath.Rel(dir, projectDir)
+			if err != nil {
+				return false, err
+			}
+			if settingsIncludeContains(SettingsIncludes(contents.String()), filepath.ToSlash(rel)) {
+				return true, nil
+			}
+		}
+		if dir == ctx.RepositoryRoot {
+			return false, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir || !insideRepository(ctx.RepositoryRoot, parent) {
+			return false, nil
+		}
+		dir = parent
+	}
+}
+
+func settingsIncludeContains(listed []string, relative string) bool {
+	return relative != "" && slices.Contains(listed, relative)
+}
+
+var (
+	gradleIncludeCall = regexp.MustCompile(`(?m)(?:^|[^\w])include\s*\(([^)]*)\)`)
+	gradleIncludeBare = regexp.MustCompile(`(?m)(?:^|[^\w])include\s+([^;\n]+)`)
+	gradleQuoted      = regexp.MustCompile(`["']([^"']+)["']`)
+)
+
+// SettingsIncludes returns member paths declared by include(...) in a Gradle
+// settings file. Line and block comments are ignored.
+func SettingsIncludes(contents string) []string {
+	contents = stripGradleComments(contents)
+	var paths []string
+	seen := make(map[string]struct{})
+	add := func(raw string) {
+		raw = strings.TrimSpace(raw)
+		raw = strings.Trim(raw, ":")
+		raw = strings.ReplaceAll(raw, ":", "/")
+		if raw == "" {
+			return
+		}
+		if _, ok := seen[raw]; ok {
+			return
+		}
+		seen[raw] = struct{}{}
+		paths = append(paths, raw)
+	}
+	for _, match := range gradleIncludeCall.FindAllStringSubmatch(contents, -1) {
+		for _, quoted := range gradleQuoted.FindAllStringSubmatch(match[1], -1) {
+			add(quoted[1])
+		}
+	}
+	for _, match := range gradleIncludeBare.FindAllStringSubmatch(contents, -1) {
+		for _, quoted := range gradleQuoted.FindAllStringSubmatch(match[1], -1) {
+			add(quoted[1])
+		}
+	}
+	return paths
 }
 
 func gradlePlugins(contents string) map[string]struct{} {

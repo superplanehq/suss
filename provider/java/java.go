@@ -175,11 +175,6 @@ func fileExists(dir, name string) bool {
 	return err == nil && !info.IsDir()
 }
 
-func dirExists(dir, name string) bool {
-	info, err := os.Stat(filepath.Join(dir, filepath.FromSlash(name)))
-	return err == nil && info.IsDir()
-}
-
 func stringPtr(value string) *string {
 	return &value
 }

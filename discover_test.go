@@ -143,6 +143,73 @@ func TestFindProjectRootsKeepsUnrelatedManifestsUnderGradleSettings(t *testing.T
 	}
 }
 
+func TestFindProjectRootsIgnoresCommentedGradleIncludes(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "settings.gradle.kts"), "rootProject.name = \"demo\"\n// include(\"legacy\")\ninclude(\"lib\")\n")
+	writeFile(t, filepath.Join(root, "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "lib", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "legacy", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{".", "legacy"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestDetectDoesNotTreatIncludedGradleMemberBuildAsStandalone(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "settings.gradle.kts"), "rootProject.name = \"demo\"\ninclude(\"lib\")\n")
+	writeFile(t, filepath.Join(root, "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "gradlew"), "#!/bin/sh\n")
+	writeFile(t, filepath.Join(root, "lib", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "lib", "package.json"), `{"name":"lib","scripts":{"test":"vitest"}}`)
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+
+	projects := map[string]plan.ProjectPlan{}
+	for _, project := range document.Projects {
+		projects[project.Path] = project
+	}
+	lib, ok := projects["lib"]
+	if !ok {
+		t.Fatal("missing lib project root for package.json")
+	}
+	for _, manager := range lib.PackageManagers {
+		if manager.Name == "gradle" {
+			t.Fatalf("included Gradle member re-enabled a standalone Gradle project: %+v", lib.PackageManagers)
+		}
+	}
+	for _, command := range lib.Commands {
+		if command.Run != nil && (derefRun(command.Run) == "gradle build" || derefRun(command.Run) == "gradle test") {
+			t.Fatalf("included member emitted a bare Gradle command: %+v", command)
+		}
+	}
+	rootProject, ok := projects["."]
+	if !ok {
+		t.Fatal("missing settings-root Gradle project")
+	}
+	foundGradle := false
+	for _, manager := range rootProject.PackageManagers {
+		if manager.Name == "gradle" {
+			foundGradle = true
+		}
+	}
+	if !foundGradle {
+		t.Fatalf("settings root missing Gradle: %+v", rootProject.PackageManagers)
+	}
+}
+
 func TestFindProjectRootsSkipsSymlinkedDirectories(t *testing.T) {
 	t.Parallel()
 

@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/superplanehq/suss/knowledge"
@@ -58,8 +59,10 @@ func mavenSpecs(ctx provider.Context, maven *mavenProject) ([]commandSpec, error
 	if tool == "" {
 		tool = "mvn"
 	}
-	includeNested := maven.Aggregator
-	testFile, err := firstJavaTest(ctx.ProjectDir(), includeNested)
+	testFile, err := firstJavaTest(ctx.ProjectDir(), testSearch{
+		match:              isSurefireTestName,
+		includeNestedMaven: maven.Aggregator,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +74,13 @@ func mavenSpecs(ctx provider.Context, maven *mavenProject) ([]commandSpec, error
 		specs = append(specs, spec)
 	}
 	specs = append(specs, conventionSpec(source, "build", tool+" package", "/#build", plan.ConfidenceMedium, "Maven projects conventionally produce artifacts with mvn package."))
-	if maven.SpringBoot && springApplicationEvidence(ctx) {
+	entry, err := firstApplicationEntry(ctx.ProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	if maven.SpringBoot && entry != "" {
 		spec := conventionSpec(source, "server", tool+" spring-boot:run", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with mvn spring-boot:run.")
+		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
 	}
 	return specs, nil
@@ -84,7 +92,10 @@ func gradleSpecs(ctx provider.Context, gradle *gradleProject) ([]commandSpec, er
 	if tool == "" {
 		tool = "gradle"
 	}
-	testFile, err := firstJavaTest(ctx.ProjectDir(), true)
+	testFile, err := firstJavaTest(ctx.ProjectDir(), testSearch{
+		match:         isGradleTestName,
+		gradleMembers: gradle.Members,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -96,23 +107,43 @@ func gradleSpecs(ctx provider.Context, gradle *gradleProject) ([]commandSpec, er
 		specs = append(specs, spec)
 	}
 	specs = append(specs, conventionSpec(source, "build", tool+" build", "/#build", plan.ConfidenceMedium, "Gradle projects conventionally produce artifacts with gradle build."))
-	if gradle.SpringBoot && springApplicationEvidence(ctx) {
-		specs = append(specs, conventionSpec(source, "server", tool+" bootRun", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with gradle bootRun."))
-	} else if gradle.ApplicationPlugin {
-		specs = append(specs, conventionSpec(source, "server", tool+" run", "/#server", plan.ConfidenceMedium, "Gradle application projects conventionally start with gradle run."))
+	entry, err := firstApplicationEntry(ctx.ProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	if gradle.SpringBoot && entry != "" {
+		spec := conventionSpec(source, "server", tool+" bootRun", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with gradle bootRun.")
+		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		specs = append(specs, spec)
+	} else if gradle.ApplicationPlugin && entry != "" {
+		spec := conventionSpec(source, "server", tool+" run", "/#server", plan.ConfidenceMedium, "Gradle application projects conventionally start with gradle run.")
+		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		specs = append(specs, spec)
 	}
 	return specs, nil
 }
 
 func competingManagerAmbiguities(ctx provider.Context, project javaProject) ([]plan.Ambiguity, error) {
-	testFile, err := firstJavaTest(ctx.ProjectDir(), true)
+	members := []string(nil)
+	if project.Gradle != nil {
+		members = project.Gradle.Members
+	}
+	mavenTest, err := firstJavaTest(ctx.ProjectDir(), testSearch{match: isSurefireTestName, includeNestedMaven: true})
 	if err != nil {
 		return nil, err
 	}
-	spring := len(springBootEvidence(ctx, project)) > 0 && springApplicationEvidence(ctx)
+	gradleTest, err := firstJavaTest(ctx.ProjectDir(), testSearch{match: isGradleTestName, gradleMembers: members})
+	if err != nil {
+		return nil, err
+	}
+	entry, err := firstApplicationEntry(ctx.ProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	spring := len(springBootEvidence(ctx, project)) > 0 && entry != ""
 
 	var ambiguities []plan.Ambiguity
-	if testFile != "" {
+	if mavenTest != "" || gradleTest != "" {
 		ambiguities = append(ambiguities, managerAmbiguity(ctx, project, "test.run", "test", func(tool, _ string) string {
 			return tool + " test"
 		}))
@@ -163,8 +194,144 @@ func managerAmbiguity(ctx provider.Context, project javaProject, subject, name s
 	}
 }
 
-func springApplicationEvidence(ctx provider.Context) bool {
-	return dirExists(ctx.ProjectDir(), "src/main") || dirExists(ctx.ProjectDir(), "src/main/java")
+func firstApplicationEntry(root string) (string, error) {
+	start := filepath.Join(root, "src", "main")
+	var first string
+	err := filepath.WalkDir(start, func(path string, entry fs.DirEntry, err error) error {
+		if os.IsNotExist(err) && path == start {
+			return fs.SkipAll
+		}
+		if err != nil {
+			return err
+		}
+		if first != "" {
+			return fs.SkipAll
+		}
+		if entry.IsDir() {
+			if skipJavaWalkDir(entry.Name()) || entry.Type()&os.ModeSymlink != 0 {
+				if path != start {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			return nil
+		}
+		if !isJvmSourceName(entry.Name()) {
+			return nil
+		}
+		contents, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return readErr
+		}
+		if !hasApplicationEntry(string(contents)) {
+			return nil
+		}
+		relative, relErr := filepath.Rel(root, path)
+		if relErr != nil {
+			return relErr
+		}
+		first = filepath.ToSlash(relative)
+		return fs.SkipAll
+	})
+	if err != nil {
+		return "", fmt.Errorf("find Java application entry: %w", err)
+	}
+	return first, nil
+}
+
+func isJvmSourceName(name string) bool {
+	return strings.HasSuffix(name, ".java") || strings.HasSuffix(name, ".kt")
+}
+
+var (
+	javaMainPattern              = regexp.MustCompile(`public\s+static\s+void\s+main\s*\(`)
+	kotlinMainPattern            = regexp.MustCompile(`(?m)fun\s+main\s*\(`)
+	springBootApplicationPattern = regexp.MustCompile(`@SpringBootApplication\b`)
+)
+
+func hasApplicationEntry(contents string) bool {
+	return springBootApplicationPattern.MatchString(contents) || javaMainPattern.MatchString(contents) || kotlinMainPattern.MatchString(contents)
+}
+
+func firstJavaTest(root string, search testSearch) (string, error) {
+	if found, err := walkJavaTests(root, filepath.Join(root, "src", "test"), search); err != nil || found != "" {
+		return found, err
+	}
+	return walkJavaTests(root, root, search)
+}
+
+type testSearch struct {
+	match              func(string) bool
+	includeNestedMaven bool
+	gradleMembers      []string
+}
+
+func walkJavaTests(root, start string, search testSearch) (string, error) {
+	var first string
+	err := filepath.WalkDir(start, func(path string, entry fs.DirEntry, err error) error {
+		if os.IsNotExist(err) && path == start {
+			return fs.SkipAll
+		}
+		if err != nil {
+			return err
+		}
+		if first != "" {
+			return fs.SkipAll
+		}
+		if entry.IsDir() {
+			if path == start {
+				return nil
+			}
+			if skipJavaWalkDir(entry.Name()) || entry.Type()&os.ModeSymlink != 0 {
+				return filepath.SkipDir
+			}
+			if isJavaMainSourceDir(path) {
+				return filepath.SkipDir
+			}
+			if path != root && skipNestedTestTree(root, path, search) {
+				return filepath.SkipDir
+			}
+			if path != root && (fileExists(path, "settings.gradle") || fileExists(path, "settings.gradle.kts")) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if search.match == nil || !search.match(entry.Name()) {
+			return nil
+		}
+		relative, relErr := filepath.Rel(root, path)
+		if relErr != nil {
+			return relErr
+		}
+		first = filepath.ToSlash(relative)
+		return fs.SkipAll
+	})
+	if err != nil {
+		return "", fmt.Errorf("find Java tests: %w", err)
+	}
+	return first, nil
+}
+
+func skipNestedTestTree(root, path string, search testSearch) bool {
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		return true
+	}
+	relative := filepath.ToSlash(rel)
+	member := underGradleMember(relative, search.gradleMembers)
+	if fileExists(path, "pom.xml") && !search.includeNestedMaven && !member {
+		return true
+	}
+	return false
+}
+
+func underGradleMember(relative string, members []string) bool {
+	for _, member := range members {
+		if relative == member || strings.HasPrefix(relative, member+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 func conventionSpec(source, name, run, pointer string, confidence plan.Confidence, description string) commandSpec {
@@ -188,59 +355,6 @@ func addEvidenceAfterManifest(evidence []plan.Evidence, additions ...plan.Eviden
 	return append(combined, evidence[1:]...)
 }
 
-func firstJavaTest(root string, includeNestedMaven bool) (string, error) {
-	if found, err := walkJavaTests(root, filepath.Join(root, "src", "test"), includeNestedMaven); err != nil || found != "" {
-		return found, err
-	}
-	return walkJavaTests(root, root, includeNestedMaven)
-}
-
-func walkJavaTests(root, start string, includeNestedMaven bool) (string, error) {
-	var first string
-	err := filepath.WalkDir(start, func(path string, entry fs.DirEntry, err error) error {
-		if os.IsNotExist(err) && path == start {
-			return fs.SkipAll
-		}
-		if err != nil {
-			return err
-		}
-		if first != "" {
-			return fs.SkipAll
-		}
-		if entry.IsDir() {
-			if path == start {
-				return nil
-			}
-			if skipJavaWalkDir(entry.Name()) || entry.Type()&os.ModeSymlink != 0 {
-				return filepath.SkipDir
-			}
-			if isJavaMainSourceDir(path) {
-				return filepath.SkipDir
-			}
-			if path != root && !includeNestedMaven && fileExists(path, "pom.xml") {
-				return filepath.SkipDir
-			}
-			if path != root && (fileExists(path, "settings.gradle") || fileExists(path, "settings.gradle.kts")) {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if !isJavaTestName(entry.Name()) {
-			return nil
-		}
-		relative, relErr := filepath.Rel(root, path)
-		if relErr != nil {
-			return relErr
-		}
-		first = filepath.ToSlash(relative)
-		return fs.SkipAll
-	})
-	if err != nil {
-		return "", fmt.Errorf("find Java tests: %w", err)
-	}
-	return first, nil
-}
-
 func skipJavaWalkDir(name string) bool {
 	if strings.HasPrefix(name, ".") {
 		return true
@@ -257,9 +371,9 @@ func isJavaMainSourceDir(path string) bool {
 	return filepath.Base(path) == "main" && filepath.Base(filepath.Dir(path)) == "src"
 }
 
-func isJavaTestName(name string) bool {
+func isSurefireTestName(name string) bool {
 	switch {
-	case strings.HasSuffix(name, "Test.java"), strings.HasSuffix(name, "Tests.java"), strings.HasSuffix(name, "IT.java"), strings.HasSuffix(name, "TestCase.java"):
+	case strings.HasSuffix(name, "Test.java"), strings.HasSuffix(name, "Tests.java"), strings.HasSuffix(name, "TestCase.java"):
 		return true
 	case strings.HasSuffix(name, "Test.kt"), strings.HasSuffix(name, "Tests.kt"), strings.HasSuffix(name, "TestCase.kt"):
 		return true
@@ -268,6 +382,13 @@ func isJavaTestName(name string) bool {
 	default:
 		return false
 	}
+}
+
+func isGradleTestName(name string) bool {
+	if isSurefireTestName(name) {
+		return true
+	}
+	return strings.HasSuffix(name, "IT.java") || strings.HasSuffix(name, "IT.kt")
 }
 
 func commandFromSpec(ctx provider.Context, spec commandSpec) (plan.Command, error) {

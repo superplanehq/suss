@@ -105,7 +105,7 @@ java {
 `,
 		"gradlew": "#!/bin/sh\n",
 		"gradle/wrapper/gradle-wrapper.properties":       "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14-bin.zip\n",
-		"src/main/java/com/example/DemoApplication.java": "public class DemoApplication {}\n",
+		"src/main/java/com/example/DemoApplication.java": "public class DemoApplication { public static void main(String[] args) {} }\n",
 		"lib/src/test/java/com/example/LibTest.java":     "class LibTest {}\n",
 	})
 
@@ -445,6 +445,84 @@ func TestDetectDoesNotTreatMainSourcesAsTests(t *testing.T) {
 
 	if _, ok := commandsByName(result)["test"]; ok {
 		t.Fatal("main-source Test*.java was treated as a test file")
+	}
+}
+
+func TestDetectMavenDoesNotInferTestFromFailsafeIT(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml":                     `<project><modelVersion>4.0.0</modelVersion><artifactId>lib</artifactId></project>`,
+		"src/test/java/WidgetIT.java": "class WidgetIT {}\n",
+	})
+
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("inferred mvn test from Failsafe *IT.java")
+	}
+}
+
+func TestDetectGradleDoesNotUseNestedMavenTests(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"settings.gradle.kts":                     "rootProject.name = \"demo\"\ninclude(\"lib\")\n",
+		"build.gradle.kts":                        "plugins { id(\"java\") }\n",
+		"lib/build.gradle.kts":                    "plugins { id(\"java\") }\n",
+		"services/api/pom.xml":                    `<project><modelVersion>4.0.0</modelVersion><artifactId>api</artifactId></project>`,
+		"services/api/src/test/java/ApiTest.java": "class ApiTest {}\n",
+	})
+
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("inferred gradle test from an unrelated nested Maven project")
+	}
+}
+
+func TestDetectSpringBootLibraryDoesNotInferServer(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.4.0</version>
+    <relativePath/>
+  </parent>
+  <artifactId>lib</artifactId>
+</project>
+`,
+		"src/main/java/com/example/Library.java": "package com.example;\npublic class Library {}\n",
+	})
+
+	if !hasProperty(result, plan.PropertyFramework, "spring-boot") {
+		t.Fatalf("missing Spring Boot framework in %+v", result.Findings)
+	}
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("inferred spring-boot:run without an application entry point")
+	}
+}
+
+func TestDetectSkipsGradleOnIncludedMemberDirectory(t *testing.T) {
+	t.Parallel()
+
+	root := writeFiles(t, map[string]string{
+		"settings.gradle.kts":  "rootProject.name = \"demo\"\ninclude(\"lib\")\n",
+		"build.gradle.kts":     "plugins { id(\"java\") }\n",
+		"gradlew":              "#!/bin/sh\n",
+		"lib/build.gradle.kts": "plugins { id(\"java\") }\n",
+		"lib/package.json":     `{"name":"lib"}`,
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "lib"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if hasPackageManager(result, "gradle", "") {
+		t.Fatalf("included Gradle member was treated as a standalone Gradle project: %+v", result.Findings)
+	}
+	if _, ok := commandsByName(result)["build"]; ok {
+		t.Fatal("included member emitted a Gradle build command")
 	}
 }
 

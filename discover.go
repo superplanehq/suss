@@ -5,11 +5,11 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strings"
 
 	"github.com/superplanehq/suss/plan"
+	"github.com/superplanehq/suss/provider/java"
 )
 
 var projectManifests = map[string]struct{}{
@@ -121,50 +121,17 @@ func loadGradleIncludes(root string, settings map[string]struct{}) (map[string][
 				return nil, err
 			}
 		}
-		includes[relative] = parseGradleIncludes(contents.String())
+		includes[relative] = java.SettingsIncludes(contents.String())
 	}
 	return includes, nil
-}
-
-var (
-	gradleIncludeCall = regexp.MustCompile(`(?m)(?:^|[^\w])include\s*\(([^)]*)\)`)
-	gradleIncludeBare = regexp.MustCompile(`(?m)(?:^|[^\w])include\s+([^;\n]+)`)
-	gradleQuoted      = regexp.MustCompile(`["']([^"']+)["']`)
-)
-
-func parseGradleIncludes(contents string) []string {
-	var paths []string
-	seen := make(map[string]struct{})
-	add := func(raw string) {
-		raw = strings.TrimSpace(raw)
-		raw = strings.Trim(raw, ":")
-		raw = strings.ReplaceAll(raw, ":", "/")
-		if raw == "" {
-			return
-		}
-		if _, ok := seen[raw]; ok {
-			return
-		}
-		seen[raw] = struct{}{}
-		paths = append(paths, raw)
-	}
-	for _, match := range gradleIncludeCall.FindAllStringSubmatch(contents, -1) {
-		for _, quoted := range gradleQuoted.FindAllStringSubmatch(match[1], -1) {
-			add(quoted[1])
-		}
-	}
-	for _, match := range gradleIncludeBare.FindAllStringSubmatch(contents, -1) {
-		for _, quoted := range gradleQuoted.FindAllStringSubmatch(match[1], -1) {
-			add(quoted[1])
-		}
-	}
-	return paths
 }
 
 func isDeclaredGradleMember(path string, files map[string]struct{}, settings map[string]struct{}, includes map[string][]string) bool {
 	if _, ok := settings[path]; ok {
 		return false
 	}
+	// Mixed directories stay roots so Node/Go/Maven keep their manifests.
+	// The Java provider ignores the included member's Gradle build file.
 	if !onlyGradleBuildManifests(files) {
 		return false
 	}
