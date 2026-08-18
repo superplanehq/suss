@@ -101,13 +101,13 @@ blocks:
 	})
 
 	commands := commandRuns(result)
-	if !slices.Contains(commands["crates/tool"], "cargo test --manifest-path crates/tool/Cargo.toml") {
-		t.Fatalf("commands = %v, want cargo test attached to crates/tool", commands)
+	if !slices.Contains(commands["crates/tool"], "cargo test") {
+		t.Fatalf("commands = %v, want cargo test attached to crates/tool without a nested manifest-path", commands)
 	}
-	if !slices.Contains(commands["crates/tool"], "cargo -C crates/tool build") {
-		t.Fatalf("commands = %v, want cargo -C build attached to crates/tool", commands)
+	if !slices.Contains(commands["crates/tool"], "cargo build") {
+		t.Fatalf("commands = %v, want cargo build attached to crates/tool without -C", commands)
 	}
-	if slices.Contains(commands["."], "cargo test --manifest-path crates/tool/Cargo.toml") {
+	if slices.Contains(commands["."], "cargo test") || slices.Contains(commands["."], "cargo test --manifest-path crates/tool/Cargo.toml") {
 		t.Fatalf("commands = %v, did not want manifest-path cargo test on the workspace root", commands)
 	}
 }

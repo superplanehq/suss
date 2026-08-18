@@ -542,6 +542,32 @@ func TestStripDirectoryFlagsNormalizesCargoManifestPath(t *testing.T) {
 	}
 }
 
+func TestRewriteDirectoryFlagsStripsCargoPaths(t *testing.T) {
+	t.Parallel()
+
+	got := RewriteDirectoryFlags(
+		"cargo test --manifest-path crates/tool/Cargo.toml --locked",
+		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml", "--locked"}},
+	)
+	if got != "cargo test --locked" {
+		t.Fatalf("RewriteDirectoryFlags(manifest-path) = %q, want cargo test --locked", got)
+	}
+	got = RewriteDirectoryFlags(
+		"cargo +nightly -C crates/tool test",
+		Invocation{Executable: "cargo", Args: []string{"-C", "crates/tool", "test"}},
+	)
+	if got != "cargo +nightly test" {
+		t.Fatalf("RewriteDirectoryFlags(-C) = %q, want cargo +nightly test", got)
+	}
+	got = RewriteDirectoryFlags(
+		"yarn --cwd ./packages/app test",
+		Invocation{Executable: "yarn", Args: []string{"--cwd", "./packages/app", "test"}},
+	)
+	if got != "yarn --cwd ./packages/app test" {
+		t.Fatalf("RewriteDirectoryFlags(yarn) = %q, want the original run", got)
+	}
+}
+
 func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	t.Parallel()
 
@@ -637,6 +663,9 @@ func TestInterpretMatchesCargoInvocations(t *testing.T) {
 	}{
 		{inv: Invocation{Executable: "cargo", Args: []string{"test"}}, want: []plan.Capability{plan.CapabilityTestRun}},
 		{inv: Invocation{Executable: "cargo", Args: []string{"+nightly", "test", "--locked"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"--locked", "test"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"--color", "always", "test"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"--offline", "--locked", "build", "--release"}}, want: []plan.Capability{plan.CapabilityArtifactBuild}},
 		{inv: Invocation{Executable: "cargo", Args: []string{"build", "--release"}}, want: []plan.Capability{plan.CapabilityArtifactBuild}},
 		{inv: Invocation{Executable: "cargo", Args: []string{"fetch"}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
 		{inv: Invocation{Executable: "cargo", Args: []string{"clippy", "--", "-D", "warnings"}}, want: []plan.Capability{plan.CapabilityCodeLint}},
@@ -689,6 +718,9 @@ func TestIsRemoteCargoInstall(t *testing.T) {
 	}
 	if !IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"install", "--locked", "cargo-deny"}}) {
 		t.Fatal("IsRemoteCargoInstall(cargo install --locked cargo-deny) = false, want true")
+	}
+	if !IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"--locked", "install", "cargo-nextest"}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo --locked install cargo-nextest) = false, want true")
 	}
 	if IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"install", "--path", "."}}) {
 		t.Fatal("IsRemoteCargoInstall(cargo install --path .) = true, want false")

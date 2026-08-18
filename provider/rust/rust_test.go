@@ -92,6 +92,19 @@ func TestDetectReadsManifestAndInfersConventions(t *testing.T) {
 	}
 }
 
+func TestDetectIgnoresTestAttributesInCommentsAndStrings(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml": "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		"src/lib.rs": "// #[test]\n/* #[tokio::test] */\nconst HINT: &str = \"#[rstest]\";\npub fn ok() {}\n",
+	})
+	project := assembleProject(t, ".", result)
+	if _, ok := commandRuns(project.Commands)["test"]; ok {
+		t.Fatalf("commands = %+v, did not want cargo test from comments or strings", project.Commands)
+	}
+}
+
 func TestDetectOmitsCargoTestWhenNoTestsExist(t *testing.T) {
 	t.Parallel()
 
@@ -263,6 +276,22 @@ func TestParseCargoTOMLReadsPackageWorkspaceAndDependencies(t *testing.T) {
 	}
 }
 
+func TestParseCargoTOMLReadsDottedWorkspaceInheritance(t *testing.T) {
+	t.Parallel()
+
+	got := parseCargoTOML("" +
+		"[dependencies]\n" +
+		"axum.workspace = true\n" +
+		"web.package = \"rocket\"\n" +
+		"\"not.a.framework.workspace\" = true\n")
+	if !slices.Equal(dependencyNames(got.Dependencies), []string{"axum", "rocket", "not.a.framework.workspace"}) {
+		t.Fatalf("dependencies = %v, want dotted keys resolved except quoted names", dependencyNames(got.Dependencies))
+	}
+	if !slices.Equal(dependencyKeys(got.Dependencies), []string{"axum", "web", "not.a.framework.workspace"}) {
+		t.Fatalf("dependency keys = %v, want axum, web, quoted name", dependencyKeys(got.Dependencies))
+	}
+}
+
 func TestParseCargoTOMLResolvesRenamedDependencies(t *testing.T) {
 	t.Parallel()
 
@@ -303,6 +332,26 @@ func TestDetectResolvesRenamedFrameworkDependencies(t *testing.T) {
 	}
 	if len(project.Frameworks[0].Evidence) == 0 || project.Frameworks[0].Evidence[0].Pointer != "/dependencies/web" {
 		t.Fatalf("framework evidence = %+v, want /dependencies/web", project.Frameworks[0].Evidence)
+	}
+}
+
+func TestDetectFindsInheritedWorkspaceFramework(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml": "" +
+			"[package]\n" +
+			"name = \"app\"\n" +
+			"version = \"0.1.0\"\n" +
+			"edition = \"2021\"\n" +
+			"\n" +
+			"[dependencies]\n" +
+			"axum.workspace = true\n",
+		"src/lib.rs": "pub fn ok() {}\n",
+	})
+	project := assembleProject(t, ".", result)
+	if got := names(project.Frameworks); !slices.Equal(got, []string{"axum"}) {
+		t.Fatalf("frameworks = %v, want axum from axum.workspace", got)
 	}
 }
 
@@ -457,6 +506,12 @@ func TestRustSourceHasTestRecognizesSupportedAttributes(t *testing.T) {
 		{src: "#[tokio::test(flavor = \"multi_thread\")]\nasync fn ok() {}", want: true},
 		{src: "#[rstest]\nfn ok() {}", want: true},
 		{src: "pub fn ok() {}", want: false},
+		{src: "// #[test]\nfn ok() {}", want: false},
+		{src: "/* #[test] */\nfn ok() {}", want: false},
+		{src: "/// #[test]\nfn ok() {}", want: false},
+		{src: `const S: &str = "#[test]";`, want: false},
+		{src: "const S: &str = r#\"#[test]\"#;", want: false},
+		{src: "// #[test]\n#[test]\nfn ok() {}", want: true},
 	}
 	for _, tt := range tests {
 		if got := rustSourceHasTest(tt.src); got != tt.want {

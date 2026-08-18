@@ -88,7 +88,7 @@ func Interpret(inv Invocation) []Match {
 		return nil
 	}
 	if executable == "cargo" {
-		inv.Args = stripCargoToolchain(append([]string{"cargo"}, inv.Args...))[1:]
+		inv.Args = normalizeCargoArgs(inv.Args)
 	}
 
 	bestLen := -1
@@ -696,6 +696,74 @@ func stripCargoToolchain(tokens []string) []string {
 	out := make([]string, 0, len(tokens)-1)
 	out = append(out, "cargo")
 	return append(out, tokens[2:]...)
+}
+
+func normalizeCargoArgs(args []string) []string {
+	if len(args) > 0 && strings.HasPrefix(args[0], "+") && args[0] != "+" {
+		args = args[1:]
+	}
+	return stripCargoGlobalOptions(args)
+}
+
+func stripCargoGlobalOptions(args []string) []string {
+	i := 0
+	for i < len(args) {
+		arg := args[i]
+		if arg == "--" || !strings.HasPrefix(arg, "-") {
+			break
+		}
+		name, _, hasValue := strings.Cut(arg, "=")
+		if cargoGlobalOptionTakesValue(name) {
+			if hasValue {
+				i++
+				continue
+			}
+			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+				i += 2
+				continue
+			}
+			i++
+			continue
+		}
+		if isCargoGlobalOption(name) {
+			i++
+			continue
+		}
+		break
+	}
+	return args[i:]
+}
+
+func cargoGlobalOptionTakesValue(name string) bool {
+	switch name {
+	case "--color", "--config", "-Z", "-C", "--manifest-path", "--explain":
+		return true
+	default:
+		return false
+	}
+}
+
+func isCargoGlobalOption(name string) bool {
+	switch name {
+	case "--verbose", "--quiet", "-q", "--offline", "--locked", "--frozen":
+		return true
+	}
+	return isCargoVerboseFlag(name)
+}
+
+func isCargoVerboseFlag(name string) bool {
+	if name == "--verbose" {
+		return true
+	}
+	if !strings.HasPrefix(name, "-") || strings.HasPrefix(name, "--") || len(name) < 2 {
+		return false
+	}
+	for _, r := range name[1:] {
+		if r != 'v' {
+			return false
+		}
+	}
+	return true
 }
 
 func dropLeadingFlags(tokens []string) []string {

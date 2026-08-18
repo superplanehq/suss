@@ -519,8 +519,8 @@ func observedCommand(source, dir, pointer string, stmt knowledge.Statement) (pla
 		return plan.Command{}, err
 	}
 
-	_, canonical := knowledge.StripDirectoryFlags(stmt.Invocation)
-	run := knowledge.RedactAssignmentValues(stmt.Raw)
+	canonical := knowledge.CanonicalInvocation(stmt.Invocation)
+	run := knowledge.RewriteDirectoryFlags(stmt.Raw, stmt.Invocation)
 	return plan.Command{
 		ID:              id,
 		Name:            knowledge.CommandName(canonical),

@@ -160,14 +160,14 @@ func IsRemoteCargoInstall(inv Invocation) bool {
 	if inv.Executable != "cargo" {
 		return false
 	}
-	args := stripCargoToolchain(append([]string{"cargo"}, inv.Args...))
-	if len(args) < 2 || args[1] != "install" {
+	args := normalizeCargoArgs(inv.Args)
+	if len(args) == 0 || args[0] != "install" {
 		return false
 	}
 	hasPath := false
 	hasRemoteSource := false
 	positional := 0
-	rest := args[2:]
+	rest := args[1:]
 	for i := 0; i < len(rest); i++ {
 		arg := rest[i]
 		if arg == "--" {
@@ -296,8 +296,7 @@ func IsRustPlumbing(inv Invocation) bool {
 	case "rustup":
 		return !isRustupRunWrapper(inv.Args)
 	case "cargo":
-		args := stripCargoToolchain(append([]string{"cargo"}, inv.Args...))
-		return isCargoVersionProbe(args[1:])
+		return isCargoVersionProbe(normalizeCargoArgs(inv.Args))
 	case "rustc":
 		return isRustcVersionProbe(inv.Args)
 	default:

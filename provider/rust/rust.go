@@ -211,5 +211,126 @@ func isRustTestFile(abs, rel, name string) (bool, error) {
 var rustTestAttribute = regexp.MustCompile(`#\[\s*(?:(?:[A-Za-z_][A-Za-z0-9_]*::)*test|rstest)(?:\s*(?:\(|]))`)
 
 func rustSourceHasTest(contents string) bool {
-	return rustTestAttribute.MatchString(contents)
+	return rustTestAttribute.MatchString(stripRustCommentsAndStrings(contents))
+}
+
+func stripRustCommentsAndStrings(src string) string {
+	b := []byte(src)
+	out := make([]byte, 0, len(b))
+	i := 0
+	for i < len(b) {
+		if i+1 < len(b) && b[i] == '/' && b[i+1] == '/' {
+			for i < len(b) && b[i] != '\n' {
+				i++
+			}
+			continue
+		}
+		if i+1 < len(b) && b[i] == '/' && b[i+1] == '*' {
+			i = skipRustBlockComment(b, i+2)
+			continue
+		}
+		if start, hashes, ok := rustRawStringStart(b, i); ok {
+			i = skipRustRawString(b, start, hashes)
+			continue
+		}
+		if start, ok := rustCookedStringStart(b, i); ok {
+			i = skipRustCookedString(b, start)
+			continue
+		}
+		out = append(out, b[i])
+		i++
+	}
+	return string(out)
+}
+
+func rustRawStringStart(b []byte, i int) (content, hashes int, ok bool) {
+	if !rustTokenStart(b, i) {
+		return 0, 0, false
+	}
+	j := i
+	if j < len(b) && (b[j] == 'b' || b[j] == 'B' || b[j] == 'c' || b[j] == 'C') {
+		j++
+	}
+	if j >= len(b) || (b[j] != 'r' && b[j] != 'R') {
+		return 0, 0, false
+	}
+	j++
+	for j < len(b) && b[j] == '#' {
+		hashes++
+		j++
+	}
+	if j >= len(b) || b[j] != '"' {
+		return 0, 0, false
+	}
+	return j + 1, hashes, true
+}
+
+func skipRustRawString(b []byte, i, hashes int) int {
+	for i < len(b) {
+		if b[i] == '"' {
+			n := 0
+			for i+1+n < len(b) && b[i+1+n] == '#' {
+				n++
+			}
+			if n == hashes {
+				return i + 1 + n
+			}
+		}
+		i++
+	}
+	return len(b)
+}
+
+func rustCookedStringStart(b []byte, i int) (content int, ok bool) {
+	if !rustTokenStart(b, i) {
+		return 0, false
+	}
+	j := i
+	if j < len(b) && (b[j] == 'b' || b[j] == 'B' || b[j] == 'c' || b[j] == 'C') {
+		j++
+	}
+	if j >= len(b) || b[j] != '"' {
+		return 0, false
+	}
+	return j + 1, true
+}
+
+func skipRustCookedString(b []byte, i int) int {
+	for i < len(b) {
+		if b[i] == '\\' && i+1 < len(b) {
+			i += 2
+			continue
+		}
+		if b[i] == '"' {
+			return i + 1
+		}
+		i++
+	}
+	return len(b)
+}
+
+func skipRustBlockComment(b []byte, i int) int {
+	depth := 1
+	for i < len(b) && depth > 0 {
+		if i+1 < len(b) && b[i] == '/' && b[i+1] == '*' {
+			depth++
+			i += 2
+			continue
+		}
+		if i+1 < len(b) && b[i] == '*' && b[i+1] == '/' {
+			depth--
+			i += 2
+			continue
+		}
+		i++
+	}
+	return i
+}
+
+func rustTokenStart(b []byte, i int) bool {
+	if i == 0 {
+		return true
+	}
+	c := b[i-1]
+	return !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')
 }

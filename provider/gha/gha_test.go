@@ -136,6 +136,40 @@ jobs:
 	}
 }
 
+func TestDetectRewritesCargoDirectoryFlags(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: cargo test --manifest-path crates/tool/Cargo.toml --locked
+      - run: cargo -C crates/tool build
+`,
+	})
+
+	commands := commandByName(result)
+	testCmd := commands["cargo test"]
+	if testCmd.Directory != "crates/tool" {
+		t.Fatalf("test directory = %q, want crates/tool", testCmd.Directory)
+	}
+	if deref(testCmd.Run) != "cargo test --locked" {
+		t.Fatalf("test run = %q, want cargo test --locked without a nested manifest-path", deref(testCmd.Run))
+	}
+	if !commandHasCapability(testCmd, plan.CapabilityTestRun) {
+		t.Fatalf("test interpretations = %+v, want test.run", testCmd.Interpretations)
+	}
+	buildCmd := commands["cargo build"]
+	if buildCmd.Directory != "crates/tool" {
+		t.Fatalf("build directory = %q, want crates/tool", buildCmd.Directory)
+	}
+	if deref(buildCmd.Run) != "cargo build" {
+		t.Fatalf("build run = %q, want cargo build without -C", deref(buildCmd.Run))
+	}
+}
+
 func TestDetectAppliesYarnCwdToCommandDirectory(t *testing.T) {
 	t.Parallel()
 

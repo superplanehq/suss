@@ -48,7 +48,7 @@ func parseCargoTOML(contents string) cargoManifest {
 			continue
 		}
 
-		key, value, ok := parseTOMLAssignment(line)
+		key, value, quoted, ok := parseTOMLField(line)
 		if !ok {
 			continue
 		}
@@ -76,12 +76,22 @@ func parseCargoTOML(contents string) cargoManifest {
 			}
 		}
 
-		if depKey, table, ok := dependencyCrateFromKey(section, key); ok {
+		if depKey, table, ok := dependencyCrateFromKey(section, key, quoted); ok {
 			crate := depKey
 			if pkg, found := tomlInlineString(value, "package"); found {
 				crate = pkg
 			}
+			if !quoted {
+				if _, field, cut := strings.Cut(key, "."); cut && field == "package" {
+					if pkg, found := tomlString(value); found {
+						crate = pkg
+					}
+				}
+			}
 			addDependency(seenDeps, &parsed.Dependencies, depKey, crate, table)
+			if crate != depKey {
+				setDependencyCrate(&parsed.Dependencies, table, depKey, crate)
+			}
 		}
 		if depKey, table, ok := dependencyCrateFromTable(section); ok && key == "package" {
 			if pkg, found := tomlString(value); found {
@@ -177,23 +187,24 @@ func parseTOMLTable(line string) (string, bool) {
 }
 
 func parseTOMLAssignment(line string) (key, value string, ok bool) {
+	key, value, _, ok = parseTOMLField(line)
+	return
+}
+
+func parseTOMLField(line string) (key, value string, quoted, ok bool) {
 	key, value, ok = strings.Cut(line, "=")
 	if !ok {
-		return "", "", false
+		return "", "", false, false
 	}
 	key = strings.TrimSpace(key)
 	value = strings.TrimSpace(value)
 	if key == "" {
-		return "", "", false
+		return "", "", false, false
 	}
-	return unquoteTOMLKey(key), value, true
-}
-
-func unquoteTOMLKey(key string) string {
-	if text, ok := tomlString(key); ok {
-		return text
+	if text, qok := tomlString(key); qok {
+		return text, value, true, true
 	}
-	return key
+	return key, value, false, true
 }
 
 func tomlString(value string) (string, bool) {
@@ -232,12 +243,18 @@ func dependencyCrateFromTable(section string) (string, string, bool) {
 	return "", "", false
 }
 
-func dependencyCrateFromKey(section, key string) (string, string, bool) {
+func dependencyCrateFromKey(section, key string, quoted bool) (string, string, bool) {
 	switch section {
 	case "dependencies", "workspace.dependencies":
-		if key != "" {
-			return key, section, true
+		if key == "" {
+			return "", "", false
 		}
+		if !quoted {
+			if name, field, ok := strings.Cut(key, "."); ok && name != "" && field != "" {
+				return name, section, true
+			}
+		}
+		return key, section, true
 	}
 	return "", "", false
 }

@@ -286,27 +286,16 @@ func expandMatrixValue(raw string, matrix map[string][]string) []string {
 	return []string{raw}
 }
 
-func applyStatementDirectory(repositoryRoot, current string, statement knowledge.Statement) string {
-	if statement.Chdir != "" {
-		return resolveDirectory(repositoryRoot, current, statement.Chdir)
-	}
-	dir, _ := knowledge.StripDirectoryFlags(statement.Invocation)
-	if dir == "" {
-		return current
-	}
-	return resolveDirectory(repositoryRoot, current, dir)
-}
-
 func observedCommand(source, directory, pointer string, statement knowledge.Statement) (plan.Command, error) {
 	id, err := plan.NewCommandID(plan.CommandIdentity{ProjectPath: directory, Provider: providerName, Source: source, Pointer: pointer})
 	if err != nil {
 		return plan.Command{}, err
 	}
-	_, canonical := knowledge.StripDirectoryFlags(statement.Invocation)
+	canonical := knowledge.CanonicalInvocation(statement.Invocation)
 	return plan.Command{
 		ID:              id,
 		Name:            knowledge.CommandName(canonical),
-		Run:             stringPtr(knowledge.RedactAssignmentValues(statement.Raw)),
+		Run:             stringPtr(knowledge.RewriteDirectoryFlags(statement.Raw, statement.Invocation)),
 		Directory:       directory,
 		Scope:           plan.ScopeProject,
 		Origin:          plan.CommandObserved,
