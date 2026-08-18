@@ -20,29 +20,74 @@ func TestWriteReportsNoProjectRoots(t *testing.T) {
 	}
 }
 
-func TestWriteRendersFixtureFactsOnUncoveredProjects(t *testing.T) {
+func TestWriteOmitsHighConfidenceFixtureProjects(t *testing.T) {
 	t.Parallel()
 
-	project := plan.NewProjectPlan("testdata/sample")
-	project.Facts = []plan.ProjectFact{{
+	root := plan.NewProjectPlan(".")
+	root.Languages = []plan.DetectedValue{{Name: "go"}}
+
+	fixture := plan.NewProjectPlan("testdata/sample")
+	fixture.Facts = []plan.ProjectFact{{
 		Name:       "project.role",
 		Value:      "fixture",
 		Confidence: plan.ConfidenceHigh,
 		Evidence:   []plan.Evidence{{Kind: plan.EvidenceFile, Source: "testdata/sample"}},
 	}}
 
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root, fixture}), []string{"node"})
+	if !strings.Contains(got, "Projects: 1 (1 fixture project omitted; use --json to inspect)") {
+		t.Fatalf("output %q, want visible and omitted project counts", got)
+	}
+	if strings.Contains(got, "Project: testdata/sample") {
+		t.Fatalf("output %q, want the fixture project omitted", got)
+	}
+	if !strings.Contains(got, "Project: .") {
+		t.Fatalf("output %q, want the primary project", got)
+	}
+}
+
+func TestWriteKeepsMediumConfidenceFixtureProjectsVisible(t *testing.T) {
+	t.Parallel()
+
+	project := plan.NewProjectPlan("examples/demo")
+	project.Facts = []plan.ProjectFact{{
+		Name:       "project.role",
+		Value:      "fixture",
+		Confidence: plan.ConfidenceMedium,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceFile, Source: "examples/demo"}},
+	}}
+
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
-	if !strings.Contains(got, "No implemented provider produced findings") {
-		t.Fatalf("output %q, want an uncovered-project explanation", got)
+	if !strings.Contains(got, "Projects: 1") {
+		t.Fatalf("output %q, want the project count", got)
+	}
+	if strings.Contains(got, "fixture project omitted") {
+		t.Fatalf("output %q, want no omitted project notice", got)
+	}
+	if !strings.Contains(got, "Project: examples/demo") {
+		t.Fatalf("output %q, want the uncertain fixture project kept visible", got)
 	}
 	if !strings.Contains(got, "project.role: fixture") {
 		t.Fatalf("output %q, want the fixture fact", got)
 	}
-	if !strings.Contains(got, "Evidence:") {
-		t.Fatalf("output %q, want fixture evidence", got)
+}
+
+func TestWriteExplainsWhenOnlyFixtureProjectsWereDetected(t *testing.T) {
+	t.Parallel()
+
+	fixture := plan.NewProjectPlan("fixtures/sample")
+	fixture.Facts = []plan.ProjectFact{{
+		Name:       "project.role",
+		Value:      "fixture",
+		Confidence: plan.ConfidenceHigh,
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{fixture}), []string{"node"})
+	if !strings.Contains(got, "Projects: 0 (1 fixture project omitted; use --json to inspect)") {
+		t.Fatalf("output %q, want the omitted project count", got)
 	}
-	if strings.Contains(got, "Languages:") {
-		t.Fatalf("output %q, want no empty field wall", got)
+	if !strings.Contains(got, "No non-fixture project roots were detected.") {
+		t.Fatalf("output %q, want an explanation for the empty human view", got)
 	}
 }
 

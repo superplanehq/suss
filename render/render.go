@@ -33,22 +33,63 @@ var toolCapabilities = map[string][]plan.Capability{
 
 // Write prints a human-readable rendering of document.
 func Write(w io.Writer, document plan.Document, opts Options) {
+	projects, omittedFixtures := projectsForHumanOutput(document.Projects)
+
 	fmt.Fprintf(w, "Providers: %s\n", joinProviders(opts.Providers))
-	fmt.Fprintf(w, "Projects: %d\n", len(document.Projects))
+	writeProjectCount(w, len(projects), omittedFixtures)
 	fmt.Fprintln(w)
 
 	if len(document.Projects) == 0 {
 		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, mix.exs, Makefile, and .env.example.")
 		return
 	}
+	if len(projects) == 0 {
+		fmt.Fprintln(w, "No non-fixture project roots were detected.")
+		return
+	}
 
-	for i, project := range document.Projects {
+	for i, project := range projects {
 		if i > 0 {
 			fmt.Fprintln(w)
 			fmt.Fprintln(w)
 		}
 		writeProject(w, project, opts.Providers)
 	}
+}
+
+func projectsForHumanOutput(projects []plan.ProjectPlan) ([]plan.ProjectPlan, int) {
+	visible := make([]plan.ProjectPlan, 0, len(projects))
+	omittedFixtures := 0
+	for _, project := range projects {
+		if isHighConfidenceFixture(project) {
+			omittedFixtures++
+			continue
+		}
+		visible = append(visible, project)
+	}
+	return visible, omittedFixtures
+}
+
+func isHighConfidenceFixture(project plan.ProjectPlan) bool {
+	for _, fact := range project.Facts {
+		if fact.Name == "project.role" && fact.Value == "fixture" && fact.Confidence == plan.ConfidenceHigh {
+			return true
+		}
+	}
+	return false
+}
+
+func writeProjectCount(w io.Writer, visible, omittedFixtures int) {
+	if omittedFixtures == 0 {
+		fmt.Fprintf(w, "Projects: %d\n", visible)
+		return
+	}
+
+	fixtureLabel := "fixture projects"
+	if omittedFixtures == 1 {
+		fixtureLabel = "fixture project"
+	}
+	fmt.Fprintf(w, "Projects: %d (%d %s omitted; use --json to inspect)\n", visible, omittedFixtures, fixtureLabel)
 }
 
 func joinProviders(names []string) string {

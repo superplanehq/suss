@@ -72,14 +72,14 @@ Scope:
 - Initial declarative knowledge base (data file): npm/pnpm/yarn/bun invocations, `vitest`, `jest`, `eslint`, `tsc`, `prettier`, `vite`.
 - Tool-configuration detection for the same tools (configured-but-no-command reporting).
 - Human-readable renderer for `suss .`, implemented strictly as a renderer of the JSON. The renderer must distinguish "the repository has no detectable content" from "no provider covers this yet", and say which providers ran. A wall of empty fields with no explanation reads as a broken tool.
-- Fixture-like project roots are reported, not hidden. Path segments `testdata`, `fixtures`, and `__fixtures__` attach an evidence-backed `project.role=fixture` fact at high confidence; `examples` uses medium confidence because real packages sometimes live there. Large corpus repositories (grafana) will stress this.
+- Fixture-like project roots are retained in the versioned document, not discarded during detection. Path segments `testdata`, `fixtures`, and `__fixtures__` attach an evidence-backed `project.role=fixture` fact at high confidence; `examples` uses medium confidence because real packages sometimes live there. Large corpus repositories (grafana) will stress this.
 - Remote corpus fetching. The milestone 1 harness only supports local fixtures; `corpusEntry` already has `gitURL` and `commit` fields but `repository()` fails on them. This milestone implements that path, since `chalk/chalk` is the first remote corpus entry: pin an exact commit SHA (not a branch), shallow-fetch it into `testdata/cache`, reuse the cache across runs, and gitignore the cache directory. A fresh checkout and CI must be able to run the corpus test with no manual cloning.
 
 Acceptance:
 
 - Golden plan for `chalk/chalk` is correct: install, test, lint commands with evidence.
 
-Status: completed and approved after one review iteration. Notable decisions: fixture-like roots (`testdata`, `fixtures`, `__fixtures__` high confidence; `examples` medium) are reported as ordinary projects with an evidence-backed `project.role=fixture` fact, not hidden. Script invocations use `pnpm run` / `yarn run` rather than bare `pnpm <name>` / `yarn <name>`, so builtin subcommands are not shadowed. `engines.node` is merged into a `.nvmrc` / `.node-version` pin only when the version strings are equal; otherwise it is a separate requirement.
+Status: completed and approved after one review iteration. Notable decisions: fixture-like roots (`testdata`, `fixtures`, `__fixtures__` high confidence; `examples` medium) remain ordinary projects in the versioned document with an evidence-backed `project.role=fixture` fact, so detection does not discard them; milestone 6 later refined their human rendering. Script invocations use `pnpm run` / `yarn run` rather than bare `pnpm <name>` / `yarn <name>`, so builtin subcommands are not shadowed. `engines.node` is merged into a `.nvmrc` / `.node-version` pin only when the version strings are equal; otherwise it is a separate requirement.
 
 ## Milestone 3 — GitHub Actions provider and reconciliation (make-or-break) — DONE
 
@@ -153,7 +153,7 @@ Status: completed and approved after one review iteration. `plausible/analytics`
 - Tool version/info/help probes are CI plumbing, matching the milestone 4 `go version` / `go env` rule: `docker version` / `docker info` / `docker compose version`, and `--version` / `-v` on node/npm/pnpm/yarn/bun/python/ruby/java. `npm version` / `yarn version` bump the package and stay commands. `make version` is a repository target, not plumbing.
 - Renderer polish (command directory when it differs from the project path; requirement kind on each line) is in this milestone, not deferred.
 
-## Milestone 6 — Human output hierarchy
+## Milestone 6 — Human output hierarchy — DONE
 
 Make multi-project output easy to scan while keeping Suss's answer—the commands a developer should run—as the primary content.
 
@@ -164,6 +164,7 @@ Scope:
 - Put ambiguities and conflicts immediately after the interpreted commands, where they qualify the actionable answer.
 - Preserve commands without interpretations in a separate, secondary section without guessing what they do.
 - Move requirements, detected properties, facts, configured-tool notices, and evidence into supporting sections after the commands.
+- Omit high-confidence fixture projects from the main human listing, report how many were omitted, and keep them available in JSON. Medium-confidence `examples` projects remain visible.
 - Make the hierarchy work in plain text. Terminal styling is optional enhancement only and must never be the sole means of conveying structure.
 
 Acceptance:
@@ -174,7 +175,7 @@ Acceptance:
 - Uninterpreted commands remain visible, and ambiguities, conflicts, project details, and evidence retain their existing information.
 - The versioned JSON document and provider behavior are unchanged.
 
-Status: implementation complete; awaiting review.
+Status: implementation revised after review exposed fixture projects receiving misleading first-class prominence; awaiting follow-up review.
 
 ## Milestone 7 — Elixir provider, Semaphore provider, dogfood
 
