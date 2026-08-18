@@ -197,7 +197,9 @@ func TestDetectMavenChildInheritsParentCompilerRelease(t *testing.T) {
 	root := writeFiles(t, map[string]string{
 		"pom.xml": `<project>
   <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
   <artifactId>parent</artifactId>
+  <version>1.0</version>
   <packaging>pom</packaging>
   <modules><module>lib</module></modules>
   <properties><maven.compiler.release>8</maven.compiler.release></properties>
@@ -247,7 +249,9 @@ func TestDetectMavenChildCompilerPluginOverridesParent(t *testing.T) {
 	root := writeFiles(t, map[string]string{
 		"pom.xml": `<project>
   <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
   <artifactId>parent</artifactId>
+  <version>1.0</version>
   <packaging>pom</packaging>
   <modules><module>lib</module></modules>
   <build>
