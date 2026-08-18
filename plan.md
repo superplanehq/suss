@@ -143,7 +143,7 @@ Scope:
 
 Acceptance:
 
-- Golden plan for `plausible/analytics` is substantially correct on the Node/Make/Compose/requirements side (Elixir commands arrive in milestone 6).
+- Golden plan for `plausible/analytics` is substantially correct on the Node/Make/Compose/requirements side (Elixir commands arrive in milestone 7).
 - Extra corpus pin: `knadh/listmonk`. Official setup is `docker compose up -d` (app + postgres). Make, Go, a Node frontend, and `.env.sample` are also present. The `dev/` compose file is the local stack (postgres, mailhog, adminer).
 
 Status: completed and approved after one review iteration. `plausible/analytics` at the pinned SHA ships no Compose file and no `.env.example`, so Compose / env-file acceptance is carried by `knadh/listmonk`. Notable decisions from the milestone 5 review:
@@ -153,7 +153,30 @@ Status: completed and approved after one review iteration. `plausible/analytics`
 - Tool version/info/help probes are CI plumbing, matching the milestone 4 `go version` / `go env` rule: `docker version` / `docker info` / `docker compose version`, and `--version` / `-v` on node/npm/pnpm/yarn/bun/python/ruby/java. `npm version` / `yarn version` bump the package and stay commands. `make version` is a repository target, not plumbing.
 - Renderer polish (command directory when it differs from the project path; requirement kind on each line) is in this milestone, not deferred.
 
-## Milestone 6 — Elixir provider, Semaphore provider, dogfood
+## Milestone 6 — Human output hierarchy
+
+Make multi-project output easy to scan while keeping Suss's answer—the commands a developer should run—as the primary content.
+
+Scope:
+
+- Give each project a strong heading and separator, remove the duplicate project/path labels, and indent all project-owned content.
+- Lead with a two-column purpose/command table that combines preparation commands and interpreted regular commands. Render contextual variants beneath their primary command.
+- Put ambiguities and conflicts immediately after the interpreted commands, where they qualify the actionable answer.
+- Preserve commands without interpretations in a separate, secondary section without guessing what they do.
+- Move requirements, detected properties, facts, configured-tool notices, and evidence into supporting sections after the commands.
+- Make the hierarchy work in plain text. Terminal styling is optional enhancement only and must never be the sole means of conveying structure.
+
+Acceptance:
+
+- A document with multiple projects has unmistakable project boundaries and reports the project count.
+- Interpreted setup/build/test/lint/format/type-check/run commands are the first substantive content in each covered project, with human-readable purpose labels.
+- A contextual variant is omitted from human output when its command and displayed directory are identical to the primary row; it remains in the JSON document as provenance.
+- Uninterpreted commands remain visible, and ambiguities, conflicts, project details, and evidence retain their existing information.
+- The versioned JSON document and provider behavior are unchanged.
+
+Status: implementation complete; awaiting review.
+
+## Milestone 7 — Elixir provider, Semaphore provider, dogfood
 
 Close the loop on our own repositories.
 
@@ -167,7 +190,7 @@ Acceptance:
 
 - Golden plans for `elixir-ecto/ecto`, then `superplanehq/superplane`, `operately/operately`, and `semaphoreio/semaphore` are correct end to end.
 
-## Milestone 7 — Polish and v0 release
+## Milestone 8 — Polish and v0 release
 
 Scope:
 

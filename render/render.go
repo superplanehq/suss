@@ -4,7 +4,6 @@
 package render
 
 import (
-	"cmp"
 	"fmt"
 	"io"
 	"slices"
@@ -35,6 +34,7 @@ var toolCapabilities = map[string][]plan.Capability{
 // Write prints a human-readable rendering of document.
 func Write(w io.Writer, document plan.Document, opts Options) {
 	fmt.Fprintf(w, "Providers: %s\n", joinProviders(opts.Providers))
+	fmt.Fprintf(w, "Projects: %d\n", len(document.Projects))
 	fmt.Fprintln(w)
 
 	if len(document.Projects) == 0 {
@@ -44,6 +44,7 @@ func Write(w io.Writer, document plan.Document, opts Options) {
 
 	for i, project := range document.Projects {
 		if i > 0 {
+			fmt.Fprintln(w)
 			fmt.Fprintln(w)
 		}
 		writeProject(w, project, opts.Providers)
@@ -58,33 +59,22 @@ func joinProviders(names []string) string {
 }
 
 func writeProject(w io.Writer, project plan.ProjectPlan, providers []string) {
-	fmt.Fprintf(w, "Project: %s\n", project.Path)
-	fmt.Fprintf(w, "Path: %s\n", project.Path)
+	heading := "Project: " + project.Path
+	fmt.Fprintln(w, heading)
+	fmt.Fprintln(w, strings.Repeat("=", len(heading)))
 
 	if !claimed(project) {
 		fmt.Fprintln(w)
-		fmt.Fprintf(w, "No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json; a Go project requires go.mod.\n", joinProviders(providers))
-		writeFacts(w, project.Facts)
+		fmt.Fprintf(w, "  No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json; a Go project requires go.mod.\n", joinProviders(providers))
+		writeProjectDetails(w, project)
 		writeEvidence(w, project)
 		return
 	}
 
-	if len(project.Languages) > 0 {
-		fmt.Fprintf(w, "Languages: %s\n", joinDetected(project.Languages))
-	}
-	if len(project.Frameworks) > 0 {
-		fmt.Fprintf(w, "Frameworks: %s\n", joinDetected(project.Frameworks))
-	}
-	if len(project.PackageManagers) > 0 {
-		fmt.Fprintf(w, "Package managers: %s\n", joinTools(project.PackageManagers))
-	}
-	writeFacts(w, project.Facts)
-	writeNamedList(w, "Requirements", requirementLines(project.Requirements))
-	writeCommands(w, "Preparation", project.Path, project.Preparation)
-	writeCommands(w, "Commands", project.Path, project.Commands)
-	writeAmbiguities(w, project.Ambiguities)
-	writeConflicts(w, project.Conflicts)
-	writeConfiguredWithoutCommand(w, project)
+	writeActionableCommands(w, project)
+	writeAttentionItems(w, project.Ambiguities, project.Conflicts)
+	writeUninterpretedCommands(w, project.Path, project.Commands)
+	writeProjectDetails(w, project)
 	writeEvidence(w, project)
 }
 
@@ -123,21 +113,10 @@ func joinTools(tools []plan.DetectedTool) string {
 	return strings.Join(parts, ", ")
 }
 
-func writeFacts(w io.Writer, facts []plan.ProjectFact) {
-	var lines []string
-	for _, fact := range facts {
-		if fact.Name == "tool.configured" {
-			continue
-		}
-		lines = append(lines, fmt.Sprintf("  %s: %s", fact.Name, fact.Value))
-	}
-	writeNamedList(w, "Facts", lines)
-}
-
 func requirementLines(requirements []plan.Requirement) []string {
 	lines := make([]string, 0, len(requirements))
 	for _, requirement := range requirements {
-		line := "  " + requirementKindLabel(requirement.Kind) + " " + requirement.Name
+		line := requirementKindLabel(requirement.Kind) + " " + requirement.Name
 		if requirement.Version != "" {
 			line += " " + requirement.Version
 		}
@@ -173,113 +152,74 @@ func requirementKindLabel(kind plan.RequirementKind) string {
 	}
 }
 
-func writeCommands(w io.Writer, title, projectPath string, commands []plan.Command) {
-	if len(commands) == 0 {
+func writeAttentionItems(w io.Writer, ambiguities []plan.Ambiguity, conflicts []plan.Conflict) {
+	if len(ambiguities) == 0 && len(conflicts) == 0 {
 		return
 	}
-	fmt.Fprintf(w, "\n%s:\n", title)
-	commands = commandsForDisplay(commands)
-	width := commandNameWidth(commands)
-	for _, command := range commands {
-		run := "(unresolved invocation)"
-		if command.Run != nil {
-			run = *command.Run
-		}
-		suffix := capabilitySuffix(command)
-		if dir := commandDirectoryNote(projectPath, command.Directory); dir != "" {
-			suffix = "  (" + dir + ")" + suffix
-		}
-		fmt.Fprintf(w, "  %-*s  %s%s\n", width, oneLine(command.Name), oneLine(run), suffix)
-		for _, variant := range command.Variants {
-			fmt.Fprintf(w, "    %s  %s\n", oneLine(variant.Context), oneLine(variant.Run))
-		}
-	}
-}
-
-func commandDirectoryNote(projectPath, directory string) string {
-	projectPath = strings.TrimSpace(projectPath)
-	directory = strings.TrimSpace(directory)
-	if directory == "" || directory == "." || directory == projectPath {
-		return ""
-	}
-	return "in " + directory
-}
-
-func commandsForDisplay(commands []plan.Command) []plan.Command {
-	out := slices.Clone(commands)
-	slices.SortStableFunc(out, func(a, b plan.Command) int {
-		aKnown, bKnown := len(a.Interpretations) > 0, len(b.Interpretations) > 0
-		if aKnown != bKnown {
-			if aKnown {
-				return -1
-			}
-			return 1
-		}
-		if n := cmp.Compare(capabilitySuffix(a), capabilitySuffix(b)); n != 0 {
-			return n
-		}
-		return cmp.Compare(a.Name, b.Name)
-	})
-	return out
-}
-
-func oneLine(value string) string {
-	return strings.Join(strings.Fields(value), " ")
-}
-
-func commandNameWidth(commands []plan.Command) int {
-	width := 0
-	for _, command := range commands {
-		if n := len(oneLine(command.Name)); n > width {
-			width = n
-		}
-	}
-	return width
-}
-
-func capabilitySuffix(command plan.Command) string {
-	if len(command.Interpretations) == 0 {
-		return ""
-	}
-	caps := make([]string, 0, len(command.Interpretations))
-	for _, interpretation := range command.Interpretations {
-		caps = append(caps, string(interpretation.Capability))
-	}
-	return "  (" + strings.Join(caps, ", ") + ")"
-}
-
-func writeAmbiguities(w io.Writer, ambiguities []plan.Ambiguity) {
-	if len(ambiguities) == 0 {
-		return
-	}
-	fmt.Fprintln(w, "\nAmbiguities:")
+	fmt.Fprintln(w, "\n  Needs attention:")
 	for _, ambiguity := range ambiguities {
-		fmt.Fprintf(w, "  %s\n", ambiguity.Subject)
-		fmt.Fprintf(w, "    %s\n", ambiguity.Message)
+		fmt.Fprintf(w, "    Ambiguity: %s\n", ambiguity.Subject)
+		fmt.Fprintf(w, "      %s\n", ambiguity.Message)
 		for _, candidate := range ambiguity.Candidates {
-			fmt.Fprintf(w, "    - %s\n", candidate.Value)
+			fmt.Fprintf(w, "      - %s\n", candidate.Value)
 		}
 	}
-}
-
-func writeConflicts(w io.Writer, conflicts []plan.Conflict) {
-	if len(conflicts) == 0 {
-		return
-	}
-	fmt.Fprintln(w, "\nConflicts:")
 	for _, conflict := range conflicts {
-		fmt.Fprintf(w, "  %s\n", conflict.Subject)
-		fmt.Fprintf(w, "    %s\n", conflict.Message)
+		fmt.Fprintf(w, "    Conflict: %s\n", conflict.Subject)
+		fmt.Fprintf(w, "      %s\n", conflict.Message)
 		for _, assertion := range conflict.Assertions {
-			fmt.Fprintf(w, "    - %s\n", assertion.Value)
+			fmt.Fprintf(w, "      - %s\n", assertion.Value)
 		}
 		if conflict.Resolution != nil {
-			fmt.Fprintf(w, "    Selected: %s (%s)\n", conflict.Resolution.SelectedValue, conflict.Resolution.Reason)
+			fmt.Fprintf(w, "      Selected: %s (%s)\n", conflict.Resolution.SelectedValue, conflict.Resolution.Reason)
 		}
 	}
 }
 
-func writeConfiguredWithoutCommand(w io.Writer, project plan.ProjectPlan) {
+func writeProjectDetails(w io.Writer, project plan.ProjectPlan) {
+	facts := projectFactLines(project.Facts)
+	configuredTools := configuredWithoutCommandLines(project)
+	if len(project.Languages) == 0 && len(project.Frameworks) == 0 && len(project.PackageManagers) == 0 &&
+		len(project.Requirements) == 0 && len(facts) == 0 && len(configuredTools) == 0 {
+		return
+	}
+
+	fmt.Fprintln(w, "\n  Project details:")
+	if len(project.Languages) > 0 {
+		fmt.Fprintf(w, "    Languages: %s\n", joinDetected(project.Languages))
+	}
+	if len(project.Frameworks) > 0 {
+		fmt.Fprintf(w, "    Frameworks: %s\n", joinDetected(project.Frameworks))
+	}
+	if len(project.PackageManagers) > 0 {
+		fmt.Fprintf(w, "    Package managers: %s\n", joinTools(project.PackageManagers))
+	}
+	writeDetailList(w, "Requirements", requirementLines(project.Requirements))
+	writeDetailList(w, "Facts", facts)
+	writeDetailList(w, "Configured tools without a matching command", configuredTools)
+}
+
+func projectFactLines(facts []plan.ProjectFact) []string {
+	var lines []string
+	for _, fact := range facts {
+		if fact.Name != "tool.configured" {
+			lines = append(lines, fmt.Sprintf("%s: %s", fact.Name, fact.Value))
+		}
+	}
+	return lines
+}
+
+func writeDetailList(w io.Writer, title string, lines []string) {
+	if len(lines) == 0 {
+		return
+	}
+	fmt.Fprintf(w, "    %s:\n", title)
+	for _, line := range lines {
+		fmt.Fprintf(w, "      %s\n", line)
+	}
+}
+
+func configuredWithoutCommandLines(project plan.ProjectPlan) []string {
 	var lines []string
 	for _, fact := range project.Facts {
 		if fact.Name != "tool.configured" {
@@ -292,9 +232,9 @@ func writeConfiguredWithoutCommand(w io.Writer, project plan.ProjectPlan) {
 		if hasAnyCapability(project, capabilities) {
 			continue
 		}
-		lines = append(lines, fmt.Sprintf("  %s is configured. No command interpreted as %s was found.", fact.Value, joinCapabilities(capabilities)))
+		lines = append(lines, fmt.Sprintf("%s is configured. No command interpreted as %s was found.", fact.Value, joinCapabilities(capabilities)))
 	}
-	writeNamedList(w, "Configured tools without a matching command", lines)
+	return lines
 }
 
 func hasAnyCapability(project plan.ProjectPlan, capabilities []plan.Capability) bool {
@@ -322,9 +262,9 @@ func writeEvidence(w io.Writer, project plan.ProjectPlan) {
 	if len(sources) == 0 {
 		return
 	}
-	fmt.Fprintln(w, "\nEvidence:")
+	fmt.Fprintln(w, "\n  Evidence:")
 	for _, source := range sources {
-		fmt.Fprintf(w, "  %s\n", source)
+		fmt.Fprintf(w, "    %s\n", source)
 	}
 }
 
@@ -383,14 +323,4 @@ func uniqueSources(project plan.ProjectPlan) []string {
 	}
 	slices.Sort(sources)
 	return sources
-}
-
-func writeNamedList(w io.Writer, title string, lines []string) {
-	if len(lines) == 0 {
-		return
-	}
-	fmt.Fprintf(w, "\n%s:\n", title)
-	for _, line := range lines {
-		fmt.Fprintln(w, line)
-	}
 }
