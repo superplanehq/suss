@@ -185,7 +185,8 @@ func setupRuntimeFindings(ctx provider.Context, source, dir, stepPointer, runtim
 
 	raw := strings.TrimSpace(with[versionKey])
 	if raw == "" {
-		return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/with/"+versionKey, runtime, "", "The setup action does not pin a version.")}
+		// The version input may be omitted entirely; /uses always exists.
+		return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/uses", runtime, "", "The setup action does not pin a version.")}
 	}
 
 	versions := []string{raw}

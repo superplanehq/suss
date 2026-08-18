@@ -272,6 +272,34 @@ jobs:
 	}
 }
 
+func TestDetectPointsUnpinnedSetupPHPAtUses(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: shivammathur/setup-php@v2
+`,
+	})
+
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != "php" {
+			continue
+		}
+		if item.Requirement.Version != "" {
+			t.Fatalf("unpinned setup-php version = %q, want empty", item.Requirement.Version)
+		}
+		if len(item.Requirement.Evidence) == 0 || item.Requirement.Evidence[0].Pointer != "/jobs/test/steps/0/uses" {
+			t.Fatalf("unpinned setup-php evidence = %+v, want /jobs/test/steps/0/uses", item.Requirement.Evidence)
+		}
+		return
+	}
+	t.Fatal("missing unpinned PHP runtime from setup-php")
+}
+
 func TestDetectIgnoresUnknownSetupPHPVersionFileInput(t *testing.T) {
 	t.Parallel()
 
@@ -399,6 +427,27 @@ jobs:
 
 	if got := keys(commandByName(result)); !slices.Equal(got, []string{"go test"}) {
 		t.Fatalf("commands = %v, want only go test", got)
+	}
+}
+
+func TestDetectSkipsPHPDiagnosticProbes(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: |
+          php -i
+          php --ini
+          php -m
+          composer -v install
+`,
+	})
+
+	if got := keys(commandByName(result)); !slices.Equal(got, []string{"install dependencies"}) {
+		t.Fatalf("commands = %v, want only composer -v install", got)
 	}
 }
 

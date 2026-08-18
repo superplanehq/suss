@@ -224,8 +224,10 @@ func IsToolPlumbing(inv Invocation) bool {
 		return isDockerPlumbing(inv.Args)
 	case "docker-compose":
 		return isVersionInfoHelp(inv.Args)
-	case "node", "python", "python3", "ruby", "java", "php":
+	case "node", "python", "python3", "ruby", "java":
 		return isFlagVersionHelp(inv.Args)
+	case "php":
+		return isPHPPlumbing(inv.Args)
 	case "composer":
 		// Composer uses -v for verbosity and -V / --version for its version.
 		return isComposerVersionHelp(inv.Args)
@@ -288,6 +290,34 @@ func isFlagVersionHelp(args []string) bool {
 func isVersionHelpFlag(arg string) bool {
 	name, _, _ := strings.Cut(arg, "=")
 	return name == "--version" || name == "-v" || name == "--help" || name == "-h"
+}
+
+func isPHPPlumbing(args []string) bool {
+	if isFlagVersionHelp(args) {
+		return true
+	}
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if !strings.HasPrefix(arg, "-") {
+			return false
+		}
+		name, _, _ := strings.Cut(arg, "=")
+		if isPHPDiagnosticFlag(name) {
+			return true
+		}
+	}
+	return false
+}
+
+func isPHPDiagnosticFlag(name string) bool {
+	switch name {
+	case "-i", "--info", "--ini", "-m", "--modules":
+		return true
+	default:
+		return false
+	}
 }
 
 func isComposerVersionHelp(args []string) bool {
@@ -364,14 +394,15 @@ func isComposerBuiltin(name string) bool {
 
 var composerBuiltins = map[string]struct{}{
 	"about": {}, "archive": {}, "audit": {}, "browse": {}, "bump": {},
-	"check-platform-reqs": {}, "clear-cache": {}, "clearcache": {}, "config": {},
-	"create-project": {}, "depends": {}, "diagnose": {}, "dump-autoload": {},
-	"dumpautoload": {}, "exec": {}, "fund": {}, "global": {}, "help": {},
-	"home": {}, "init": {}, "install": {}, "licenses": {}, "list": {},
-	"outdated": {}, "prohibits": {}, "reinstall": {}, "remove": {}, "require": {},
+	"cc": {}, "check-platform-reqs": {}, "clear-cache": {}, "clearcache": {},
+	"config": {}, "create-project": {}, "depends": {}, "diagnose": {},
+	"dump-autoload": {}, "dumpautoload": {}, "exec": {}, "fund": {},
+	"global": {}, "help": {}, "home": {}, "i": {}, "info": {}, "init": {},
+	"install": {}, "licenses": {}, "list": {}, "outdated": {}, "prohibits": {},
+	"r": {}, "reinstall": {}, "remove": {}, "require": {}, "rm": {},
 	"run": {}, "run-script": {}, "search": {}, "self-update": {}, "selfupdate": {},
-	"show": {}, "status": {}, "suggests": {}, "update": {}, "validate": {},
-	"why": {}, "why-not": {},
+	"show": {}, "status": {}, "suggests": {}, "u": {}, "uninstall": {},
+	"update": {}, "upgrade": {}, "validate": {}, "why": {}, "why-not": {},
 }
 
 var bunBuiltins = map[string]struct{}{

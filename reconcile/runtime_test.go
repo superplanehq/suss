@@ -10,6 +10,8 @@ func TestVersionSatisfiesComposerCommaAndConstraints(t *testing.T) {
 		version    string
 		want       bool
 	}{
+		{constraint: ">=8.1,<8.3", version: "8.2", want: true},
+		{constraint: ">=8.1,<8.3", version: "8.4", want: false},
 		{constraint: ">=8.1,<8.4", version: "8.3", want: true},
 		{constraint: ">=8.1,<8.4", version: "8.3.6", want: true},
 		{constraint: ">=8.1,<8.4", version: "8.4", want: false},

@@ -351,6 +351,29 @@ func TestApplyDoesNotFoldIncompatibleRangeMembersAsEvidence(t *testing.T) {
 	}
 }
 
+func TestApplyDoesNotFoldSetupPHPOutsideAComposerCommaUpperBound(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    ">=8.1,<8.3",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.4")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 8.4 attached to >=8.1,<8.3", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 1 {
+		t.Fatalf("conflicts = %+v, want a version conflict for 8.4 vs >=8.1,<8.3", got[0].Conflicts)
+	}
+}
+
 func TestApplyDoesNotFoldACIPinOutsideAComposerCommaConstraint(t *testing.T) {
 	t.Parallel()
 

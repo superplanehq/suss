@@ -192,6 +192,18 @@ func TestDetectMergesMatchingRuntimeEvidence(t *testing.T) {
 	t.Fatal("missing merged PHP 8.3.6 requirement")
 }
 
+func TestDetectEmitsComposerCommaRuntimeConstraint(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{"require":{"php":">=8.1,<8.3"}}`,
+	})
+
+	if !hasRuntime(result, ">=8.1,<8.3") {
+		t.Fatalf("missing require.php >=8.1,<8.3 in %+v", result.Findings)
+	}
+}
+
 func TestDetectAcceptsDisabledComposerPlatformPackages(t *testing.T) {
 	t.Parallel()
 

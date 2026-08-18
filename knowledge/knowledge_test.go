@@ -320,6 +320,13 @@ func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
 	if !ok || update.Install || update.Script != "" {
 		t.Fatalf("ClassifyManager(composer update) = %+v, ok=%v", update, ok)
 	}
+
+	for _, alias := range []string{"upgrade", "u", "info", "rm", "uninstall", "r", "cc"} {
+		got, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{alias}})
+		if !ok || got.Install || got.Script != "" {
+			t.Fatalf("ClassifyManager(composer %s) = %+v, ok=%v, want a builtin", alias, got, ok)
+		}
+	}
 }
 
 func TestIsRemoteGemInstall(t *testing.T) {
@@ -550,6 +557,18 @@ func TestIsToolPlumbingCoversVersionProbes(t *testing.T) {
 	}
 	if !IsToolPlumbing(Invocation{Executable: "php", Args: []string{"-v"}}) {
 		t.Fatal("IsToolPlumbing(php -v) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "php", Args: []string{"-i"}}) {
+		t.Fatal("IsToolPlumbing(php -i) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "php", Args: []string{"--ini"}}) {
+		t.Fatal("IsToolPlumbing(php --ini) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "php", Args: []string{"-m"}}) {
+		t.Fatal("IsToolPlumbing(php -m) = false, want true")
+	}
+	if IsToolPlumbing(Invocation{Executable: "php", Args: []string{"artisan", "test"}}) {
+		t.Fatal("IsToolPlumbing(php artisan test) = true, want false")
 	}
 }
 
