@@ -66,7 +66,7 @@ line-length = 88
 	assertCommand(t, commands["test"], "pytest", plan.CapabilityTestRun)
 	assertCommand(t, commands["server"], "python manage.py runserver", plan.CapabilityApplicationRun)
 
-	tools := factValues(result, "tool.configured")
+	tools := configuredToolValues(result)
 	for _, tool := range []string{"pytest", "ruff"} {
 		if !slices.Contains(tools, tool) {
 			t.Fatalf("configured tools = %v, want %s", tools, tool)
@@ -388,8 +388,8 @@ func TestDetectToolOnlyPyprojectDoesNotInferInstall(t *testing.T) {
 	if hasPackageManager(result, "pip") {
 		t.Fatalf("configuration-only pyproject unexpectedly selected pip in %+v", result.Findings)
 	}
-	if !slices.Contains(factValues(result, "tool.configured"), "ruff") {
-		t.Fatalf("configured tools = %v, want ruff", factValues(result, "tool.configured"))
+	if !slices.Contains(configuredToolValues(result), "ruff") {
+		t.Fatalf("configured tools = %v, want ruff", configuredToolValues(result))
 	}
 }
 
@@ -412,7 +412,7 @@ test = ["pytest", "ruff"]
 		t.Fatalf("missing pdm in %+v", result.Findings)
 	}
 	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
-	tools := factValues(result, "tool.configured")
+	tools := configuredToolValues(result)
 	for _, tool := range []string{"pytest", "ruff"} {
 		if !slices.Contains(tools, tool) {
 			t.Fatalf("configured tools = %v, want %s", tools, tool)
@@ -427,7 +427,7 @@ func TestDetectMypyExtensionsIsNotConfiguredMypy(t *testing.T) {
 		"pyproject.toml": "[project]\nname = \"widget\"\ndependencies = [\"mypy-extensions\"]\n",
 	})
 
-	if slices.Contains(factValues(result, "tool.configured"), "mypy") {
+	if slices.Contains(configuredToolValues(result), "mypy") {
 		t.Fatalf("mypy-extensions unexpectedly configured mypy in %+v", result.Findings)
 	}
 }
@@ -440,8 +440,8 @@ func TestDetectPrefixedPytestCovCitesRequirements(t *testing.T) {
 		"requirements.txt": "pytest-cov\n",
 	})
 
-	if !slices.Contains(factValues(result, "tool.configured"), "pytest") {
-		t.Fatalf("configured tools = %v, want pytest", factValues(result, "tool.configured"))
+	if !slices.Contains(configuredToolValues(result), "pytest") {
+		t.Fatalf("configured tools = %v, want pytest", configuredToolValues(result))
 	}
 	sources := factSources(result, "tool.configured", "pytest")
 	if !slices.Contains(sources, "requirements.txt") {
@@ -527,11 +527,11 @@ func assertCommand(t *testing.T, command plan.Command, run string, capability pl
 	t.Fatalf("command interpretations = %+v, want %s", command.Interpretations, capability)
 }
 
-func factValues(result provider.Result, name string) []string {
+func configuredToolValues(result provider.Result) []string {
 	var values []string
 	for _, finding := range result.Findings {
 		item, ok := finding.(plan.PropertyFinding)
-		if ok && item.Property.Kind == plan.PropertyFact && item.Property.Name == name {
+		if ok && item.Property.Kind == plan.PropertyFact && item.Property.Name == "tool.configured" {
 			values = append(values, item.Property.Value)
 		}
 	}
