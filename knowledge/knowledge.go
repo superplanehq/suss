@@ -729,11 +729,13 @@ func canonicalizeExecutable(executable string) string {
 // MavenGradleArgs drops leading options and a leading `clean` lifecycle
 // phase so `mvn -B clean test` matches the `mvn test` rule. Options that
 // take a following value, such as `-pl module` or `--project-dir app`,
-// are skipped as a pair.
+// are skipped as a pair. Options after `clean` are dropped the same way
+// so `mvn clean -DskipTests package` matches `mvn package`.
 func MavenGradleArgs(executable string, args []string) []string {
-	args = dropLeadingToolFlags(args, mavenGradleValueFlags(executable))
-	if len(args) > 1 && args[0] == "clean" {
-		return args[1:]
+	flags := mavenGradleValueFlags(executable)
+	args = dropLeadingToolFlags(args, flags)
+	if len(args) > 0 && args[0] == "clean" {
+		args = dropLeadingToolFlags(args[1:], flags)
 	}
 	return args
 }

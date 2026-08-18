@@ -10,7 +10,8 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "build.gradle"
+              "source": "build.gradle",
+              "pointer": "/plugins/java"
             },
             {
               "kind": "declaration",

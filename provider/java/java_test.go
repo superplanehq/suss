@@ -564,28 +564,93 @@ java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
 	}
 }
 
-func TestDetectGradleLegacyJavaVersion(t *testing.T) {
+func TestDetectIgnoresGradleWithoutJavaPlugin(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		src  string
+		name  string
+		files map[string]string
 	}{
-		{name: "enum", src: "plugins { id 'java' }\nsourceCompatibility = JavaVersion.VERSION_1_8\n"},
-		{name: "quoted", src: "plugins { id 'java' }\nsourceCompatibility = '1.8'\n"},
+		{name: "settings-only", files: map[string]string{"settings.gradle.kts": "rootProject.name = \"demo\"\n"}},
+		{name: "android", files: map[string]string{"build.gradle.kts": "plugins { id(\"com.android.application\") }\n"}},
+		{name: "kotlin-only", files: map[string]string{"build.gradle.kts": "plugins { id(\"org.jetbrains.kotlin.jvm\") }\n"}},
+		{name: "native", files: map[string]string{"build.gradle.kts": "plugins { id(\"cpp-library\") }\n"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			result := detectFiles(t, map[string]string{"build.gradle": tt.src})
-			if !hasRuntime(result, "8") {
-				t.Fatalf("missing normalized Java 8 in %+v", result.Findings)
+			result := detectFiles(t, tt.files)
+			if hasProperty(result, plan.PropertyLanguage, "java") {
+				t.Fatalf("classified a non-Java Gradle build as Java: %+v", result.Findings)
 			}
-			if hasRuntime(result, "1") {
-				t.Fatalf("legacy Java 8 declaration was reported as Java 1: %+v", result.Findings)
+			if _, ok := commandsByName(result)["build"]; ok {
+				t.Fatal("inferred gradle build without a Java plugin")
 			}
 		})
 	}
+}
+
+func TestDetectGradleSourceCompatibilityIsNotARuntime(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"build.gradle": "plugins { id 'java' }\nsourceCompatibility = JavaVersion.VERSION_1_8\n",
+	})
+
+	if hasRuntime(result, "8") || hasRuntime(result, "1.8") {
+		t.Fatalf("sourceCompatibility was treated as a Java runtime: %+v", result.Findings)
+	}
+}
+
+func TestDetectMergesLegacyJavaVersionFilePins(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml":        `<project><modelVersion>4.0.0</modelVersion></project>`,
+		".java-version":  "1.8\n",
+		".tool-versions": "java 8\n",
+	})
+
+	if hasRuntime(result, "1.8") {
+		t.Fatalf("legacy version-file pin was not normalized: %+v", result.Findings)
+	}
+	if !hasRuntime(result, "8") {
+		t.Fatalf("missing merged Java 8 in %+v", result.Findings)
+	}
+	if len(result.Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none between 1.8 and 8", result.Conflicts)
+	}
+}
+
+func TestDetectGradleKotlinPluginAccessorsInfersRun(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"build.gradle.kts":                   "plugins {\n    application\n    `java-library`\n    checkstyle\n}\napplication { mainClass.set(\"com.example.App\") }\n",
+		"src/main/java/com/example/App.java": "public class App { public static void main(String[] args) {} }\n",
+	})
+
+	assertCommand(t, commandsByName(result)["server"], "gradle run", plan.CapabilityApplicationRun)
+	if !slices.Contains(factValues(result, "tool.configured"), "checkstyle") {
+		t.Fatalf("configured tools = %v, want checkstyle", factValues(result, "tool.configured"))
+	}
+}
+
+func TestDetectCompetingManagersKeepGradleRun(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml": `<project><modelVersion>4.0.0</modelVersion><artifactId>demo</artifactId></project>`,
+		"build.gradle.kts": `plugins { application }
+application { mainClass.set("com.example.App") }
+`,
+		"src/main/java/com/example/App.java": "public class App { public static void main(String[] args) {} }\n",
+	})
+
+	if slices.Contains(ambiguitySubjects(result), "application.run") {
+		t.Fatalf("application.run ambiguity cited an unsupported Maven server: %+v", result.Ambiguities)
+	}
+	assertCommand(t, commandsByName(result)["server"], "gradle run", plan.CapabilityApplicationRun)
 }
 
 func TestDetectIgnoresUnappliedGradlePlugins(t *testing.T) {

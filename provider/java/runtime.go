@@ -50,19 +50,21 @@ func runtimeFindings(ctx provider.Context, project javaProject) ([]plan.Finding,
 			Assertions: assertions,
 		})
 	} else if len(pins) > 0 {
+		version := normalizeJavaVersion(pins[0].version)
 		evidence := make([]plan.Evidence, 0, len(pins)+2)
 		for _, pin := range pins {
 			evidence = append(evidence, pin.evidence)
 		}
-		evidence = append(evidence, matchingManifestEvidence(ctx, project, pins[0].version, manifestMerged)...)
-		findings = append(findings, runtimeFinding(ctx, pins[0].version, plan.ConfidenceHigh, evidence))
+		evidence = append(evidence, matchingManifestEvidence(ctx, project, version, manifestMerged)...)
+		findings = append(findings, runtimeFinding(ctx, version, plan.ConfidenceHigh, evidence))
 	}
 
 	for _, version := range manifestJavaVersions(ctx, project) {
-		if manifestMerged[version.value] {
+		normalized := normalizeJavaVersion(version.value)
+		if manifestMerged[version.value] || manifestMerged[normalized] {
 			continue
 		}
-		findings = append(findings, runtimeFinding(ctx, version.value, plan.ConfidenceHigh, []plan.Evidence{version.evidence}))
+		findings = append(findings, runtimeFinding(ctx, normalized, plan.ConfidenceHigh, []plan.Evidence{version.evidence}))
 	}
 	return findings, conflicts, nil
 }
@@ -104,12 +106,14 @@ func manifestJavaVersions(ctx provider.Context, project javaProject) []manifestV
 }
 
 func matchingManifestEvidence(ctx provider.Context, project javaProject, version string, merged map[string]bool) []plan.Evidence {
+	version = normalizeJavaVersion(version)
 	var evidence []plan.Evidence
 	for _, item := range manifestJavaVersions(ctx, project) {
-		if item.value != version {
+		if normalizeJavaVersion(item.value) != version {
 			continue
 		}
 		merged[item.value] = true
+		merged[version] = true
 		evidence = append(evidence, item.evidence)
 	}
 	return evidence
@@ -122,6 +126,7 @@ func readJavaVersionFile(ctx provider.Context) (*runtimePin, error) {
 	}
 	version := firstVersionLine(contents)
 	version = strings.TrimPrefix(version, "java-")
+	version = normalizeJavaVersion(version)
 	if version == "" {
 		return nil, nil
 	}
@@ -138,8 +143,12 @@ func readJavaToolVersion(ctx provider.Context) (*runtimePin, error) {
 		line, _, _ := strings.Cut(scanner.Text(), "#")
 		fields := strings.Fields(line)
 		if len(fields) >= 2 && fields[0] == "java" {
+			version := normalizeJavaVersion(fields[1])
+			if version == "" {
+				return nil, nil
+			}
 			return &runtimePin{
-				version:  fields[1],
+				version:  version,
 				evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path, Pointer: "/java"},
 			}, nil
 		}
@@ -163,7 +172,7 @@ func readSdkmanrc(ctx provider.Context) (*runtimePin, error) {
 		if !ok || strings.TrimSpace(name) != "java" {
 			continue
 		}
-		version := strings.TrimSpace(value)
+		version := normalizeJavaVersion(value)
 		if version == "" {
 			return nil, nil
 		}
@@ -215,8 +224,12 @@ func firstVersionLine(contents string) string {
 }
 
 func pinsDisagree(pins []runtimePin) bool {
-	for index := 1; index < len(pins); index++ {
-		if pins[index].version != pins[0].version {
+	if len(pins) == 0 {
+		return false
+	}
+	first := normalizeJavaVersion(pins[0].version)
+	for _, pin := range pins[1:] {
+		if normalizeJavaVersion(pin.version) != first {
 			return true
 		}
 	}

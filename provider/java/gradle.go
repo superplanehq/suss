@@ -82,6 +82,9 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 		return nil, err
 	}
 	project.Wrapper, project.WrapperSource, project.WrapperVersion, project.WrapperProperties = gradleWrapper(ctx)
+	if !project.hasSupportedJavaPlugin() {
+		return nil, nil
+	}
 	return project, nil
 }
 
@@ -107,7 +110,7 @@ func absorbGradleBuild(project *gradleProject, source, contents string) {
 			project.Plugins[id] = source
 		}
 	}
-	if version, pointer := gradleJavaVersion(contents); version != "" {
+	if version, pointer := gradleToolchainVersion(contents); version != "" {
 		project.JavaPins = append(project.JavaPins, gradleJavaPin{Version: version, Pointer: pointer, Source: source})
 		if project.JavaVersion == "" {
 			project.JavaVersion = version
@@ -250,29 +253,150 @@ func gradlePlugins(contents string) map[string]struct{} {
 			out[match[1]] = struct{}{}
 		}
 	}
+	for _, block := range gradlePluginsBlocks(contents) {
+		addGradlePluginAccessors(out, block)
+	}
 	return out
 }
 
+var supportedJavaPlugins = []string{
+	"java",
+	"java-library",
+	"java-gradle-plugin",
+	"application",
+	"org.springframework.boot",
+}
+
+var gradleCorePlugins = map[string]struct{}{
+	"application":        {},
+	"checkstyle":         {},
+	"groovy":             {},
+	"java":               {},
+	"java-gradle-plugin": {},
+	"java-library":       {},
+	"jacoco":             {},
+	"pmd":                {},
+	"scala":              {},
+	"war":                {},
+}
+
+var gradlePluginAccessorKeywords = map[string]struct{}{
+	"alias":   {},
+	"apply":   {},
+	"false":   {},
+	"id":      {},
+	"kotlin":  {},
+	"true":    {},
+	"version": {},
+}
+
 var (
-	gradleApplyFalse  = regexp.MustCompile(`(?i)\bapply\s*(?:false|\(\s*false\s*\))`)
-	gradleApplyPlugin = regexp.MustCompile(`(?m)apply\s+plugin:\s*["']([^"']+)["']`)
+	gradleApplyFalse       = regexp.MustCompile(`(?i)\bapply\s*(?:false|\(\s*false\s*\))`)
+	gradleApplyPlugin      = regexp.MustCompile(`(?m)apply\s+plugin:\s*["']([^"']+)["']`)
+	gradleBacktickPlugin   = regexp.MustCompile("`([a-z][a-z0-9-]*)`")
+	gradleBarePlugin       = regexp.MustCompile(`(?m)(?:^|[{\s,])([a-z][a-z0-9-]*)\b`)
+	gradleToolchainPattern = regexp.MustCompile(`JavaLanguageVersion\.of\(\s*["']?(\d+)["']?\s*\)`)
 )
 
-func gradleJavaVersion(contents string) (string, string) {
-	patterns := []struct {
-		pattern *regexp.Regexp
-		pointer string
-	}{
-		{regexp.MustCompile(`JavaLanguageVersion\.of\(\s*["']?(\d+)["']?\s*\)`), "/java/toolchain"},
-		{regexp.MustCompile(`JavaVersion\.VERSION_(\d+(?:_\d+)?)`), "/sourceCompatibility"},
-		{regexp.MustCompile(`(?m)sourceCompatibility\s*=\s*["']?(\d+(?:\.\d+)?)["']?`), "/sourceCompatibility"},
-		{regexp.MustCompile(`(?m)targetCompatibility\s*=\s*["']?(\d+(?:\.\d+)?)["']?`), "/targetCompatibility"},
-		{regexp.MustCompile(`(?m)jvmTarget\s*=\s*["']?(\d+(?:\.\d+)?)["']?`), "/jvmTarget"},
-	}
-	for _, candidate := range patterns {
-		if match := candidate.pattern.FindStringSubmatch(contents); len(match) == 2 {
-			return normalizeJavaVersion(match[1]), candidate.pointer
+func gradlePluginsBlocks(contents string) []string {
+	var blocks []string
+	for i := 0; i < len(contents); {
+		idx := strings.Index(contents[i:], "plugins")
+		if idx < 0 {
+			break
 		}
+		idx += i
+		if idx > 0 && isGradleIdentChar(contents[idx-1]) {
+			i = idx + len("plugins")
+			continue
+		}
+		after := idx + len("plugins")
+		if after < len(contents) && isGradleIdentChar(contents[after]) {
+			i = after
+			continue
+		}
+		open := skipGradleSpace(contents, after)
+		if open >= len(contents) || contents[open] != '{' {
+			i = after
+			continue
+		}
+		block, end, ok := readGradleBraceBlock(contents, open)
+		if !ok {
+			break
+		}
+		blocks = append(blocks, block)
+		i = end
+	}
+	return blocks
+}
+
+func addGradlePluginAccessors(out map[string]struct{}, block string) {
+	add := func(name, line string) {
+		if _, known := gradleCorePlugins[name]; !known {
+			return
+		}
+		if gradleApplyFalse.MatchString(line) {
+			return
+		}
+		out[name] = struct{}{}
+	}
+	for _, match := range gradleBacktickPlugin.FindAllStringSubmatchIndex(block, -1) {
+		add(block[match[2]:match[3]], gradleLineAt(block, match[0]))
+	}
+	for _, match := range gradleBarePlugin.FindAllStringSubmatchIndex(block, -1) {
+		name := block[match[2]:match[3]]
+		if _, skip := gradlePluginAccessorKeywords[name]; skip {
+			continue
+		}
+		rest := strings.TrimSpace(block[match[3]:])
+		if strings.HasPrefix(rest, "(") {
+			continue
+		}
+		add(name, gradleLineAt(block, match[0]))
+	}
+}
+
+func gradleLineAt(contents string, index int) string {
+	start, end := index, index
+	for start > 0 && contents[start-1] != '\n' {
+		start--
+	}
+	for end < len(contents) && contents[end] != '\n' {
+		end++
+	}
+	return contents[start:end]
+}
+
+func isGradleIdentChar(b byte) bool {
+	return b == '_' || b == '-' || (b >= '0' && b <= '9') || (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z')
+}
+
+func skipGradleSpace(contents string, i int) int {
+	for i < len(contents) && (contents[i] == ' ' || contents[i] == '\t' || contents[i] == '\n' || contents[i] == '\r') {
+		i++
+	}
+	return i
+}
+
+func readGradleBraceBlock(contents string, open int) (string, int, bool) {
+	depth := 0
+	for i := open; i < len(contents); i++ {
+		switch contents[i] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return contents[open+1 : i], i + 1, true
+			}
+		}
+	}
+	return "", open, false
+}
+
+func gradleToolchainVersion(contents string) (string, string) {
+	if match := gradleToolchainPattern.FindStringSubmatch(contents); len(match) == 2 {
+		return normalizeJavaVersion(match[1]), "/java/toolchain"
 	}
 	return "", ""
 }
@@ -323,6 +447,34 @@ func (g *gradleProject) pluginSource(id string) string {
 		return ""
 	}
 	return g.Plugins[id]
+}
+
+func (g *gradleProject) hasSupportedJavaPlugin() bool {
+	if g == nil {
+		return false
+	}
+	for _, id := range supportedJavaPlugins {
+		if g.hasPlugin(id) {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *gradleProject) javaPluginEvidence() []plan.Evidence {
+	if g == nil {
+		return nil
+	}
+	for _, id := range supportedJavaPlugins {
+		if source := g.pluginSource(id); source != "" {
+			return []plan.Evidence{{
+				Kind:    plan.EvidenceDeclaration,
+				Source:  source,
+				Pointer: "/plugins/" + pointerToken(id),
+			}}
+		}
+	}
+	return nil
 }
 
 func (g *gradleProject) hasSpringBootPlugin() bool {

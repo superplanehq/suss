@@ -178,11 +178,8 @@ func competingManagerResult(ctx provider.Context, project javaProject) ([]comman
 }
 
 func competingServerResult(ctx provider.Context, project javaProject, entry string) ([]commandSpec, *plan.Ambiguity) {
-	if entry == "" {
-		return nil, nil
-	}
 	var specs []commandSpec
-	if project.Maven != nil && project.Maven.hasSpringBootPlugin() {
+	if entry != "" && project.Maven != nil && project.Maven.hasSpringBootPlugin() {
 		source := ctx.SourcePath(project.Maven.Source)
 		tool := project.Maven.Wrapper
 		if tool == "" {
@@ -192,7 +189,7 @@ func competingServerResult(ctx provider.Context, project javaProject, entry stri
 		spec.evidence = attachCommandEvidence(spec.evidence, project.Maven.WrapperSource, springBootPluginEvidence(project.Maven), plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
 	}
-	if project.Gradle != nil && project.Gradle.hasSpringBootPlugin() {
+	if project.Gradle != nil && project.Gradle.hasSpringBootPlugin() && entry != "" {
 		source := ctx.SourcePath(project.Gradle.Source)
 		tool := project.Gradle.Wrapper
 		if tool == "" {
@@ -201,13 +198,29 @@ func competingServerResult(ctx provider.Context, project javaProject, entry stri
 		spec := conventionSpec(source, "server", tool+" bootRun", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with gradle bootRun.")
 		spec.evidence = attachCommandEvidence(spec.evidence, project.Gradle.WrapperSource, gradlePluginEvidence(ctx, project.Gradle, "org.springframework.boot"), plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
+	} else if project.Gradle != nil && project.Gradle.canRunApplication() {
+		source := ctx.SourcePath(project.Gradle.Source)
+		tool := project.Gradle.Wrapper
+		if tool == "" {
+			tool = "gradle"
+		}
+		spec := conventionSpec(source, "server", tool+" run", "/#server", plan.ConfidenceMedium, "Gradle application projects conventionally start with gradle run.")
+		extras := []plan.Evidence{gradleMainClassEvidence(ctx, project.Gradle)}
+		if entry != "" {
+			extras = append(extras, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		}
+		spec.evidence = attachCommandEvidence(spec.evidence, project.Gradle.WrapperSource, extras...)
+		specs = append(specs, spec)
 	}
 	if len(specs) >= 2 {
 		ambiguity := managerAmbiguity(ctx, project, "application.run", "server", func(tool, kind string) string {
 			if kind == "maven" {
 				return tool + " spring-boot:run"
 			}
-			return tool + " bootRun"
+			if project.Gradle != nil && project.Gradle.hasSpringBootPlugin() {
+				return tool + " bootRun"
+			}
+			return tool + " run"
 		})
 		return nil, &ambiguity
 	}

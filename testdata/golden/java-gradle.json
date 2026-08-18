@@ -10,7 +10,8 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "build.gradle.kts"
+              "source": "build.gradle.kts",
+              "pointer": "/plugins/java"
             }
           ]
         }

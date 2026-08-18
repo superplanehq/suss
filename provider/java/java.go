@@ -107,7 +107,11 @@ func languageEvidence(ctx provider.Context, project javaProject) []plan.Evidence
 		evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceDeclaration, Source: ctx.SourcePath(project.Maven.Source)})
 	}
 	if project.Gradle != nil {
-		evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceDeclaration, Source: ctx.SourcePath(project.Gradle.Source)})
+		if pluginEvidence := project.Gradle.javaPluginEvidence(); len(pluginEvidence) > 0 {
+			evidence = append(evidence, pluginEvidence...)
+		} else {
+			evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceDeclaration, Source: ctx.SourcePath(project.Gradle.Source)})
+		}
 	}
 	return evidence
 }
