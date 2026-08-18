@@ -222,6 +222,25 @@ func sameVersion(a, b string) bool {
 	return normalizeVersion(a) == normalizeVersion(b) && a != "" && b != ""
 }
 
+func inequalitySatisfies(raw, version string) (ok, known bool) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return false, false
+	}
+	if strings.ContainsAny(raw, "xX*") {
+		matched, known := wildcardSatisfies(raw, version)
+		if !known {
+			return false, false
+		}
+		return !matched, true
+	}
+	bound := normalizeVersion(raw)
+	if bound == "" || !comparableVersion(bound) {
+		return false, false
+	}
+	return compareVersions(version, bound) != 0, true
+}
+
 func normalizeVersion(version string) string {
 	version = strings.TrimSpace(version)
 	version = strings.TrimPrefix(version, "v")
@@ -240,7 +259,7 @@ func versionSatisfies(runtime, declared, version string) (ok, known bool) {
 		return true, true
 	}
 
-	for _, group := range strings.Split(declared, "||") {
+	for _, group := range strings.Split(strings.ReplaceAll(declared, "||", "|"), "|") {
 		satisfied, groupKnown := andConstraints(runtime, strings.TrimSpace(group), version)
 		if !groupKnown {
 			return false, false
@@ -326,7 +345,7 @@ func splitConstraints(group string) []string {
 	fields := strings.Fields(strings.ReplaceAll(group, ",", " "))
 	for i := 0; i < len(fields); i++ {
 		field := fields[i]
-		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "^" || field == "~" || field == "~>" {
+		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "!=" || field == "<>" || field == "^" || field == "~" || field == "~>" {
 			if i+1 < len(fields) {
 				tokens = append(tokens, field+fields[i+1])
 				i++
@@ -353,11 +372,7 @@ func constraintSatisfies(runtime, token, version string) (ok, known bool) {
 		}
 		return compareVersions(version, bound) <= 0, true
 	case strings.HasPrefix(token, "!="), strings.HasPrefix(token, "<>"):
-		bound := normalizeVersion(strings.TrimSpace(token[2:]))
-		if bound == "" {
-			return false, false
-		}
-		return !sameVersion(bound, version), true
+		return inequalitySatisfies(strings.TrimSpace(token[2:]), version)
 	case strings.HasPrefix(token, ">"):
 		bound := normalizeVersion(strings.TrimSpace(token[1:]))
 		if bound == "" {

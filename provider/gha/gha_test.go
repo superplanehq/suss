@@ -451,6 +451,48 @@ jobs:
 	}
 }
 
+func TestDetectExpandsMatrixComposerWorkingDir(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        dir: [packages/app, packages/lib]
+    steps:
+      - run: composer --working-dir=${{ matrix.dir }} test
+`,
+	})
+	dirs := commandDirectories(result, "test")
+	if !slices.Equal(sortedCopy(dirs), []string{"packages/app", "packages/lib"}) {
+		t.Fatalf("directories = %v, want packages/app and packages/lib", dirs)
+	}
+	for _, dir := range dirs {
+		if strings.Contains(dir, "${{") {
+			t.Fatalf("directories = %v, did not want an unresolved expression", dirs)
+		}
+	}
+}
+
+func TestDetectLeavesUnresolvedComposerWorkingDirOnTheParent(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: composer --working-dir=${{ inputs.dir }} test
+`,
+	})
+	dirs := commandDirectories(result, "test")
+	if !slices.Equal(dirs, []string{"."}) {
+		t.Fatalf("directories = %v, want the parent project", dirs)
+	}
+}
+
 func TestDetectAppliesComposerWorkingDirWhenUnwrappingExec(t *testing.T) {
 	t.Parallel()
 

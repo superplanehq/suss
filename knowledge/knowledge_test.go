@@ -219,6 +219,10 @@ func TestInterpretMatchesPHPInvocations(t *testing.T) {
 		{invocation: Invocation{Executable: "psalm"}, capability: plan.CapabilityCodeTypecheck},
 		{invocation: Invocation{Executable: "pint"}, capability: plan.CapabilityCodeFormat},
 		{invocation: Invocation{Executable: "pint", Args: []string{"--test"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "pint", Args: []string{"--dirty", "--test"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "pint", Args: []string{"app", "--test"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "php-cs-fixer", Args: []string{"fix"}}, capability: plan.CapabilityCodeFormat},
+		{invocation: Invocation{Executable: "php-cs-fixer", Args: []string{"fix", "--dry-run", "--diff"}}, capability: plan.CapabilityCodeLint},
 		{invocation: Invocation{Executable: "phpcs"}, capability: plan.CapabilityCodeLint},
 	}
 	for _, tt := range tests {

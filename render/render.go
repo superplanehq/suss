@@ -40,7 +40,7 @@ var toolCapabilities = map[string][]plan.Capability{
 	"pest":          {plan.CapabilityTestRun},
 	"phpstan":       {plan.CapabilityCodeTypecheck},
 	"psalm":         {plan.CapabilityCodeTypecheck},
-	"php-cs-fixer":  {plan.CapabilityCodeFormat},
+	"php-cs-fixer":  {plan.CapabilityCodeFormat, plan.CapabilityCodeLint},
 	"phpcs":         {plan.CapabilityCodeLint},
 	"pint":          {plan.CapabilityCodeLint, plan.CapabilityCodeFormat},
 }

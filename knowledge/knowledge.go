@@ -40,6 +40,7 @@ type rule struct {
 	ID           string            `json:"id"`
 	Executable   string            `json:"executable"`
 	ArgsPrefix   []string          `json:"argsPrefix"`
+	ArgsContains []string          `json:"argsContains"`
 	Capabilities []plan.Capability `json:"capabilities"`
 	Confidence   plan.Confidence   `json:"confidence"`
 	Description  string            `json:"description"`
@@ -74,7 +75,8 @@ func loaded() ([]rule, error) {
 }
 
 // Interpret returns knowledge-base matches for a single invocation. When
-// several rules match, only the most specific args-prefix group is kept.
+// several rules match, only the most specific args-prefix and args-contains
+// group is kept.
 func Interpret(inv Invocation) []Match {
 	loadedRules, err := loaded()
 	if err != nil {
@@ -95,12 +97,15 @@ func Interpret(inv Invocation) []Match {
 		if !hasArgsPrefix(inv.Args, rule.ArgsPrefix) {
 			continue
 		}
-		prefixLen := len(rule.ArgsPrefix)
-		if prefixLen < bestLen {
+		if !hasArgsContains(inv.Args, rule.ArgsContains) {
 			continue
 		}
-		if prefixLen > bestLen {
-			bestLen = prefixLen
+		specificity := len(rule.ArgsPrefix) + len(rule.ArgsContains)
+		if specificity < bestLen {
+			continue
+		}
+		if specificity > bestLen {
+			bestLen = specificity
 			matches = matches[:0]
 		}
 		for _, capability := range rule.Capabilities {
@@ -646,6 +651,22 @@ func hasArgsPrefix(args, prefix []string) bool {
 	}
 	for i, part := range prefix {
 		if args[i] != part {
+			return false
+		}
+	}
+	return true
+}
+
+func hasArgsContains(args, required []string) bool {
+	if len(required) == 0 {
+		return true
+	}
+	have := make(map[string]struct{}, len(args))
+	for _, arg := range args {
+		have[arg] = struct{}{}
+	}
+	for _, want := range required {
+		if _, ok := have[want]; !ok {
 			return false
 		}
 	}

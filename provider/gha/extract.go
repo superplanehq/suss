@@ -85,7 +85,7 @@ func extractStep(ctx provider.Context, source, workflowDir, jobWD, stepPointer s
 		if strings.TrimSpace(step.Run) == "" {
 			continue
 		}
-		commands, err := runFindings(ctx, source, dir, stepPointer+"/run", step.Run)
+		commands, err := runFindings(ctx, source, dir, stepPointer+"/run", step.Run, matrix)
 		if err != nil {
 			return nil, err
 		}
@@ -275,15 +275,17 @@ func runtimeFinding(source, dir, pointer, name, version, description string) pla
 	})
 }
 
-func runFindings(ctx provider.Context, source, dir, pointer, script string) ([]plan.Finding, error) {
+func runFindings(ctx provider.Context, source, dir, pointer, script string, matrix map[string][]string) ([]plan.Finding, error) {
 	statements := knowledge.ParseStatementsKeepPipelines(normalizeRunScript(script))
 	suffix := len(statements) > 1
 	current := dir
 	var findings []plan.Finding
 	for i, stmt := range statements {
-		commandDir := applyStatementDirectory(ctx.RepositoryRoot, current, stmt)
+		dirs := statementDirectories(ctx.RepositoryRoot, current, stmt, matrix)
 		if stmt.Chdir != "" {
-			current = commandDir
+			if len(dirs) > 0 {
+				current = dirs[0]
+			}
 			continue
 		}
 		if skipStatement(stmt) {
@@ -297,31 +299,33 @@ func runFindings(ctx provider.Context, source, dir, pointer, script string) ([]p
 		if suffix {
 			commandPointer = pointer + "#command=" + strconv.Itoa(i)
 		}
-		command, err := observedCommand(source, commandDir, commandPointer, stmt)
-		if err != nil {
-			return nil, err
+		for _, commandDir := range dirs {
+			command, err := observedCommand(source, commandDir, commandPointer, stmt)
+			if err != nil {
+				return nil, err
+			}
+			findings = append(findings, plan.CommandFinding{
+				ProjectPath: commandDir,
+				Detector:    providerName,
+				Command:     command,
+			})
 		}
-		findings = append(findings, plan.CommandFinding{
-			ProjectPath: commandDir,
-			Detector:    providerName,
-			Command:     command,
-		})
 	}
 	return findings, nil
 }
 
-func applyStatementDirectory(repo, current string, stmt knowledge.Statement) string {
+func statementDirectories(repo, current string, stmt knowledge.Statement, matrix map[string][]string) []string {
 	if stmt.Chdir != "" {
-		return resolveDirectory(repo, current, stmt.Chdir)
+		return expandDirectories(repo, current, stmt.Chdir, matrix)
 	}
-	if stmt.WorkingDir != "" {
-		return resolveDirectory(repo, current, stmt.WorkingDir)
+	rel := stmt.WorkingDir
+	if rel == "" {
+		rel, _ = knowledge.StripDirectoryFlags(stmt.Invocation)
 	}
-	dir, _ := knowledge.StripDirectoryFlags(stmt.Invocation)
-	if dir == "" {
-		return current
+	if rel == "" {
+		return []string{current}
 	}
-	return resolveDirectory(repo, current, dir)
+	return expandDirectories(repo, current, rel, matrix)
 }
 
 func observedCommand(source, dir, pointer string, stmt knowledge.Statement) (plan.Command, error) {

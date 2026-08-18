@@ -457,6 +457,14 @@
       "description": "The command runs Psalm."
     },
     {
+      "id": "php-cs-fixer-dry-run",
+      "executable": "php-cs-fixer",
+      "argsContains": ["--dry-run"],
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command checks PHP formatting with PHP-CS-Fixer without writing files."
+    },
+    {
       "id": "php-cs-fixer",
       "executable": "php-cs-fixer",
       "capabilities": ["code.format"],
@@ -473,7 +481,7 @@
     {
       "id": "pint-test",
       "executable": "pint",
-      "argsPrefix": ["--test"],
+      "argsContains": ["--test"],
       "capabilities": ["code.lint"],
       "confidence": "high",
       "description": "The command checks PHP style with Laravel Pint without writing files."
