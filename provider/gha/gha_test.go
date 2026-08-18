@@ -332,6 +332,46 @@ jobs:
 	}
 }
 
+func TestDetectAppliesPoetryDirectoryToCommandDirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: poetry -C backend run pytest
+      - run: pdm --project services/web run pytest
+`,
+	})
+
+	found := map[string]string{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = item.Command.Directory
+	}
+	if got := found["poetry -C backend run pytest"]; got != "backend" {
+		t.Fatalf("poetry -C directory = %q, want backend in %+v", got, found)
+	}
+	if got := found["pdm --project services/web run pytest"]; got != "services/web" {
+		t.Fatalf("pdm --project directory = %q, want services/web in %+v", got, found)
+	}
+	interpreted := false
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil || *item.Command.Run != "poetry -C backend run pytest" {
+			continue
+		}
+		interpreted = commandHasCapability(item.Command, plan.CapabilityTestRun)
+	}
+	if !interpreted {
+		t.Fatal("poetry -C backend run pytest was not interpreted as a test command")
+	}
+}
+
 func TestDetectLeavesUnresolvedUvDirectoryOnTheParent(t *testing.T) {
 	t.Parallel()
 

@@ -833,6 +833,52 @@ func TestApplyDoesNotFoldAVersionAboveAnUpperBound(t *testing.T) {
 	}
 }
 
+func TestApplyDoesNotFoldPythonAboveACommaUpperBound(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "python",
+		Version:    ">=3.9,<4",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "pyproject.toml", Pointer: "/requires-python"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPython("4.0")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 4.0 attached to >=3.9,<4", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 1 {
+		t.Fatalf("conflicts = %+v, want a version conflict for 4.0 vs >=3.9,<4", got[0].Conflicts)
+	}
+}
+
+func TestApplyFoldsPythonCompatibleRelease(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "python",
+		Version:    "~=3.11",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "pyproject.toml", Pointer: "/requires-python"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPython("3.12")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a conflict for 3.12 vs ~=3.11", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want CI 3.12 attached to ~=3.11", got[0].Requirements[0].Evidence)
+	}
+}
+
 func TestApplyRecordsUnevaluableRangesAsMatrixFacts(t *testing.T) {
 	t.Parallel()
 
@@ -1028,18 +1074,26 @@ func ciPHP(version string) plan.RequirementFinding {
 }
 
 func ciNode(version string) plan.RequirementFinding {
+	return ciRuntime("node", version)
+}
+
+func ciPython(version string) plan.RequirementFinding {
+	return ciRuntime("python", version)
+}
+
+func ciRuntime(name, version string) plan.RequirementFinding {
 	return plan.RequirementFinding{
 		ProjectPath: ".",
 		Requirement: plan.Requirement{
 			Kind:       plan.RequirementRuntime,
-			Name:       "node",
+			Name:       name,
 			Version:    version,
 			Confidence: plan.ConfidenceHigh,
 			Evidence: []plan.Evidence{{
 				Kind:        plan.EvidenceInvocation,
 				Source:      ".github/workflows/ci.yml",
-				Pointer:     "/jobs/test/steps/1/with/node-version",
-				Description: "CI tests node " + version,
+				Pointer:     "/jobs/test/steps/1/with/" + name + "-version",
+				Description: "CI tests " + name + " " + version,
 			}},
 		},
 	}

@@ -2,6 +2,7 @@ package python
 
 import (
 	"bufio"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -16,11 +17,25 @@ type pythonProject struct {
 	ManagerTables         map[string]struct{}
 	HasProjectTable       bool
 	HasPackageTable       bool
+	HasUVDefaultGroups    bool
+	UVDefaultGroups       []string
+}
+
+const (
+	depKindMain  = "main"
+	depKindExtra = "extra"
+	depKindGroup = "group"
+)
+
+type depOrigin struct {
+	Kind  string
+	Group string
 }
 
 type depDeclaration struct {
-	Name   string
-	Source string
+	Name    string
+	Source  string
+	Origins []depOrigin
 }
 
 type lockfile struct {
@@ -59,23 +74,48 @@ func parsePyproject(contents string) pythonProject {
 	if project, ok := doc["project"]; ok {
 		parsed.HasProjectTable = true
 		setRequiresPython(&parsed, project.scalars["requires-python"], "pyproject.toml", "/requires-python")
-		addDependencies(&parsed, "pyproject.toml", "/project/dependencies", project.arrays["dependencies"])
+		addDependencies(&parsed, "pyproject.toml", "/project/dependencies", project.arrays["dependencies"], depOrigin{Kind: depKindMain})
 	}
-	for name, section := range doc {
+	for _, name := range sortedTOMLNames(doc) {
+		section := doc[name]
 		switch {
-		case name == "project.optional-dependencies" || strings.HasPrefix(name, "project.optional-dependencies."):
-			for _, values := range section.arrays {
-				addDependencies(&parsed, "pyproject.toml", "/project/optional-dependencies", values)
+		case name == "project.optional-dependencies":
+			for _, extra := range section.keys {
+				addDependencies(&parsed, "pyproject.toml", "/project/optional-dependencies", section.arrays[extra], depOrigin{Kind: depKindExtra, Group: extra})
 			}
-		case name == "dependency-groups" || strings.HasPrefix(name, "dependency-groups."):
+		case strings.HasPrefix(name, "project.optional-dependencies."):
+			extra := strings.TrimPrefix(name, "project.optional-dependencies.")
 			for _, values := range section.arrays {
-				addDependencies(&parsed, "pyproject.toml", "/dependency-groups", values)
+				addDependencies(&parsed, "pyproject.toml", "/project/optional-dependencies", values, depOrigin{Kind: depKindExtra, Group: extra})
+			}
+		case name == "dependency-groups":
+			for _, group := range section.keys {
+				addDependencies(&parsed, "pyproject.toml", "/dependency-groups", section.arrays[group], depOrigin{Kind: depKindGroup, Group: group})
+			}
+		case strings.HasPrefix(name, "dependency-groups."):
+			group := strings.TrimPrefix(name, "dependency-groups.")
+			for _, values := range section.arrays {
+				addDependencies(&parsed, "pyproject.toml", "/dependency-groups", values, depOrigin{Kind: depKindGroup, Group: group})
 			}
 		case name == "tool.pdm.dev-dependencies" || strings.HasPrefix(name, "tool.pdm.dev-dependencies."):
-			for _, values := range section.arrays {
-				addDependencies(&parsed, "pyproject.toml", "/tool/pdm/dev-dependencies", values)
+			group := "dev"
+			if rest, ok := strings.CutPrefix(name, "tool.pdm.dev-dependencies."); ok && rest != "" {
+				group = rest
+			}
+			for _, key := range section.keys {
+				originGroup := group
+				if name == "tool.pdm.dev-dependencies" && key != "" {
+					originGroup = key
+				}
+				addDependencies(&parsed, "pyproject.toml", "/tool/pdm/dev-dependencies", section.arrays[key], depOrigin{Kind: depKindGroup, Group: originGroup})
 			}
 			recordToolTable(&parsed, strings.TrimPrefix(name, "tool."))
+		case name == "tool.uv":
+			if _, ok := section.arrays["default-groups"]; ok {
+				parsed.HasUVDefaultGroups = true
+				parsed.UVDefaultGroups = append([]string(nil), section.arrays["default-groups"]...)
+			}
+			recordToolTable(&parsed, "uv")
 		case strings.HasPrefix(name, "tool."):
 			recordToolTable(&parsed, strings.TrimPrefix(name, "tool."))
 		}
@@ -85,17 +125,18 @@ func parsePyproject(contents string) pythonProject {
 		setRequiresPython(&parsed, poetryScalar(poetry, "python"), "pyproject.toml", "/tool/poetry/dependencies/python")
 		for _, name := range poetry.keys {
 			if name != "python" {
-				addDependency(&parsed, "pyproject.toml", "/tool/poetry/dependencies", name)
+				addDependency(&parsed, "pyproject.toml", "/tool/poetry/dependencies", name, depOrigin{Kind: depKindMain})
 			}
 		}
 	}
-	for name, section := range doc {
+	for _, name := range sortedTOMLNames(doc) {
 		if !strings.HasPrefix(name, "tool.poetry.group.") || !strings.HasSuffix(name, ".dependencies") {
 			continue
 		}
-		for _, dep := range section.keys {
+		group := strings.TrimSuffix(strings.TrimPrefix(name, "tool.poetry.group."), ".dependencies")
+		for _, dep := range doc[name].keys {
 			if dep != "python" {
-				addDependency(&parsed, "pyproject.toml", "/tool/poetry/group", dep)
+				addDependency(&parsed, "pyproject.toml", "/tool/poetry/group", dep, depOrigin{Kind: depKindGroup, Group: group})
 			}
 		}
 	}
@@ -122,8 +163,12 @@ func parsePipfile(contents string) pythonProject {
 		if !ok {
 			continue
 		}
+		origin := depOrigin{Kind: depKindMain}
+		if table == "dev-packages" {
+			origin = depOrigin{Kind: depKindGroup, Group: "dev"}
+		}
 		for _, name := range section.keys {
-			addDependency(&parsed, "Pipfile", "/"+table, name)
+			addDependency(&parsed, "Pipfile", "/"+table, name, origin)
 		}
 	}
 	return parsed
@@ -139,8 +184,12 @@ func parseSetupPy(contents string) pythonProject {
 		},
 		HasPackageTable: true,
 	}
-	for _, match := range setupDependencyStrings(contents) {
-		addKnownDependency(&parsed, "setup.py", "/setup", match)
+	for _, match := range setupDependencyEntries(contents) {
+		origin := depOrigin{Kind: depKindMain}
+		if match.key == "extras_require" {
+			origin.Kind = depKindExtra
+		}
+		addKnownDependency(&parsed, "setup.py", "/setup", match.value, origin)
 	}
 	return parsed
 }
@@ -174,10 +223,16 @@ func mergeProject(base, extra pythonProject) pythonProject {
 		base.HasPackageTable = true
 	}
 	for name, dep := range extra.Dependencies {
-		if _, exists := base.Dependencies[name]; exists {
+		if existing, exists := base.Dependencies[name]; exists {
+			existing.Origins = appendOrigins(existing.Origins, dep.Origins...)
+			base.Dependencies[name] = existing
 			continue
 		}
 		base.Dependencies[name] = dep
+	}
+	if extra.HasUVDefaultGroups && !base.HasUVDefaultGroups {
+		base.HasUVDefaultGroups = true
+		base.UVDefaultGroups = append([]string(nil), extra.UVDefaultGroups...)
 	}
 	for name := range extra.ToolTables {
 		base.ToolTables[name] = struct{}{}
@@ -210,29 +265,59 @@ func recordToolTable(parsed *pythonProject, rest string) {
 	}
 }
 
-func addDependencies(parsed *pythonProject, source, pointer string, values []string) {
+func addDependencies(parsed *pythonProject, source, pointer string, values []string, origin depOrigin) {
 	for _, value := range values {
-		addDependency(parsed, source, pointer, value)
+		addDependency(parsed, source, pointer, value, origin)
 	}
 }
 
-func addKnownDependency(parsed *pythonProject, source, pointer, spec string) {
+func addKnownDependency(parsed *pythonProject, source, pointer, spec string, origin depOrigin) {
 	name := dependencyName(spec)
 	if !isKnownFramework(name) && !isKnownTool(name) {
 		return
 	}
-	addDependency(parsed, source, pointer, name)
+	addDependency(parsed, source, pointer, name, origin)
 }
 
-func addDependency(parsed *pythonProject, source, pointer, spec string) {
+func addDependency(parsed *pythonProject, source, pointer, spec string, origin depOrigin) {
 	name := dependencyName(spec)
 	if name == "" {
 		return
 	}
-	if _, exists := parsed.Dependencies[name]; exists {
-		return
+	if origin.Kind == "" {
+		origin.Kind = depKindMain
 	}
-	parsed.Dependencies[name] = depDeclaration{Name: name, Source: source + pointer}
+	dep, exists := parsed.Dependencies[name]
+	if !exists {
+		dep = depDeclaration{Name: name, Source: source + pointer}
+	}
+	dep.Origins = appendOrigins(dep.Origins, origin)
+	parsed.Dependencies[name] = dep
+}
+
+func appendOrigins(existing []depOrigin, additions ...depOrigin) []depOrigin {
+	for _, addition := range additions {
+		found := false
+		for _, origin := range existing {
+			if origin.Kind == addition.Kind && origin.Group == addition.Group {
+				found = true
+				break
+			}
+		}
+		if !found {
+			existing = append(existing, addition)
+		}
+	}
+	return existing
+}
+
+func sortedTOMLNames(doc map[string]*tomlSection) []string {
+	names := make([]string, 0, len(doc))
+	for name := range doc {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	return names
 }
 
 func dependencyName(spec string) string {
@@ -593,8 +678,12 @@ var setupDependencyKeys = []string{
 	"extras_require",
 }
 
-func setupDependencyStrings(contents string) []string {
-	var values []string
+type setupDep struct {
+	key, value string
+}
+
+func setupDependencyEntries(contents string) []setupDep {
+	var values []setupDep
 	i := 0
 	for i < len(contents) {
 		if contents[i] == '#' {
@@ -633,10 +722,14 @@ func setupDependencyStrings(contents string) []string {
 				closer = ')'
 			}
 			body, after := readBalanced(contents, i, open, closer)
+			var found []string
 			if key == "extras_require" {
-				values = append(values, quotedStringsInBracketLists(body)...)
+				found = quotedStringsInBracketLists(body)
 			} else {
-				values = append(values, quotedStrings(body)...)
+				found = quotedStrings(body)
+			}
+			for _, value := range found {
+				values = append(values, setupDep{key: key, value: value})
 			}
 			i = after
 		case i < len(contents) && (contents[i] == '"' || contents[i] == '\''):
@@ -644,7 +737,7 @@ func setupDependencyStrings(contents string) []string {
 			if !ok {
 				return values
 			}
-			values = append(values, value)
+			values = append(values, setupDep{key: key, value: value})
 			i = after
 		default:
 			i = next

@@ -154,6 +154,154 @@ func installRun(ctx provider.Context, manager string) string {
 	}
 }
 
+func applyInstallSelectors(manager, run string, extras, groups []string) string {
+	if run == "" {
+		return run
+	}
+	slices.Sort(extras)
+	slices.Sort(groups)
+	switch manager {
+	case "pip":
+		if run != "pip install -e ." {
+			return run
+		}
+		if len(extras) > 0 {
+			return "pip install -e .[" + strings.Join(extras, ",") + "]"
+		}
+		for _, group := range groups {
+			run += " --group " + group
+		}
+		return run
+	case "uv":
+		for _, extra := range extras {
+			run += " --extra " + extra
+		}
+		for _, group := range groups {
+			run += " --group " + group
+		}
+		return run
+	case "poetry":
+		if len(extras) > 0 {
+			run += " --extras " + strings.Join(extras, ",")
+		}
+		for _, group := range groups {
+			run += " --with " + group
+		}
+		return run
+	case "pdm":
+		if len(extras) > 0 {
+			run += " --extras " + strings.Join(extras, ",")
+		}
+		for _, group := range groups {
+			run += " -G " + group
+		}
+		return run
+	case "pipenv":
+		if len(groups) > 0 || len(extras) > 0 {
+			return "pipenv install --dev"
+		}
+		return run
+	default:
+		return run
+	}
+}
+
+func installSelectorsFor(project pythonProject, manager string, names []string) (extras, groups []string) {
+	extraSet := map[string]struct{}{}
+	groupSet := map[string]struct{}{}
+	for _, name := range names {
+		dep, ok := project.Dependencies[name]
+		if !ok || depInstalledByDefault(project, manager, dep) {
+			continue
+		}
+		kind, selector := preferredSelector(dep)
+		switch kind {
+		case depKindExtra:
+			extraSet[selector] = struct{}{}
+		case depKindGroup:
+			if !groupInstalledByDefault(project, manager, selector) {
+				groupSet[selector] = struct{}{}
+			}
+		}
+	}
+	for extra := range extraSet {
+		extras = append(extras, extra)
+	}
+	for group := range groupSet {
+		groups = append(groups, group)
+	}
+	slices.Sort(extras)
+	slices.Sort(groups)
+	return extras, groups
+}
+
+func pytestPackageNames(project pythonProject) []string {
+	var names []string
+	for name := range project.Dependencies {
+		if name == "pytest" || strings.HasPrefix(name, "pytest-") {
+			names = append(names, name)
+		}
+	}
+	slices.Sort(names)
+	return names
+}
+
+func depInstalledByDefault(project pythonProject, manager string, dep depDeclaration) bool {
+	if len(dep.Origins) == 0 {
+		return true
+	}
+	for _, origin := range dep.Origins {
+		if origin.Kind == depKindMain {
+			return true
+		}
+		if origin.Kind == depKindGroup && groupInstalledByDefault(project, manager, origin.Group) {
+			return true
+		}
+	}
+	return false
+}
+
+func preferredSelector(dep depDeclaration) (kind, name string) {
+	var extras, groups []string
+	for _, origin := range dep.Origins {
+		if origin.Group == "" {
+			continue
+		}
+		switch origin.Kind {
+		case depKindExtra:
+			extras = append(extras, origin.Group)
+		case depKindGroup:
+			groups = append(groups, origin.Group)
+		}
+	}
+	slices.Sort(extras)
+	slices.Sort(groups)
+	if len(extras) > 0 {
+		return depKindExtra, extras[0]
+	}
+	if len(groups) > 0 {
+		return depKindGroup, groups[0]
+	}
+	return "", ""
+}
+
+func groupInstalledByDefault(project pythonProject, manager, group string) bool {
+	if group == "" {
+		return false
+	}
+	switch manager {
+	case "uv":
+		if project.HasUVDefaultGroups {
+			return slices.Contains(project.UVDefaultGroups, group)
+		}
+		return group == "dev"
+	case "poetry", "pdm":
+		return true
+	default:
+		return false
+	}
+}
+
 func pipInstallRun(ctx provider.Context) string {
 	if fileExists(ctx.ProjectDir(), "requirements.txt") {
 		return "pip install -r requirements.txt"

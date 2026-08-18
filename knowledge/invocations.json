@@ -776,6 +776,16 @@
     {
       "id": "tox",
       "executable": "tox",
+      "argsExact": true,
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs the tox test matrix."
+    },
+    {
+      "id": "tox-run",
+      "executable": "tox",
+      "argsPrefix": ["run"],
+      "argsExact": true,
       "capabilities": ["test.run"],
       "confidence": "high",
       "description": "The command runs the tox test matrix."
@@ -783,6 +793,7 @@
     {
       "id": "nox",
       "executable": "nox",
+      "argsExact": true,
       "capabilities": ["test.run"],
       "confidence": "high",
       "description": "The command runs Nox sessions."

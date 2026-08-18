@@ -28,6 +28,13 @@ func StripDirectoryFlags(inv Invocation) (dir string, canonical Invocation) {
 	case "uv":
 		args, dir = stripFlag(args, "--directory", dir)
 		args, dir = stripFlag(args, "-C", dir)
+	case "poetry", "pipenv", "pdm":
+		args, dir = stripFlag(args, "--directory", dir)
+		args, dir = stripFlag(args, "-C", dir)
+		args, dir = stripFlag(args, "--project", dir)
+		if inv.Executable == "pdm" {
+			args, dir = stripFlag(args, "-p", dir)
+		}
 	}
 	return dir, Invocation{Executable: inv.Executable, Args: args, Directory: dir}
 }

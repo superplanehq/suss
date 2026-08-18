@@ -42,6 +42,7 @@ type rule struct {
 	Executable   string            `json:"executable"`
 	ArgsPrefix   []string          `json:"argsPrefix"`
 	ArgsContains []string          `json:"argsContains"`
+	ArgsExact    bool              `json:"argsExact"`
 	Capabilities []plan.Capability `json:"capabilities"`
 	Confidence   plan.Confidence   `json:"confidence"`
 	Description  string            `json:"description"`
@@ -102,6 +103,9 @@ func Interpret(inv Invocation) []Match {
 			continue
 		}
 		if !hasArgsContains(inv.Args, rule.ArgsContains) {
+			continue
+		}
+		if rule.ArgsExact && len(inv.Args) != len(rule.ArgsPrefix) {
 			continue
 		}
 		specificity := len(rule.ArgsPrefix) + len(rule.ArgsContains)
@@ -566,8 +570,9 @@ func unwrapOnce(tokens []string) ([]string, string) {
 		}
 		return append([]string{"php"}, rest...), ""
 	case "poetry", "pipenv", "pdm":
-		if len(tokens) >= 2 && tokens[1] == "run" {
-			return dropLeadingFlags(tokens[2:]), ""
+		rest, dir := skipPythonManagerGlobals(tokens[1:])
+		if len(rest) >= 1 && rest[0] == "run" {
+			return dropLeadingFlags(rest[1:]), dir
 		}
 	case "uv":
 		rest, dir := skipUVGlobals(tokens[1:])
@@ -618,8 +623,43 @@ var uvGlobalValueFlags = map[string]struct{}{
 var pythonManagerValueFlags = map[string]struct{}{
 	"--index-url": {}, "-i": {}, "--extra-index-url": {},
 	"--trusted-host": {}, "--find-links": {}, "-f": {},
-	"--directory": {}, "-C": {}, "--project": {},
+	"--directory": {}, "-C": {}, "--project": {}, "-p": {},
 	"--python": {}, "--config-file": {},
+}
+
+var pythonRunnerDirFlags = map[string]struct{}{
+	"--directory": {}, "-C": {}, "--project": {}, "-p": {},
+}
+
+func skipPythonManagerGlobals(tokens []string) ([]string, string) {
+	dir := ""
+	i := 0
+	for i < len(tokens) && strings.HasPrefix(tokens[i], "-") {
+		name, value, hasValue := strings.Cut(tokens[i], "=")
+		if name == "--" {
+			return tokens[i+1:], dir
+		}
+		if _, isDir := pythonRunnerDirFlags[name]; isDir {
+			if hasValue {
+				dir = value
+				i++
+				continue
+			}
+			if i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
+				dir = tokens[i+1]
+				i += 2
+				continue
+			}
+			i++
+			continue
+		}
+		if _, ok := pythonManagerValueFlags[name]; ok && !hasValue && i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
+			i += 2
+			continue
+		}
+		i++
+	}
+	return tokens[i:], dir
 }
 
 func skipUVGlobals(tokens []string) ([]string, string) {

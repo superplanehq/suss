@@ -459,6 +459,41 @@ func TestParseScriptStripsPythonWrappers(t *testing.T) {
 	}
 }
 
+func TestParseScriptCapturesPoetryPipenvPdmRunDirectory(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript(`poetry -C backend run pytest && poetry --directory=packages/api run pytest && pdm -p services/web run pytest && pipenv --python 3.12 run pytest`)
+	want := []Invocation{
+		{Executable: "pytest", Directory: "backend"},
+		{Executable: "pytest", Directory: "packages/api"},
+		{Executable: "pytest", Directory: "services/web"},
+		{Executable: "pytest"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestInterpretToxAndNoxOnlyMatchUnqualifiedRuns(t *testing.T) {
+	t.Parallel()
+
+	if got := capabilities(Interpret(Invocation{Executable: "tox"})); !slices.Equal(got, []plan.Capability{plan.CapabilityTestRun}) {
+		t.Fatalf("Interpret(tox) = %v, want test.run", got)
+	}
+	if got := capabilities(Interpret(Invocation{Executable: "tox", Args: []string{"run"}})); !slices.Equal(got, []plan.Capability{plan.CapabilityTestRun}) {
+		t.Fatalf("Interpret(tox run) = %v, want test.run", got)
+	}
+	if got := capabilities(Interpret(Invocation{Executable: "tox", Args: []string{"run", "-e", "typing"}})); len(got) != 0 {
+		t.Fatalf("Interpret(tox run -e typing) = %v, want no matches", got)
+	}
+	if got := capabilities(Interpret(Invocation{Executable: "nox"})); !slices.Equal(got, []plan.Capability{plan.CapabilityTestRun}) {
+		t.Fatalf("Interpret(nox) = %v, want test.run", got)
+	}
+	if got := capabilities(Interpret(Invocation{Executable: "nox", Args: []string{"-s", "lint"}})); len(got) != 0 {
+		t.Fatalf("Interpret(nox -s lint) = %v, want no matches", got)
+	}
+}
+
 func TestParseScriptCapturesUvRunDirectory(t *testing.T) {
 	t.Parallel()
 

@@ -21,7 +21,15 @@ type commandSpec struct {
 func commandFindings(ctx provider.Context, project pythonProject, choice managerChoice) ([]plan.Finding, error) {
 	var specs []commandSpec
 	if choice.selected != "" && choice.install != "" {
-		specs = append(specs, installSpec(ctx, project, choice))
+		testFile, err := firstPythonTest(ctx.ProjectDir())
+		if err != nil {
+			return nil, err
+		}
+		var needed []string
+		if testFile != "" && len(pytestEvidence(ctx, project)) > 0 {
+			needed = pytestPackageNames(project)
+		}
+		specs = append(specs, installSpec(ctx, project, choice, needed))
 	}
 
 	testSpec, ok, err := testCommandSpec(ctx, project, choice)
@@ -49,10 +57,12 @@ func commandFindings(ctx provider.Context, project pythonProject, choice manager
 	return findings, nil
 }
 
-func installSpec(ctx provider.Context, project pythonProject, choice managerChoice) commandSpec {
+func installSpec(ctx provider.Context, project pythonProject, choice managerChoice, needed []string) commandSpec {
+	extras, groups := installSelectorsFor(project, choice.selected, needed)
+	run := applyInstallSelectors(choice.selected, choice.install, extras, groups)
 	source := ctx.SourcePath(project.Manifest)
-	description := fmt.Sprintf("%s-managed Python projects conventionally install dependencies with %s.", choice.selected, choice.install)
-	spec := conventionSpec(source, "install dependencies", choice.install, "/#dependencies", plan.ConfidenceMedium, description)
+	description := fmt.Sprintf("%s-managed Python projects conventionally install dependencies with %s.", choice.selected, run)
+	spec := conventionSpec(source, "install dependencies", run, "/#dependencies", plan.ConfidenceMedium, description)
 	if lock := lockfileFor(choice, choice.selected); lock != "" {
 		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{
 			Kind:   plan.EvidenceDeclaration,

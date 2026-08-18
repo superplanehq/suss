@@ -215,7 +215,7 @@ python_version = "3.12"
 		t.Fatalf("Python 3.12 evidence sources = %v, did not want pyproject.toml", sources)
 	}
 	install := commandsByName(result)["install dependencies"]
-	assertCommand(t, install, "pipenv install", plan.CapabilityDependenciesInstall)
+	assertCommand(t, install, "pipenv install --dev", plan.CapabilityDependenciesInstall)
 	installSources := commandEvidenceSources(install)
 	if !slices.Contains(installSources, "Pipfile") {
 		t.Fatalf("install evidence sources = %v, want Pipfile", installSources)
@@ -346,7 +346,7 @@ python_version = "3.12"
 	if !hasRuntime(result, "3.12") {
 		t.Fatalf("missing Pipfile Python pin in %+v", result.Findings)
 	}
-	assertCommand(t, commandsByName(result)["install dependencies"], "pipenv install", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["install dependencies"], "pipenv install --dev", plan.CapabilityDependenciesInstall)
 	assertCommand(t, commandsByName(result)["test"], "pipenv run pytest", plan.CapabilityTestRun)
 }
 
@@ -582,6 +582,84 @@ func TestDetectMypyExtensionsIsNotConfiguredMypy(t *testing.T) {
 	if slices.Contains(configuredToolValues(result), "mypy") {
 		t.Fatalf("mypy-extensions unexpectedly configured mypy in %+v", result.Findings)
 	}
+}
+
+func TestDetectOptionalPytestExtraUsesInstallExtra(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+dependencies = ["django"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+`,
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -e .[dev]", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+}
+
+func TestDetectUvOptionalPytestUsesSyncExtra(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+`,
+		"uv.lock":              "version = 1\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "uv sync --extra dev", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "uv run pytest", plan.CapabilityTestRun)
+}
+
+func TestDetectUvDependencyGroupUsesSyncGroup(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+
+[dependency-groups]
+tests = ["pytest"]
+`,
+		"uv.lock":              "version = 1\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "uv sync --group tests", plan.CapabilityDependenciesInstall)
+}
+
+func TestDetectUvDefaultGroupDoesNotAddSyncGroup(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+
+[dependency-groups]
+dev = ["pytest"]
+tests = ["pytest"]
+
+[tool.uv]
+default-groups = ["dev", "tests"]
+`,
+		"uv.lock":              "version = 1\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "uv sync", plan.CapabilityDependenciesInstall)
 }
 
 func TestDetectPytestPluginInfersPytest(t *testing.T) {
