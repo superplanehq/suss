@@ -218,6 +218,7 @@ func TestInterpretMatchesPHPInvocations(t *testing.T) {
 		{invocation: Invocation{Executable: "phpstan", Args: []string{"analyse"}}, capability: plan.CapabilityCodeTypecheck},
 		{invocation: Invocation{Executable: "psalm"}, capability: plan.CapabilityCodeTypecheck},
 		{invocation: Invocation{Executable: "pint"}, capability: plan.CapabilityCodeFormat},
+		{invocation: Invocation{Executable: "pint", Args: []string{"--test"}}, capability: plan.CapabilityCodeLint},
 		{invocation: Invocation{Executable: "phpcs"}, capability: plan.CapabilityCodeLint},
 	}
 	for _, tt := range tests {
@@ -248,6 +249,43 @@ func TestParseScriptSkipsPHPCLIOptionsBeforeVendorBin(t *testing.T) {
 	want := []Invocation{
 		{Executable: "phpunit"},
 		{Executable: "phpunit", Args: []string{"--testdox"}},
+		{Executable: "pest"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestParseScriptStripsPHPCLIOptionsBeforeArtisan(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("php -d memory_limit=-1 artisan test")
+	want := []Invocation{{Executable: "php", Args: []string{"artisan", "test"}}}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestParseScriptPreservesPHPFileOptionTargets(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("php -f vendor/bin/phpunit && php --file vendor/bin/phpunit --testdox && php -fvendor/bin/pest")
+	want := []Invocation{
+		{Executable: "phpunit"},
+		{Executable: "phpunit", Args: []string{"--testdox"}},
+		{Executable: "pest"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestParseScriptUnwrapsComposerExecAfterGlobalOptions(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("composer --no-interaction exec phpunit && composer -d tools exec pest")
+	want := []Invocation{
+		{Executable: "phpunit"},
 		{Executable: "pest"},
 	}
 	if !slices.EqualFunc(got, want, invocationsEqual) {

@@ -206,7 +206,7 @@ func firstPHPTestIn(root, directory string) (string, error) {
 			return fs.SkipAll
 		}
 		if entry.IsDir() {
-			if path != testRoot && fileExists(path, "composer.json") {
+			if fileExists(path, "composer.json") {
 				return fs.SkipDir
 			}
 			return nil

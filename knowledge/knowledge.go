@@ -454,14 +454,19 @@ func dropWrappers(tokens []string) []string {
 			return dropLeadingFlags(tokens[2:])
 		}
 	case "composer":
-		if len(tokens) >= 2 && tokens[1] == "exec" {
-			return dropLeadingFlags(tokens[2:])
+		rest := skipComposerGlobalOptions(tokens[1:])
+		if len(rest) > 0 && rest[0] == "exec" {
+			return dropLeadingFlags(rest[1:])
 		}
 	case "php":
 		rest := skipPHPCLIOptions(tokens[1:])
-		if len(rest) > 0 && isVendorBinPath(rest[0]) {
+		if len(rest) == 0 {
+			break
+		}
+		if isVendorBinPath(rest[0]) {
 			return rest
 		}
+		return append([]string{"php"}, rest...)
 	case "npm", "pnpm", "yarn":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
 			return dropLeadingFlags(tokens[2:])
@@ -480,8 +485,8 @@ func isVendorBinPath(value string) bool {
 }
 
 // skipPHPCLIOptions drops php(1) flags and their values so a following
-// vendor/bin executable can be unwrapped. Value-taking options are those
-// documented by `php --help`.
+// script or vendor/bin executable can be unwrapped. -f/--file values are
+// kept as the PHP script target. Other value-taking options follow `php --help`.
 func skipPHPCLIOptions(tokens []string) []string {
 	i := 0
 	for i < len(tokens) {
@@ -493,6 +498,13 @@ func skipPHPCLIOptions(tokens []string) []string {
 			return tokens[i:]
 		}
 		name, hasValue := phpCLIOption(token)
+		if name == "-f" || name == "--file" {
+			target, rest, ok := phpFileOptionTarget(tokens, i, token, hasValue)
+			if !ok {
+				return nil
+			}
+			return append([]string{target}, rest...)
+		}
 		if phpCLIOptionTakesValue(name) && !hasValue {
 			if i+1 >= len(tokens) {
 				return nil
@@ -503,6 +515,42 @@ func skipPHPCLIOptions(tokens []string) []string {
 		i++
 	}
 	return nil
+}
+
+func phpFileOptionTarget(tokens []string, i int, token string, hasValue bool) (string, []string, bool) {
+	if hasValue {
+		var target string
+		if strings.HasPrefix(token, "--") {
+			_, target, _ = strings.Cut(token, "=")
+		} else {
+			target = strings.TrimPrefix(token[2:], "=")
+		}
+		if target == "" {
+			return "", nil, false
+		}
+		return target, tokens[i+1:], true
+	}
+	if i+1 >= len(tokens) {
+		return "", nil, false
+	}
+	return tokens[i+1], tokens[i+2:], true
+}
+
+func skipComposerGlobalOptions(args []string) []string {
+	i := 0
+	for i < len(args) && strings.HasPrefix(args[i], "-") && args[i] != "--" {
+		name, _, hasValue := strings.Cut(args[i], "=")
+		if !hasValue && composerGlobalOptionTakesValue(name) && i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+			i += 2
+			continue
+		}
+		i++
+	}
+	return args[i:]
+}
+
+func composerGlobalOptionTakesValue(name string) bool {
+	return name == "--working-dir" || name == "-d"
 }
 
 func phpCLIOption(token string) (name string, hasValue bool) {

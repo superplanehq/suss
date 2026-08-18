@@ -42,7 +42,7 @@ var toolCapabilities = map[string][]plan.Capability{
 	"psalm":         {plan.CapabilityCodeTypecheck},
 	"php-cs-fixer":  {plan.CapabilityCodeFormat},
 	"phpcs":         {plan.CapabilityCodeLint},
-	"pint":          {plan.CapabilityCodeFormat},
+	"pint":          {plan.CapabilityCodeLint, plan.CapabilityCodeFormat},
 }
 
 type classifiedProjects struct {

@@ -271,7 +271,8 @@ func andConstraints(group, version string) (ok, known bool) {
 
 func splitConstraints(group string) []string {
 	var tokens []string
-	fields := strings.Fields(group)
+	// Composer treats comma as AND (`>=8.1,<8.4`); npm-style ranges use spaces.
+	fields := strings.Fields(strings.ReplaceAll(group, ",", " "))
 	for i := 0; i < len(fields); i++ {
 		field := fields[i]
 		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "^" || field == "~" || field == "~>" {

@@ -471,6 +471,14 @@
       "description": "The command checks PHP style with PHP_CodeSniffer."
     },
     {
+      "id": "pint-test",
+      "executable": "pint",
+      "argsPrefix": ["--test"],
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command checks PHP style with Laravel Pint without writing files."
+    },
+    {
       "id": "pint",
       "executable": "pint",
       "capabilities": ["code.format"],

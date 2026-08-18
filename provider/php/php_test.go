@@ -229,6 +229,56 @@ func TestDetectInterpretsPHPCLIOptionsInDeclaredTestScript(t *testing.T) {
 	assertCommand(t, commandsByName(result)["test"], "composer run-script test", plan.CommandDeclared, plan.CapabilityTestRun)
 }
 
+func TestDetectInterpretsArtisanAfterPHPCLIOptions(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "require": {"laravel/framework": "^11.0"},
+  "scripts": {
+    "test": "@php -d memory_limit=-1 artisan test"
+  }
+}`,
+		"artisan": "#!/usr/bin/env php\n",
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "composer run-script test", plan.CommandDeclared, plan.CapabilityTestRun)
+}
+
+func TestDetectInterpretsPHPFileOptionVendorBin(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "scripts": {
+    "test": "@php -f vendor/bin/phpunit"
+  }
+}`,
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "composer run-script test", plan.CommandDeclared, plan.CapabilityTestRun)
+}
+
+func TestDetectInterpretsPintTestAsStyleCheck(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "scripts": {
+    "lint": "vendor/bin/pint --test"
+  }
+}`,
+	})
+
+	command := commandsByName(result)["lint"]
+	assertCommand(t, command, "composer run-script lint", plan.CommandDeclared, plan.CapabilityCodeLint)
+	for _, interpretation := range command.Interpretations {
+		if interpretation.Capability == plan.CapabilityCodeFormat {
+			t.Fatalf("pint --test interpretations = %+v, did not want code.format", command.Interpretations)
+		}
+	}
+}
+
 func TestDetectDoesNotInferTestsFromNestedComposerProject(t *testing.T) {
 	t.Parallel()
 
@@ -240,6 +290,20 @@ func TestDetectDoesNotInferTestsFromNestedComposerProject(t *testing.T) {
 
 	if _, ok := commandsByName(result)["test"]; ok {
 		t.Fatal("parent inferred a test command from a nested Composer project's tests")
+	}
+}
+
+func TestDetectDoesNotInferTestsFromComposerProjectAtTestRoot(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json":         `{"require":{"php":"^8.2"}}`,
+		"tests/composer.json":   `{"require":{"php":"^8.2"}}`,
+		"tests/ExampleTest.php": "<?php\nclass ExampleTest {}\n",
+	})
+
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("parent inferred a test command from tests/composer.json")
 	}
 }
 
