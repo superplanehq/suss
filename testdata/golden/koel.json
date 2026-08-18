@@ -2620,7 +2620,7 @@
         },
         {
           "id": "cmd_bcde14a261e6e93d1726cc448b3ae8d9",
-          "name": "sudo systemctl",
+          "name": "systemctl stop",
           "run": "sudo systemctl stop caddy",
           "directory": ".",
           "scope": "project",
