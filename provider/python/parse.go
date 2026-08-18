@@ -405,7 +405,7 @@ func readQuoted(contents string, i int) (string, int, bool) {
 	return out.String(), i, false
 }
 
-func readBalanced(contents string, i int, open, close byte) (string, int) {
+func readBalanced(contents string, i int, open, closer byte) (string, int) {
 	depth := 0
 	start := i
 	inString := byte(0)
@@ -432,7 +432,7 @@ func readBalanced(contents string, i int, open, close byte) (string, int) {
 		if ch == open {
 			depth++
 		}
-		if ch == close {
+		if ch == closer {
 			depth--
 			if depth == 0 {
 				return contents[start+1 : i], i + 1

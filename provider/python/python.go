@@ -31,10 +31,7 @@ func (Provider) Detect(ctx provider.Context) (provider.Result, error) {
 		return provider.Result{}, err
 	}
 
-	choice, err := choosePackageManager(ctx, project)
-	if err != nil {
-		return provider.Result{}, err
-	}
+	choice := choosePackageManager(ctx, project)
 
 	result := provider.Result{
 		Findings:    projectFindings(ctx, project, choice),
@@ -61,11 +58,11 @@ func readProject(ctx provider.Context) (pythonProject, bool, error) {
 		return pythonProject{}, false, err
 	} else if ok {
 		project := parsePyproject(contents)
-		if extras, err := readRequirements(ctx); err != nil {
+		extras, err := readRequirements(ctx)
+		if err != nil {
 			return pythonProject{}, false, err
-		} else {
-			addDependencies(&project, "requirements.txt", "", extras)
 		}
+		addDependencies(&project, "requirements.txt", "", extras)
 		return project, true, nil
 	}
 
@@ -79,11 +76,11 @@ func readProject(ctx provider.Context) (pythonProject, bool, error) {
 		return pythonProject{}, false, err
 	} else if ok {
 		project := parseSetupPy(contents)
-		if extras, err := readRequirements(ctx); err != nil {
+		extras, err := readRequirements(ctx)
+		if err != nil {
 			return pythonProject{}, false, err
-		} else {
-			addDependencies(&project, "requirements.txt", "", extras)
 		}
+		addDependencies(&project, "requirements.txt", "", extras)
 		return project, true, nil
 	}
 	return pythonProject{}, false, nil

@@ -30,11 +30,8 @@ var lockfiles = []lockfile{
 	{Manager: "pipenv", File: "Pipfile.lock"},
 }
 
-func choosePackageManager(ctx provider.Context, project pythonProject) (managerChoice, error) {
-	signals, err := collectManagerSignals(ctx, project)
-	if err != nil {
-		return managerChoice{}, err
-	}
+func choosePackageManager(ctx provider.Context, project pythonProject) managerChoice {
+	signals := collectManagerSignals(ctx, project)
 
 	choice := managerChoice{signals: signals}
 	for _, signal := range signals {
@@ -66,10 +63,10 @@ func choosePackageManager(ctx provider.Context, project pythonProject) (managerC
 			Candidates: managerCandidates(signals),
 		})
 	}
-	return choice, nil
+	return choice
 }
 
-func collectManagerSignals(ctx provider.Context, project pythonProject) ([]managerSignal, error) {
+func collectManagerSignals(ctx provider.Context, project pythonProject) []managerSignal {
 	var signals []managerSignal
 	for _, lock := range lockfiles {
 		if !fileExists(ctx.ProjectDir(), lock.File) {
@@ -114,7 +111,7 @@ func collectManagerSignals(ctx provider.Context, project pythonProject) ([]manag
 			}},
 		})
 	}
-	return signals, nil
+	return signals
 }
 
 func inferredPipFinding(ctx provider.Context, project pythonProject) plan.Finding {

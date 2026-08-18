@@ -418,24 +418,6 @@
           ]
         },
         {
-          "id": "cmd_6ad95dd99ec53bfac6f97c2f66b51697",
-          "name": "pip install",
-          "run": "pip install --upgrade cloudsmith-cli",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/release.yml",
-              "pointer": "/jobs/release/steps/5/run"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
           "id": "cmd_771e916f311f45ac53eeb33ca2ee8376",
           "name": "vet",
           "run": "go vet ./...",
