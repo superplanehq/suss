@@ -539,18 +539,26 @@ java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
 		switch item := finding.(type) {
 		case plan.PropertyFinding:
 			if item.Property.Kind == plan.PropertyFramework && item.Property.Name == "spring-boot" {
-				assertEvidenceSource(t, item.Property.Evidence, "app/build.gradle.kts")
+				if !slices.Contains(evidenceSources(item.Property.Evidence), "app/build.gradle.kts") {
+					t.Fatalf("Spring Boot evidence = %v, want app/build.gradle.kts", evidenceSources(item.Property.Evidence))
+				}
 			}
 			if item.Property.Kind == plan.PropertyFact && item.Property.Name == "tool.configured" && item.Property.Value == "checkstyle" {
-				assertEvidenceSource(t, item.Property.Evidence, "app/build.gradle.kts")
+				if !slices.Contains(evidenceSources(item.Property.Evidence), "app/build.gradle.kts") {
+					t.Fatalf("checkstyle evidence = %v, want app/build.gradle.kts", evidenceSources(item.Property.Evidence))
+				}
 			}
 		case plan.RequirementFinding:
 			if item.Requirement.Name == "java" && item.Requirement.Version == "21" {
-				assertEvidenceSource(t, item.Requirement.Evidence, "app/build.gradle.kts")
+				if !slices.Contains(evidenceSources(item.Requirement.Evidence), "app/build.gradle.kts") {
+					t.Fatalf("Java 21 evidence = %v, want app/build.gradle.kts", evidenceSources(item.Requirement.Evidence))
+				}
 			}
 		case plan.CommandFinding:
 			if item.Command.Name == "server" {
-				assertEvidenceSource(t, item.Command.Evidence, "app/build.gradle.kts")
+				if !slices.Contains(evidenceSources(item.Command.Evidence), "app/build.gradle.kts") {
+					t.Fatalf("server evidence = %v, want app/build.gradle.kts", evidenceSources(item.Command.Evidence))
+				}
 			}
 		}
 	}
@@ -1243,14 +1251,12 @@ func hasRuntime(result provider.Result, version string) bool {
 	return false
 }
 
-func assertEvidenceSource(t *testing.T, evidence []plan.Evidence, want string) {
-	t.Helper()
+func evidenceSources(evidence []plan.Evidence) []string {
+	out := make([]string, 0, len(evidence))
 	for _, item := range evidence {
-		if item.Source == want {
-			return
-		}
+		out = append(out, item.Source)
 	}
-	t.Fatalf("evidence sources = %v, want %q", evidence, want)
+	return out
 }
 
 func commandsByName(result provider.Result) map[string]plan.Command {
