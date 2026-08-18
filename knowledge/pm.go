@@ -153,8 +153,12 @@ func IsToolPlumbing(inv Invocation) bool {
 		return isDockerPlumbing(inv.Args)
 	case "docker-compose":
 		return isVersionInfoHelp(inv.Args)
-	case "node", "npm", "pnpm", "yarn", "bun", "python", "python3", "ruby", "java":
-		return isVersionInfoHelp(inv.Args)
+	case "node", "python", "python3", "ruby", "java":
+		return isFlagVersionHelp(inv.Args)
+	case "npm", "pnpm", "yarn", "bun":
+		// `npm version` / `yarn version` bump the package version; only
+		// `--version` / `-v` are probes.
+		return isFlagVersionHelp(inv.Args)
 	default:
 		return false
 	}
@@ -177,8 +181,7 @@ func isVersionInfoHelp(args []string) bool {
 			return false
 		}
 		if strings.HasPrefix(arg, "-") {
-			name, _, _ := strings.Cut(arg, "=")
-			if name == "--version" || name == "-v" || name == "--help" || name == "-h" {
+			if isVersionHelpFlag(arg) {
 				return true
 			}
 			continue
@@ -191,6 +194,26 @@ func isVersionInfoHelp(args []string) bool {
 		}
 	}
 	return false
+}
+
+func isFlagVersionHelp(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if !strings.HasPrefix(arg, "-") {
+			return false
+		}
+		if isVersionHelpFlag(arg) {
+			return true
+		}
+	}
+	return false
+}
+
+func isVersionHelpFlag(arg string) bool {
+	name, _, _ := strings.Cut(arg, "=")
+	return name == "--version" || name == "-v" || name == "--help" || name == "-h"
 }
 
 func isGlobalInstall(args []string) bool {

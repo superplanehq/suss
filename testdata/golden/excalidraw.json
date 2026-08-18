@@ -290,47 +290,18 @@
           "variants": []
         },
         {
-          "id": "cmd_ae21e52c391ccef56f7107de041061bb",
+          "id": "cmd_86d058b28c14ddd12e8848dc174f6dff",
           "name": "install dependencies",
-          "run": "yarn install --frozen-lockfile",
+          "run": "yarn --frozen-lockfile",
           "directory": ".",
           "scope": "repository",
-          "origin": "inferred",
+          "origin": "observed",
           "confidence": "high",
           "evidence": [
-            {
-              "kind": "declaration",
-              "source": "package.json",
-              "pointer": "/packageManager"
-            },
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/lint.yml",
-              "pointer": "/jobs/lint/steps/2/run#command=0"
-            },
             {
               "kind": "invocation",
               "source": ".github/workflows/sentry-production.yml",
               "pointer": "/jobs/sentry/steps/2/run#command=0"
-            },
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/test-coverage-pr.yml",
-              "pointer": "/jobs/coverage/steps/2/run"
-            },
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/test.yml",
-              "pointer": "/jobs/test/steps/2/run#command=0"
-            },
-            {
-              "kind": "file",
-              "source": "yarn.lock"
-            },
-            {
-              "kind": "convention",
-              "source": "node-ecosystem",
-              "pointer": "yarn-frozen"
             }
           ],
           "interpretations": [
@@ -339,51 +310,139 @@
               "confidence": "high",
               "evidence": [
                 {
-                  "kind": "convention",
-                  "source": "node-ecosystem",
-                  "pointer": "yarn-frozen"
+                  "kind": "invocation",
+                  "source": ".github/workflows/sentry-production.yml",
+                  "pointer": "/jobs/sentry/steps/2/run#command=0",
+                  "description": "The command performs a frozen Yarn Classic install."
                 }
               ]
             }
           ],
-          "variants": [
+          "variants": []
+        },
+        {
+          "id": "cmd_8d6e4da1a9b82fcf7a36dde30280a832",
+          "name": "install dependencies",
+          "run": "yarn install",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
             {
-              "context": "ci",
-              "run": "yarn --frozen-lockfile",
-              "directory": ".",
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/test/steps/2/run#command=0"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
               "confidence": "high",
               "evidence": [
                 {
                   "kind": "invocation",
-                  "source": ".github/workflows/sentry-production.yml",
-                  "pointer": "/jobs/sentry/steps/2/run#command=0"
+                  "source": ".github/workflows/test.yml",
+                  "pointer": "/jobs/test/steps/2/run#command=0",
+                  "description": "The command installs Yarn dependencies."
                 }
               ]
-            },
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_b22034fe83ff0c4d9a6e7d084d0e35d6",
+          "name": "clean-install",
+          "run": "yarn run clean-install",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
             {
-              "context": "ci",
-              "run": "yarn install",
-              "directory": ".",
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/scripts/clean-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "package.json",
+                  "pointer": "/scripts/clean-install",
+                  "description": "The command installs Yarn dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_bae2fe0ac9ba23541a9c8dc885e978f4",
+          "name": "install dependencies",
+          "run": "yarn install",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test-coverage-pr.yml",
+              "pointer": "/jobs/coverage/steps/2/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test-coverage-pr.yml",
+                  "pointer": "/jobs/coverage/steps/2/run",
+                  "description": "The command installs Yarn dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_d951d99b7402dc4b52dbe4f44fa4d1c0",
+          "name": "install dependencies",
+          "run": "yarn install",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/lint/steps/2/run#command=0"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
               "confidence": "high",
               "evidence": [
                 {
                   "kind": "invocation",
                   "source": ".github/workflows/lint.yml",
-                  "pointer": "/jobs/lint/steps/2/run#command=0"
-                },
-                {
-                  "kind": "invocation",
-                  "source": ".github/workflows/test-coverage-pr.yml",
-                  "pointer": "/jobs/coverage/steps/2/run"
-                },
-                {
-                  "kind": "invocation",
-                  "source": ".github/workflows/test.yml",
-                  "pointer": "/jobs/test/steps/2/run#command=0"
+                  "pointer": "/jobs/lint/steps/2/run#command=0",
+                  "description": "The command installs Yarn dependencies."
                 }
               ]
             }
-          ]
+          ],
+          "variants": []
         }
       ],
       "commands": [
@@ -909,37 +968,6 @@
             }
           ],
           "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_b22034fe83ff0c4d9a6e7d084d0e35d6",
-          "name": "clean-install",
-          "run": "yarn run clean-install",
-          "directory": ".",
-          "scope": "repository",
-          "origin": "declared",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "package.json",
-              "pointer": "/scripts/clean-install"
-            }
-          ],
-          "interpretations": [
-            {
-              "capability": "dependencies.install",
-              "confidence": "high",
-              "evidence": [
-                {
-                  "kind": "declaration",
-                  "source": "package.json",
-                  "pointer": "/scripts/clean-install",
-                  "description": "The command installs Yarn dependencies."
-                }
-              ]
-            }
-          ],
           "variants": []
         },
         {

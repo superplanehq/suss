@@ -290,9 +290,7 @@ func inlineRecipe(header string) string {
 	if !found {
 		return ""
 	}
-	if strings.HasPrefix(rest, ":") {
-		rest = rest[1:]
-	}
+	rest = strings.TrimPrefix(rest, ":")
 	_, recipe, found := strings.Cut(rest, ";")
 	if !found {
 		return ""

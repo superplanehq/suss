@@ -214,6 +214,11 @@
             {
               "kind": "declaration",
               "source": "docker-compose.yml",
+              "pointer": "/services/app/environment"
+            },
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
               "pointer": "/services/app/environment/LISTMONK_ADMIN_PASSWORD"
             }
           ]
@@ -225,6 +230,11 @@
           "hasDefault": true,
           "confidence": "high",
           "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment"
+            },
             {
               "kind": "declaration",
               "source": "docker-compose.yml",
@@ -574,24 +584,6 @@
               "source": "Makefile",
               "pointer": "/targets/rm-dev-docker",
               "description": "The target recipe invokes docker."
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_1e93c68f940507eeeed17eb8cc79c0f9",
-          "name": "docker version",
-          "run": "docker version",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/release.yml",
-              "pointer": "/jobs/goreleaser/steps/6/run"
             }
           ],
           "interpretations": [],

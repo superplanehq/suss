@@ -150,7 +150,7 @@ Status: review fixes applied; awaiting approval. `plausible/analytics` at the pi
 
 - Declared wrappers win over inferred convention commands of the same capability (`make test` drops `go test ./...`). This is `reconcile.PreferDeclared`, not provider logic. idea.md: conventions fill gaps when explicit evidence is absent.
 - Any command interpreted as `dependencies.install` is preparation, regardless of detector or origin. The previous `Detector == "make"` special case is gone. `docker compose up` remains preparation.
-- Tool version/info/help probes (`docker version`, `docker info`, `docker compose version`, `node --version`, and the same for npm/pnpm/yarn/bun/python/ruby/java) are CI plumbing, matching the milestone 4 `go version` / `go env` rule. `make version` is not plumbing: it is a repository target.
+- Tool version/info/help probes are CI plumbing, matching the milestone 4 `go version` / `go env` rule: `docker version` / `docker info` / `docker compose version`, and `--version` / `-v` on node/npm/pnpm/yarn/bun/python/ruby/java. `npm version` / `yarn version` bump the package and stay commands. `make version` is a repository target, not plumbing.
 - Renderer polish (command directory when it differs from the project path; requirement kind on each line) is in this milestone, not deferred.
 
 ## Milestone 6 — Elixir provider, Semaphore provider, dogfood

@@ -109,41 +109,6 @@
       ],
       "preparation": [
         {
-          "id": "cmd_3c33ddd10248e94f1b03d746409efbc8",
-          "name": "download dependencies",
-          "run": "go mod download",
-          "directory": ".",
-          "scope": "project",
-          "origin": "inferred",
-          "confidence": "medium",
-          "evidence": [
-            {
-              "kind": "file",
-              "source": "go.mod"
-            },
-            {
-              "kind": "convention",
-              "source": "go-ecosystem",
-              "pointer": "dependencies",
-              "description": "Go modules conventionally download dependencies with go mod download."
-            }
-          ],
-          "interpretations": [
-            {
-              "capability": "dependencies.install",
-              "confidence": "medium",
-              "evidence": [
-                {
-                  "kind": "convention",
-                  "source": "go-ecosystem",
-                  "pointer": "dependencies"
-                }
-              ]
-            }
-          ],
-          "variants": []
-        },
-        {
           "id": "cmd_73e78b236bbdb1935bfe2220f7427b85",
           "name": "install_deps",
           "run": "make install_deps",
@@ -178,45 +143,6 @@
       ],
       "commands": [
         {
-          "id": "cmd_33a3282f3cadbdc5ea6cc1eee9d174e5",
-          "name": "test",
-          "run": "go test ./...",
-          "directory": ".",
-          "scope": "project",
-          "origin": "inferred",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "file",
-              "source": "active_help_test.go"
-            },
-            {
-              "kind": "file",
-              "source": "go.mod"
-            },
-            {
-              "kind": "convention",
-              "source": "go-ecosystem",
-              "pointer": "test",
-              "description": "Go modules with test files conventionally run all package tests with go test ./...."
-            }
-          ],
-          "interpretations": [
-            {
-              "capability": "test.run",
-              "confidence": "high",
-              "evidence": [
-                {
-                  "kind": "convention",
-                  "source": "go-ecosystem",
-                  "pointer": "test"
-                }
-              ]
-            }
-          ],
-          "variants": []
-        },
-        {
           "id": "cmd_394b7afee19c82ee3cecb66f7a6363f6",
           "name": "golangci-lint run",
           "run": "golangci-lint run --verbose",
@@ -241,41 +167,6 @@
                   "source": ".github/workflows/test.yml",
                   "pointer": "/jobs/golangci-lint/steps/2/uses",
                   "description": "The command runs golangci-lint."
-                }
-              ]
-            }
-          ],
-          "variants": []
-        },
-        {
-          "id": "cmd_771e916f311f45ac53eeb33ca2ee8376",
-          "name": "vet",
-          "run": "go vet ./...",
-          "directory": ".",
-          "scope": "project",
-          "origin": "inferred",
-          "confidence": "medium",
-          "evidence": [
-            {
-              "kind": "file",
-              "source": "go.mod"
-            },
-            {
-              "kind": "convention",
-              "source": "go-ecosystem",
-              "pointer": "vet",
-              "description": "Go modules conventionally run go vet ./... to check packages."
-            }
-          ],
-          "interpretations": [
-            {
-              "capability": "code.lint",
-              "confidence": "medium",
-              "evidence": [
-                {
-                  "kind": "convention",
-                  "source": "go-ecosystem",
-                  "pointer": "vet"
                 }
               ]
             }

@@ -79,18 +79,6 @@
         },
         {
           "kind": "service",
-          "name": "${{ matrix.postgres_image }}",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/build/services/postgres/image"
-            }
-          ]
-        },
-        {
-          "kind": "service",
           "name": "clickhouse-server",
           "version": "25.11.5.8-alpine",
           "confidence": "high",
@@ -113,6 +101,11 @@
           "version": "18",
           "confidence": "high",
           "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/services/postgres/image"
+            },
             {
               "kind": "invocation",
               "source": ".github/workflows/elixir.yml",
@@ -1172,24 +1165,6 @@
               "kind": "invocation",
               "source": ".github/workflows/elixir.yml",
               "pointer": "/jobs/build/steps/9/run"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_f69e8ff6e8f4a2634f9e5105eb2b6efa",
-          "name": "matrix.platform }}",
-          "run": "platform=$platform matrix.platform }}",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/build-public-images-ghcr.yml",
-              "pointer": "/jobs/build/steps/0/run#command=0"
             }
           ],
           "interpretations": [],

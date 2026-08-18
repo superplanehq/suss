@@ -65,9 +65,7 @@ func environmentValues(node yaml.Node) []string {
 		for i := 0; i+1 < len(node.Content); i += 2 {
 			key := resolveNode(*node.Content[i])
 			if strings.TrimSpace(key.Value) == "<<" {
-				for _, nested := range environmentValues(resolveNode(*node.Content[i+1])) {
-					values = append(values, nested)
-				}
+				values = append(values, environmentValues(resolveNode(*node.Content[i+1]))...)
 				continue
 			}
 			values = append(values, scalarString(node.Content[i+1]))

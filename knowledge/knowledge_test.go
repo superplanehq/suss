@@ -326,6 +326,12 @@ func TestIsToolPlumbingCoversVersionProbes(t *testing.T) {
 	if IsToolPlumbing(Invocation{Executable: "make", Args: []string{"version"}}) {
 		t.Fatal("IsToolPlumbing(make version) = true, want false")
 	}
+	if !IsToolPlumbing(Invocation{Executable: "npm", Args: []string{"--version"}}) {
+		t.Fatal("IsToolPlumbing(npm --version) = false, want true")
+	}
+	if IsToolPlumbing(Invocation{Executable: "npm", Args: []string{"version", "--no-git-tag-version", "1.2.3"}}) {
+		t.Fatal("IsToolPlumbing(npm version ...) = true, want false; npm version bumps the package")
+	}
 }
 
 func TestParseScriptKeepsGHAExpressionsAtomic(t *testing.T) {
