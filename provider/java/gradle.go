@@ -21,6 +21,8 @@ type gradleProject struct {
 	SpringBoot        bool
 	SpringPointer     string
 	ApplicationPlugin bool
+	MainClass         string
+	MainClassPointer  string
 	Plugins           map[string]struct{}
 	Wrapper           string
 	WrapperSource     string
@@ -69,6 +71,7 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 	project.JavaVersion, project.JavaVersionPtr = gradleJavaVersion(stripped)
 	project.SpringBoot, project.SpringPointer = gradleSpringBoot(stripped, project.Plugins)
 	_, project.ApplicationPlugin = project.Plugins["application"]
+	project.MainClass, project.MainClassPointer = gradleMainClass(stripped)
 	project.Wrapper, project.WrapperSource, project.WrapperVersion, project.WrapperProperties = gradleWrapper(ctx)
 	return project, nil
 }
@@ -253,6 +256,31 @@ func (g *gradleProject) hasPlugin(id string) bool {
 	}
 	_, ok := g.Plugins[id]
 	return ok
+}
+
+func (g *gradleProject) hasSpringBootPlugin() bool {
+	return g.hasPlugin("org.springframework.boot")
+}
+
+func (g *gradleProject) canRunApplication() bool {
+	return g != nil && g.ApplicationPlugin && g.MainClass != ""
+}
+
+func gradleMainClass(contents string) (string, string) {
+	patterns := []struct {
+		pattern *regexp.Regexp
+		pointer string
+	}{
+		{regexp.MustCompile(`(?m)\bmainClass(?:Name)?\s*\.\s*set\s*\(\s*["']([^"']+)["']\s*\)`), "/application/mainClass"},
+		{regexp.MustCompile(`(?m)\bmainClassName\s*=\s*["']([^"']+)["']`), "/mainClassName"},
+		{regexp.MustCompile(`(?m)\bmainClass\s*=\s*["']([^"']+)["']`), "/application/mainClass"},
+	}
+	for _, candidate := range patterns {
+		if match := candidate.pattern.FindStringSubmatch(contents); len(match) == 2 && strings.TrimSpace(match[1]) != "" {
+			return match[1], candidate.pointer
+		}
+	}
+	return "", ""
 }
 
 func gradleWrapper(ctx provider.Context) (script, source, version, properties string) {

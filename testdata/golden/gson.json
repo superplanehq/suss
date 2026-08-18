@@ -107,6 +107,18 @@
           ]
         },
         {
+          "name": "tool.configured",
+          "value": "spotless",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/spotless-maven-plugin"
+            }
+          ]
+        },
+        {
           "name": "workspace.orchestrator",
           "value": "maven",
           "confidence": "high",
@@ -548,7 +560,20 @@
           ]
         }
       ],
-      "facts": [],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "spotless",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/spotless-maven-plugin"
+            }
+          ]
+        }
+      ],
       "requirements": [
         {
           "kind": "runtime",
@@ -685,7 +710,20 @@
           ]
         }
       ],
-      "facts": [],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "spotless",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/spotless-maven-plugin"
+            }
+          ]
+        }
+      ],
       "requirements": [
         {
           "kind": "runtime",
@@ -822,7 +860,20 @@
           ]
         }
       ],
-      "facts": [],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "spotless",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/spotless-maven-plugin"
+            }
+          ]
+        }
+      ],
       "requirements": [
         {
           "kind": "runtime",
@@ -919,7 +970,20 @@
           ]
         }
       ],
-      "facts": [],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "spotless",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/spotless-maven-plugin"
+            }
+          ]
+        }
+      ],
       "requirements": [
         {
           "kind": "runtime",
@@ -1056,7 +1120,20 @@
           ]
         }
       ],
-      "facts": [],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "spotless",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/spotless-maven-plugin"
+            }
+          ]
+        }
+      ],
       "requirements": [
         {
           "kind": "runtime",
@@ -1193,7 +1270,20 @@
           ]
         }
       ],
-      "facts": [],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "spotless",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/spotless-maven-plugin"
+            }
+          ]
+        }
+      ],
       "requirements": [
         {
           "kind": "runtime",
@@ -1330,7 +1420,20 @@
           ]
         }
       ],
-      "facts": [],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "spotless",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/spotless-maven-plugin"
+            }
+          ]
+        }
+      ],
       "requirements": [
         {
           "kind": "runtime",

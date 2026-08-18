@@ -33,6 +33,7 @@ var configuredTools = []configuredTool{
 	},
 	{
 		name:          "spotless",
+		mavenPlugins:  []string{"spotless-maven-plugin"},
 		gradlePlugins: []string{"com.diffplug.spotless"},
 	},
 	{

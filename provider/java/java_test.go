@@ -297,6 +297,143 @@ func TestDetectMavenChildCompilerPluginOverridesParent(t *testing.T) {
 	}
 }
 
+func TestDetectIgnoresNonInheritedParentPlugins(t *testing.T) {
+	t.Parallel()
+
+	root := writeFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>parent</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+  <modules><module>lib</module></modules>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <inherited>false</inherited>
+        <configuration><release>8</release></configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <inherited>false</inherited>
+      </plugin>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <inherited>false</inherited>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+`,
+		"lib/pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.example</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>lib</artifactId>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+  </dependencies>
+</project>
+`,
+		"lib/src/main/java/com/example/App.java": "public class App { public static void main(String[] args) {} }\n",
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "lib"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if hasRuntime(result, "8") {
+		t.Fatalf("inherited=false compiler plugin supplied Java 8: %+v", result.Findings)
+	}
+	if slices.Contains(factValues(result, "tool.configured"), "checkstyle") {
+		t.Fatal("inherited=false checkstyle plugin was reported as configured")
+	}
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("inferred spring-boot:run from inherited=false spring-boot-maven-plugin")
+	}
+}
+
+func TestDetectMavenChildKeepsParentCompilerReleaseWhenRedeclaring(t *testing.T) {
+	t.Parallel()
+
+	root := writeFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>parent</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+  <modules><module>lib</module></modules>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration><release>17</release></configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+`,
+		"lib/pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.example</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>lib</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+`,
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "lib"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if !hasRuntime(result, "17") {
+		t.Fatalf("missing merged parent Java 17 in %+v", result.Findings)
+	}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != "java" || item.Requirement.Version != "17" {
+			continue
+		}
+		for _, evidence := range item.Requirement.Evidence {
+			if evidence.Source != "pom.xml" {
+				t.Fatalf("merged compiler release evidence source = %q, want parent pom.xml", evidence.Source)
+			}
+			if evidence.Pointer != "/build/plugins/maven-compiler-plugin/configuration/release" {
+				t.Fatalf("merged compiler release pointer = %q", evidence.Pointer)
+			}
+		}
+		return
+	}
+	t.Fatal("missing merged Java 17 requirement")
+}
+
 func TestDetectMavenModuleUsesAncestorWrapper(t *testing.T) {
 	t.Parallel()
 
@@ -686,6 +823,14 @@ func TestDetectCompetingManagersOnlyAmbiguatesSupportedServer(t *testing.T) {
     <relativePath/>
   </parent>
   <artifactId>demo</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>
 `,
 		"build.gradle": `plugins { id 'java' }`,
@@ -716,6 +861,116 @@ func TestDetectWrapperEvidenceOnInferredCommands(t *testing.T) {
 	}
 	if !slices.Contains(sources, "mvnw") {
 		t.Fatalf("test evidence = %v, want wrapper file mvnw", sources)
+	}
+}
+
+func TestDetectMavenSpringBootWithoutPluginDoesNotInferServer(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.4.0</version>
+    <relativePath/>
+  </parent>
+  <artifactId>demo</artifactId>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+  </dependencies>
+</project>
+`,
+		"src/main/java/com/example/DemoApplication.java": "public class DemoApplication { public static void main(String[] args) {} }\n",
+	})
+
+	if !hasProperty(result, plan.PropertyFramework, "spring-boot") {
+		t.Fatalf("missing Spring Boot framework in %+v", result.Findings)
+	}
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("inferred spring-boot:run without spring-boot-maven-plugin")
+	}
+}
+
+func TestDetectGradleStarterWithoutPluginDoesNotInferBootRun(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"build.gradle": `plugins { id 'java' }
+dependencies { implementation 'org.springframework.boot:spring-boot-starter-web' }
+`,
+		"src/main/java/com/example/DemoApplication.java": "public class DemoApplication { public static void main(String[] args) {} }\n",
+	})
+
+	if !hasProperty(result, plan.PropertyFramework, "spring-boot") {
+		t.Fatalf("missing Spring Boot framework in %+v", result.Findings)
+	}
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("inferred bootRun without the Spring Boot Gradle plugin")
+	}
+}
+
+func TestDetectGradleApplicationWithoutMainClassDoesNotInferRun(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"build.gradle":                       `plugins { id 'application' }`,
+		"src/main/java/com/example/App.java": "public class App { public static void main(String[] args) {} }\n",
+	})
+
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("inferred gradle run without application.mainClass")
+	}
+}
+
+func TestDetectGradleApplicationWithMainClassInfersRun(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"build.gradle.kts": `plugins { id("application") }
+application { mainClass.set("com.example.App") }
+`,
+		"src/main/java/com/example/App.java": "public class App { public static void main(String[] args) {} }\n",
+	})
+
+	command := commandsByName(result)["server"]
+	assertCommand(t, command, "gradle run", plan.CapabilityApplicationRun)
+	var pointers []string
+	for _, evidence := range command.Evidence {
+		if evidence.Pointer != "" {
+			pointers = append(pointers, evidence.Pointer)
+		}
+	}
+	if !slices.Contains(pointers, "/application/mainClass") {
+		t.Fatalf("run evidence pointers = %v, want /application/mainClass", pointers)
+	}
+}
+
+func TestDetectMavenSpotlessPlugin(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>lib</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+`,
+	})
+
+	if !slices.Contains(factValues(result, "tool.configured"), "spotless") {
+		t.Fatalf("configured tools = %v, want spotless", factValues(result, "tool.configured"))
 	}
 }
 

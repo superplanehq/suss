@@ -82,9 +82,9 @@ func mavenSpecs(ctx provider.Context, maven *mavenProject) ([]commandSpec, error
 	if err != nil {
 		return nil, err
 	}
-	if maven.SpringBoot && entry != "" {
+	if maven.hasSpringBootPlugin() && entry != "" {
 		spec := conventionSpec(source, "server", tool+" spring-boot:run", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with mvn spring-boot:run.")
-		spec.evidence = attachCommandEvidence(spec.evidence, maven.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		spec.evidence = attachCommandEvidence(spec.evidence, maven.WrapperSource, springBootPluginEvidence(maven), plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
 	}
 	return specs, nil
@@ -117,13 +117,17 @@ func gradleSpecs(ctx provider.Context, gradle *gradleProject) ([]commandSpec, er
 	if err != nil {
 		return nil, err
 	}
-	if gradle.SpringBoot && entry != "" {
+	if gradle.hasSpringBootPlugin() && entry != "" {
 		spec := conventionSpec(source, "server", tool+" bootRun", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with gradle bootRun.")
-		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, gradlePluginEvidence(ctx, gradle, "org.springframework.boot"), plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
-	} else if gradle.ApplicationPlugin && entry != "" {
+	} else if gradle.canRunApplication() {
 		spec := conventionSpec(source, "server", tool+" run", "/#server", plan.ConfidenceMedium, "Gradle application projects conventionally start with gradle run.")
-		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		extras := []plan.Evidence{gradleMainClassEvidence(ctx, gradle)}
+		if entry != "" {
+			extras = append(extras, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		}
+		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, extras...)
 		specs = append(specs, spec)
 	}
 	return specs, nil
@@ -177,24 +181,24 @@ func competingServerResult(ctx provider.Context, project javaProject, entry stri
 		return nil, nil
 	}
 	var specs []commandSpec
-	if project.Maven != nil && project.Maven.SpringBoot {
+	if project.Maven != nil && project.Maven.hasSpringBootPlugin() {
 		source := ctx.SourcePath(project.Maven.Source)
 		tool := project.Maven.Wrapper
 		if tool == "" {
 			tool = "mvn"
 		}
 		spec := conventionSpec(source, "server", tool+" spring-boot:run", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with mvn spring-boot:run.")
-		spec.evidence = attachCommandEvidence(spec.evidence, project.Maven.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		spec.evidence = attachCommandEvidence(spec.evidence, project.Maven.WrapperSource, springBootPluginEvidence(project.Maven), plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
 	}
-	if project.Gradle != nil && project.Gradle.SpringBoot {
+	if project.Gradle != nil && project.Gradle.hasSpringBootPlugin() {
 		source := ctx.SourcePath(project.Gradle.Source)
 		tool := project.Gradle.Wrapper
 		if tool == "" {
 			tool = "gradle"
 		}
 		spec := conventionSpec(source, "server", tool+" bootRun", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with gradle bootRun.")
-		spec.evidence = attachCommandEvidence(spec.evidence, project.Gradle.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		spec.evidence = attachCommandEvidence(spec.evidence, project.Gradle.WrapperSource, gradlePluginEvidence(ctx, project.Gradle, "org.springframework.boot"), plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
 	}
 	if len(specs) >= 2 {
@@ -379,6 +383,30 @@ func underDeclaredMember(relative string, members []string) bool {
 		}
 	}
 	return false
+}
+
+func springBootPluginEvidence(maven *mavenProject) plan.Evidence {
+	return plan.Evidence{
+		Kind:    plan.EvidenceDeclaration,
+		Source:  maven.pluginSource("spring-boot-maven-plugin"),
+		Pointer: "/build/plugins/spring-boot-maven-plugin",
+	}
+}
+
+func gradlePluginEvidence(ctx provider.Context, gradle *gradleProject, plugin string) plan.Evidence {
+	return plan.Evidence{
+		Kind:    plan.EvidenceDeclaration,
+		Source:  ctx.SourcePath(gradle.Source),
+		Pointer: "/plugins/" + pointerToken(plugin),
+	}
+}
+
+func gradleMainClassEvidence(ctx provider.Context, gradle *gradleProject) plan.Evidence {
+	return plan.Evidence{
+		Kind:    plan.EvidenceDeclaration,
+		Source:  ctx.SourcePath(gradle.Source),
+		Pointer: gradle.MainClassPointer,
+	}
 }
 
 func attachCommandEvidence(evidence []plan.Evidence, wrapperSource string, extras ...plan.Evidence) []plan.Evidence {

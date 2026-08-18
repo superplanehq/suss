@@ -61,12 +61,16 @@ type pomArtifact struct {
 type pomPlugin struct {
 	GroupID       string `xml:"groupId"`
 	ArtifactID    string `xml:"artifactId"`
+	Inherited     string `xml:"inherited"`
 	Source        string `xml:"-"`
 	Configuration struct {
 		Release string `xml:"release"`
 		Source  string `xml:"source"`
 		Target  string `xml:"target"`
 	} `xml:"configuration"`
+	ReleaseSource string `xml:"-"`
+	SourceSource  string `xml:"-"`
+	TargetSource  string `xml:"-"`
 }
 
 type pomProperties struct {
@@ -236,10 +240,10 @@ func stampPOM(parsed *pomDocument, source string) {
 		parsed.Properties.Entries[i].Source = source
 	}
 	for i := range parsed.Plugins {
-		parsed.Plugins[i].Source = source
+		stampPlugin(&parsed.Plugins[i], source)
 	}
 	for i := range parsed.PluginManagement {
-		parsed.PluginManagement[i].Source = source
+		stampPlugin(&parsed.PluginManagement[i], source)
 	}
 	for i := range parsed.Dependencies {
 		parsed.Dependencies[i].Source = source
@@ -277,13 +281,36 @@ func mergePOM(parent, child pomDocument) pomDocument {
 	return merged
 }
 
+func stampPlugin(plugin *pomPlugin, source string) {
+	plugin.Source = source
+	if strings.TrimSpace(plugin.Configuration.Release) != "" && plugin.ReleaseSource == "" {
+		plugin.ReleaseSource = source
+	}
+	if strings.TrimSpace(plugin.Configuration.Source) != "" && plugin.SourceSource == "" {
+		plugin.SourceSource = source
+	}
+	if strings.TrimSpace(plugin.Configuration.Target) != "" && plugin.TargetSource == "" {
+		plugin.TargetSource = source
+	}
+}
+
+func pluginInherited(plugin pomPlugin) bool {
+	return !strings.EqualFold(strings.TrimSpace(plugin.Inherited), "false")
+}
+
 func mergePlugins(parent, child []pomPlugin) []pomPlugin {
-	merged := append([]pomPlugin{}, parent...)
+	var merged []pomPlugin
+	for _, item := range parent {
+		if !pluginInherited(item) {
+			continue
+		}
+		merged = append(merged, item)
+	}
 	for _, item := range child {
 		replaced := false
 		for i, existing := range merged {
 			if pluginsMatch(existing, item) {
-				merged[i] = item
+				merged[i] = mergePlugin(existing, item)
 				replaced = true
 				break
 			}
@@ -293,6 +320,32 @@ func mergePlugins(parent, child []pomPlugin) []pomPlugin {
 		}
 	}
 	return merged
+}
+
+func mergePlugin(parent, child pomPlugin) pomPlugin {
+	merged := child
+	if strings.TrimSpace(merged.Configuration.Release) == "" {
+		merged.Configuration.Release = parent.Configuration.Release
+		merged.ReleaseSource = firstNonEmpty(parent.ReleaseSource, parent.Source)
+	}
+	if strings.TrimSpace(merged.Configuration.Source) == "" {
+		merged.Configuration.Source = parent.Configuration.Source
+		merged.SourceSource = firstNonEmpty(parent.SourceSource, parent.Source)
+	}
+	if strings.TrimSpace(merged.Configuration.Target) == "" {
+		merged.Configuration.Target = parent.Configuration.Target
+		merged.TargetSource = firstNonEmpty(parent.TargetSource, parent.Source)
+	}
+	return merged
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func pluginsMatch(a, b pomPlugin) bool {
@@ -328,12 +381,13 @@ func compilerPluginJavaVersion(parsed pomDocument, plugins []pomPlugin, values m
 			continue
 		}
 		for _, candidate := range []struct {
-			value string
-			field string
+			value  string
+			field  string
+			source string
 		}{
-			{plugin.Configuration.Release, "release"},
-			{plugin.Configuration.Source, "source"},
-			{plugin.Configuration.Target, "target"},
+			{plugin.Configuration.Release, "release", plugin.ReleaseSource},
+			{plugin.Configuration.Source, "source", plugin.SourceSource},
+			{plugin.Configuration.Target, "target", plugin.TargetSource},
 		} {
 			raw := strings.TrimSpace(candidate.value)
 			if raw == "" {
@@ -345,10 +399,7 @@ func compilerPluginJavaVersion(parsed pomDocument, plugins []pomPlugin, values m
 				}
 			}
 			if version := literalVersion(interpolate(raw, values, 0)); version != "" {
-				source := plugin.Source
-				if source == "" {
-					source = parsed.Source
-				}
+				source := firstNonEmpty(candidate.source, plugin.Source, parsed.Source)
 				return version, pointerBase + "/configuration/" + candidate.field, source, true
 			}
 		}
@@ -465,6 +516,10 @@ func (m *mavenProject) pluginSource(artifactID string) string {
 		return ""
 	}
 	return m.Plugins[artifactID]
+}
+
+func (m *mavenProject) hasSpringBootPlugin() bool {
+	return m.pluginSource("spring-boot-maven-plugin") != ""
 }
 
 func mavenWrapper(ctx provider.Context) (script, source, version, properties string) {

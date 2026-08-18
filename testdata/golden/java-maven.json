@@ -105,6 +105,11 @@
           "confidence": "medium",
           "evidence": [
             {
+              "kind": "declaration",
+              "source": "pom.xml",
+              "pointer": "/build/plugins/spring-boot-maven-plugin"
+            },
+            {
               "kind": "file",
               "source": "mvnw"
             },
