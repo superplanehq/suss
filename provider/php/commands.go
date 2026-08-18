@@ -136,20 +136,30 @@ func testCommandSpec(ctx provider.Context, manifest composerManifest) (commandSp
 		return spec, true, nil
 	}
 
-	if testFile == "" && !phpunitConfigured(ctx) {
-		return commandSpec{}, false, nil
-	}
-	run := composerBinary(manifest, "phpunit")
-	spec := conventionSpec(source, "test", run, "/#test", plan.ConfidenceHigh, "Composer PHP projects with PHPUnit tests conventionally run them with "+run+".")
-	var extra []plan.Evidence
-	if testFile != "" {
-		extra = append(extra, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
-	}
-	extra = append(extra, composerBinEvidence(source, manifest)...)
-	if len(extra) > 0 {
+	if runner, pointer, ok := phpTestRunner(manifest); ok {
+		run := composerBinary(manifest, runner)
+		spec := conventionSpec(source, "test", run, "/#test", plan.ConfidenceHigh, "Composer PHP projects with "+runner+" conventionally run tests with "+run+".")
+		var extra []plan.Evidence
+		if testFile != "" {
+			extra = append(extra, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
+		}
+		extra = append(extra, plan.Evidence{Kind: plan.EvidenceDeclaration, Source: source, Pointer: pointer})
+		extra = append(extra, composerBinEvidence(source, manifest)...)
 		spec.evidence = addEvidenceAfterManifest(spec.evidence, extra...)
+		return spec, true, nil
 	}
-	return spec, true, nil
+
+	return commandSpec{}, false, nil
+}
+
+func phpTestRunner(manifest composerManifest) (name, pointer string, ok bool) {
+	if pointer, ok = packagePointer(manifest, "phpunit/phpunit"); ok {
+		return "phpunit", pointer, true
+	}
+	if pointer, ok = packagePointer(manifest, "symfony/phpunit-bridge"); ok {
+		return "simple-phpunit", pointer, true
+	}
+	return "", "", false
 }
 
 func laravelApplicationEvidence(ctx provider.Context, manifest composerManifest) []plan.Evidence {

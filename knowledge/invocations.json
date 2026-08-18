@@ -404,6 +404,13 @@
       "description": "The command runs PHPUnit tests."
     },
     {
+      "id": "simple-phpunit",
+      "executable": "simple-phpunit",
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs PHPUnit tests through Symfony's PHPUnit bridge."
+    },
+    {
       "id": "pest",
       "executable": "pest",
       "capabilities": ["test.run"],

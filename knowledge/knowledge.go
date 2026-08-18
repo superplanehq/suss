@@ -149,7 +149,7 @@ func CommandName(inv Invocation) string {
 
 func takesSubcommand(executable string) bool {
 	switch canonicalizeExecutable(executable) {
-	case "phpunit", "pest", "phpstan", "psalm", "phpcs", "pint", "php-cs-fixer":
+	case "phpunit", "simple-phpunit", "pest", "phpstan", "psalm", "phpcs", "pint", "php-cs-fixer":
 		return false
 	default:
 		return true

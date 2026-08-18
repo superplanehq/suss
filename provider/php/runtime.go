@@ -77,7 +77,12 @@ func runtimeFindings(ctx provider.Context, manifest composerManifest) ([]plan.Fi
 	}
 
 	if requireVersion != "" && !requireMerged {
-		findings = append(findings, runtimeFinding(ctx, requireVersion, plan.ConfidenceHigh, []plan.Evidence{requirePHPEvidence(ctx)}))
+		evidence := []plan.Evidence{requirePHPEvidence(ctx)}
+		if platformVersion == requireVersion {
+			evidence = append(evidence, platformPHPEvidence(ctx))
+			platformMerged = true
+		}
+		findings = append(findings, runtimeFinding(ctx, requireVersion, plan.ConfidenceHigh, evidence))
 	}
 	if platformVersion != "" && !platformMerged && platformVersion != requireVersion {
 		findings = append(findings, runtimeFinding(ctx, platformVersion, plan.ConfidenceHigh, []plan.Evidence{platformPHPEvidence(ctx)}))

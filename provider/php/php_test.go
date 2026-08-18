@@ -108,7 +108,9 @@ func TestDetectLaravelPackageWithoutArtisanDoesNotInferArtisanCommands(t *testin
 	if _, ok := commands["server"]; ok {
 		t.Fatal("Laravel package without artisan unexpectedly has a server command")
 	}
-	assertCommand(t, commands["test"], "vendor/bin/phpunit", plan.CommandInferred, plan.CapabilityTestRun)
+	if _, ok := commands["test"]; ok {
+		t.Fatal("Laravel package without a PHPUnit runner unexpectedly has a test command")
+	}
 }
 
 func TestDetectLaravelDependencyWithoutApplicationDoesNotInferServer(t *testing.T) {
@@ -123,7 +125,21 @@ func TestDetectLaravelDependencyWithoutApplicationDoesNotInferServer(t *testing.
 	if _, ok := commands["server"]; ok {
 		t.Fatal("Laravel dependency without application evidence unexpectedly has a server command")
 	}
-	assertCommand(t, commands["test"], "vendor/bin/phpunit", plan.CommandInferred, plan.CapabilityTestRun)
+	if _, ok := commands["test"]; ok {
+		t.Fatal("Laravel dependency without a PHPUnit runner unexpectedly has a test command")
+	}
+}
+
+func TestDetectDoesNotInferPHPUnitFromTestFilenamesAlone(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json":        `{"require":{"php":"^8.2"}}`,
+		"tests/ParserTest.php": "<?php\nclass ParserTest {}\n",
+	})
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("inferred PHPUnit from a *Test.php file without a PHPUnit runner")
+	}
 }
 
 func TestDetectComposerLibraryPHPUnitAndPest(t *testing.T) {
@@ -168,9 +184,31 @@ func TestDetectSymfonyFrameworkWithoutInferredServer(t *testing.T) {
 		t.Fatalf("missing Symfony framework in %+v", result.Findings)
 	}
 	commands := commandsByName(result)
-	assertCommand(t, commands["test"], "vendor/bin/phpunit", plan.CommandInferred, plan.CapabilityTestRun)
+	if _, ok := commands["test"]; ok {
+		t.Fatal("Symfony project without a PHPUnit runner unexpectedly has a test command")
+	}
 	if _, ok := commands["server"]; ok {
 		t.Fatal("Symfony project unexpectedly has an inferred server command")
+	}
+
+	phpunit := detectFiles(t, map[string]string{
+		"composer.json":            `{"require":{"php":"^8.3","symfony/framework-bundle":"^7.2"},"require-dev":{"phpunit/phpunit":"^11.0"}}`,
+		"bin/console":              "#!/usr/bin/env php\n",
+		"phpunit.xml.dist":         "<phpunit></phpunit>\n",
+		"tests/ControllerTest.php": "<?php\nclass ControllerTest {}\n",
+	})
+	assertCommand(t, commandsByName(phpunit)["test"], "vendor/bin/phpunit", plan.CommandInferred, plan.CapabilityTestRun)
+
+	bridge := detectFiles(t, map[string]string{
+		"composer.json":            `{"require":{"php":"^8.3","symfony/framework-bundle":"^7.2"},"require-dev":{"symfony/phpunit-bridge":"^7.2"}}`,
+		"bin/console":              "#!/usr/bin/env php\n",
+		"phpunit.xml.dist":         "<phpunit></phpunit>\n",
+		"tests/ControllerTest.php": "<?php\nclass ControllerTest {}\n",
+	})
+	command := commandsByName(bridge)["test"]
+	assertCommand(t, command, "vendor/bin/simple-phpunit", plan.CommandInferred, plan.CapabilityTestRun)
+	if !hasEvidencePointer(command.Evidence, "composer.json", "/require-dev/symfony~1phpunit-bridge") {
+		t.Fatalf("evidence = %+v, want phpunit-bridge declaration", command.Evidence)
 	}
 }
 
@@ -293,6 +331,38 @@ func TestDetectMergesMatchingRuntimeEvidence(t *testing.T) {
 		return
 	}
 	t.Fatal("missing merged PHP 8.3.6 requirement")
+}
+
+func TestDetectMergesEqualPlatformPHPEvidenceIntoRequire(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "require": {"php": "^8.3"},
+  "config": {"platform": {"php": "^8.3"}}
+}`,
+	})
+
+	var found bool
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != "php" || item.Requirement.Version != "^8.3" {
+			continue
+		}
+		found = true
+		if !hasEvidencePointer(item.Requirement.Evidence, "composer.json", "/require/php") {
+			t.Fatalf("evidence = %+v, want /require/php", item.Requirement.Evidence)
+		}
+		if !hasEvidencePointer(item.Requirement.Evidence, "composer.json", "/config/platform/php") {
+			t.Fatalf("evidence = %+v, want /config/platform/php merged into the same requirement", item.Requirement.Evidence)
+		}
+	}
+	if !found {
+		t.Fatal("missing merged PHP ^8.3 requirement")
+	}
+	if count := runtimeCount(result, "^8.3"); count != 1 {
+		t.Fatalf("found %d ^8.3 requirements, want one merged requirement", count)
+	}
 }
 
 func TestDetectEmitsComposerCommaRuntimeConstraint(t *testing.T) {
@@ -509,6 +579,17 @@ func hasPackageManager(result provider.Result, name string) bool {
 		}
 	}
 	return false
+}
+
+func runtimeCount(result provider.Result, version string) int {
+	count := 0
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if ok && item.Requirement.Kind == plan.RequirementRuntime && item.Requirement.Name == "php" && item.Requirement.Version == version {
+			count++
+		}
+	}
+	return count
 }
 
 func hasRuntime(result provider.Result, version string) bool {
