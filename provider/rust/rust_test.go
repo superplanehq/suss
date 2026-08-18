@@ -199,6 +199,23 @@ func TestDetectReportsWorkspaceFactAndInheritsRustVersion(t *testing.T) {
 	}
 }
 
+func TestDetectIgnoresPlainRustVersionFile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml":   "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\nrust-version = \"1.81\"\n",
+		"src/lib.rs":   "pub fn ok() {}\n",
+		"rust-version": "1.70.0\n",
+	})
+	project := assembleProject(t, ".", result)
+	if !slices.Equal(rustRequirementVersions(project), []string{">=1.81"}) {
+		t.Fatalf("rust versions = %v, want only Cargo.toml rust-version, not a rust-version file", rustRequirementVersions(project))
+	}
+	if len(project.Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a conflict from an unsupported rust-version file", project.Conflicts)
+	}
+}
+
 func TestDetectReadsToolchainAndToolVersions(t *testing.T) {
 	t.Parallel()
 

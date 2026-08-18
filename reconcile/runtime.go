@@ -346,6 +346,9 @@ func versionSatisfies(runtime, declared, version string) (ok, known bool) {
 	if sameVersion(declared, version) {
 		return true, true
 	}
+	if !isVersionConstraint(declared) && !comparableVersion(normalizeVersion(declared)) {
+		return false, false
+	}
 
 	for _, group := range strings.Split(strings.ReplaceAll(declared, "||", "|"), "|") {
 		satisfied, groupKnown := andConstraints(runtime, strings.TrimSpace(group), version)

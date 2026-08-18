@@ -1,9 +1,6 @@
 package knowledge
 
-import (
-	"path"
-	"strings"
-)
+import "strings"
 
 // StripDirectoryFlags removes package-manager working-directory flags from an
 // invocation and returns the flag value when present. The original invocation
@@ -27,7 +24,7 @@ func StripDirectoryFlags(inv Invocation) (dir string, canonical Invocation) {
 			return "", inv
 		}
 		args, dir = stripFlag(args, "-C", dir)
-		args, dir = stripManifestPath(args, dir)
+		args, _ = stripFlag(args, "--manifest-path", "")
 	}
 	return dir, Invocation{Executable: inv.Executable, Args: args}
 }
@@ -44,8 +41,8 @@ func CanonicalInvocation(inv Invocation) Invocation {
 
 // RewriteDirectoryFlags returns redacted command text that is executable
 // from the directory implied by package-manager directory flags. Cargo -C
-// and --manifest-path are removed so consumers do not resolve those paths
-// twice.
+// is removed because it changes the working directory. --manifest-path is
+// kept: Cargo still reads .cargo/config.toml from the original cwd.
 func RewriteDirectoryFlags(raw string, inv Invocation) string {
 	redacted := RedactAssignmentValues(raw)
 	if canonicalizeExecutable(inv.Executable) != "cargo" {
@@ -84,7 +81,6 @@ func stripCargoDirectoryFlagsFromRun(redacted string) string {
 	head := rest[:cargoAt+1]
 	args := rest[cargoAt+1:]
 	args = stripFlagQuoted(args, "-C")
-	args = stripFlagQuoted(args, "--manifest-path")
 	out := append(append([]string{}, prefix...), head...)
 	out = append(out, args...)
 	return strings.Join(out, " ")
@@ -160,69 +156,4 @@ func cargoDirectoryFlagIsDynamic(args []string) bool {
 func isDynamicPath(path string) bool {
 	path = strings.TrimSpace(path)
 	return strings.Contains(path, "${{") || strings.Contains(path, "$")
-}
-
-func stripManifestPath(args []string, current string) ([]string, string) {
-	out, manifest := stripFlag(args, "--manifest-path", "")
-	if manifest == "" {
-		return out, current
-	}
-	if isDynamicPath(manifest) {
-		return args, current
-	}
-	manifestDir := manifest
-	if parent, ok := cargoManifestDirectory(manifest); ok {
-		manifestDir = parent
-	}
-	return out, joinCargoDirectory(current, manifestDir)
-}
-
-func joinCargoDirectory(base, rel string) string {
-	base = normalizeCargoPath(base)
-	rel = normalizeCargoPath(rel)
-	if rel == "" || rel == "." {
-		if base == "" {
-			return "."
-		}
-		return base
-	}
-	if path.IsAbs(rel) {
-		return rel
-	}
-	if base == "" || base == "." {
-		return rel
-	}
-	joined := path.Clean(base + "/" + rel)
-	if joined == "" {
-		return "."
-	}
-	return joined
-}
-
-func normalizeCargoPath(value string) string {
-	value = strings.ReplaceAll(strings.TrimSpace(value), "\\", "/")
-	value = strings.TrimPrefix(value, "./")
-	if value == "" {
-		return ""
-	}
-	return path.Clean(value)
-}
-
-func cargoManifestDirectory(path string) (string, bool) {
-	if isDynamicPath(path) {
-		return "", false
-	}
-	normalized := strings.ReplaceAll(strings.TrimSpace(path), "\\", "/")
-	normalized = strings.TrimPrefix(normalized, "./")
-	if !strings.HasSuffix(normalized, "Cargo.toml") {
-		return "", false
-	}
-	if strings.EqualFold(normalized, "Cargo.toml") {
-		return ".", true
-	}
-	parent := strings.TrimSuffix(normalized, "/Cargo.toml")
-	if parent == "" || parent == "." {
-		return ".", true
-	}
-	return parent, true
 }

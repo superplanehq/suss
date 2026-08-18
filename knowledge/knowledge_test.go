@@ -519,20 +519,20 @@ func TestStripDirectoryFlagsStopsAtDoubleDash(t *testing.T) {
 	}
 }
 
-func TestStripDirectoryFlagsNormalizesCargoManifestPath(t *testing.T) {
+func TestStripDirectoryFlagsUsesCargoCNotManifestPath(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		args []string
 		want string
 	}{
-		{args: []string{"test", "--manifest-path", "Cargo.toml"}, want: "."},
-		{args: []string{"test", "--manifest-path", "./Cargo.toml"}, want: "."},
-		{args: []string{"test", "--manifest-path=./Cargo.toml"}, want: "."},
-		{args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml"}, want: "crates/tool"},
+		{args: []string{"test", "--manifest-path", "Cargo.toml"}, want: ""},
+		{args: []string{"test", "--manifest-path", "./Cargo.toml"}, want: ""},
+		{args: []string{"test", "--manifest-path=./Cargo.toml"}, want: ""},
+		{args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml"}, want: ""},
 		{args: []string{"-C", "crates/tool", "test", "--manifest-path", "Cargo.toml"}, want: "crates/tool"},
-		{args: []string{"-C", "crates", "test", "--manifest-path", "tool/Cargo.toml"}, want: "crates/tool"},
-		{args: []string{"-C", "crates/tool", "test", "--manifest-path", "../cli/Cargo.toml"}, want: "crates/cli"},
+		{args: []string{"-C", "crates", "test", "--manifest-path", "tool/Cargo.toml"}, want: "crates"},
+		{args: []string{"-C", "crates/tool", "test", "--manifest-path", "../cli/Cargo.toml"}, want: "crates/tool"},
 	}
 	for _, tt := range tests {
 		dir, got := StripDirectoryFlags(Invocation{Executable: "cargo", Args: tt.args})
@@ -552,8 +552,8 @@ func TestRewriteDirectoryFlagsStripsCargoPaths(t *testing.T) {
 		"cargo test --manifest-path crates/tool/Cargo.toml --locked",
 		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml", "--locked"}},
 	)
-	if got != "cargo test --locked" {
-		t.Fatalf("RewriteDirectoryFlags(manifest-path) = %q, want cargo test --locked", got)
+	if got != "cargo test --manifest-path crates/tool/Cargo.toml --locked" {
+		t.Fatalf("RewriteDirectoryFlags(manifest-path) = %q, want the original invocation", got)
 	}
 	got = RewriteDirectoryFlags(
 		"cargo +nightly -C crates/tool test",
@@ -566,15 +566,15 @@ func TestRewriteDirectoryFlagsStripsCargoPaths(t *testing.T) {
 		"cargo -C crates/tool test --manifest-path Cargo.toml",
 		Invocation{Executable: "cargo", Args: []string{"-C", "crates/tool", "test", "--manifest-path", "Cargo.toml"}},
 	)
-	if got != "cargo test" {
-		t.Fatalf("RewriteDirectoryFlags(-C and manifest-path) = %q, want cargo test", got)
+	if got != "cargo test --manifest-path Cargo.toml" {
+		t.Fatalf("RewriteDirectoryFlags(-C and manifest-path) = %q, want cargo test with the manifest path kept", got)
 	}
 	got = RewriteDirectoryFlags(
 		`cargo test --manifest-path crates/tool/Cargo.toml --features "foo bar"`,
 		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml", "--features", "foo bar"}},
 	)
-	if got != `cargo test --features "foo bar"` {
-		t.Fatalf("RewriteDirectoryFlags(quoted features) = %q, want quotes preserved", got)
+	if got != `cargo test --manifest-path crates/tool/Cargo.toml --features "foo bar"` {
+		t.Fatalf("RewriteDirectoryFlags(quoted features) = %q, want the original invocation", got)
 	}
 	got = RewriteDirectoryFlags(
 		`cargo -C crates/tool test --features 'foo bar'`,
@@ -587,8 +587,8 @@ func TestRewriteDirectoryFlagsStripsCargoPaths(t *testing.T) {
 		"rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml",
 		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml"}},
 	)
-	if got != "rustup run nightly cargo test" {
-		t.Fatalf("RewriteDirectoryFlags(rustup) = %q, want rustup run nightly cargo test", got)
+	if got != "rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml" {
+		t.Fatalf("RewriteDirectoryFlags(rustup) = %q, want the original rustup invocation", got)
 	}
 	got = RewriteDirectoryFlags(
 		`cargo test --manifest-path "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"`,

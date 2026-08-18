@@ -276,7 +276,7 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		"npm test",
 		"CI variant          npm test --coverage",
 		"environment API_TOKEN (required, default present)",
-		"eslint is configured. No command interpreted as code.lint was found.",
+		"eslint is configured. No command that invokes it was found.",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("output %q, want %q", got, want)
@@ -290,6 +290,74 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 	}
 	if strings.Contains(got, "Evidence:") {
 		t.Fatalf("output %q, want evidence omitted by default", got)
+	}
+}
+
+func TestWriteReportsNextestWhenOnlyCargoTestExists(t *testing.T) {
+	t.Parallel()
+
+	run := "cargo test"
+	id := plan.CommandID("cmd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "rust"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "nextest",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: ".config/nextest.toml"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:         id,
+		Name:       "test",
+		Run:        &run,
+		Directory:  ".",
+		Scope:      plan.ScopeProject,
+		Origin:     plan.CommandInferred,
+		Confidence: plan.ConfidenceHigh,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityTestRun,
+			Confidence: plan.ConfidenceHigh,
+		}},
+		Variants: []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"rust"})
+	if !strings.Contains(got, "nextest is configured. No command that invokes it was found.") {
+		t.Fatalf("output %q, want nextest visible when only cargo test exists", got)
+	}
+}
+
+func TestWriteHidesNextestWhenCargoNextestExists(t *testing.T) {
+	t.Parallel()
+
+	run := "cargo nextest run"
+	id := plan.CommandID("cmd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "rust"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "nextest",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: ".config/nextest.toml"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:         id,
+		Name:       "test",
+		Run:        &run,
+		Directory:  ".",
+		Scope:      plan.ScopeProject,
+		Origin:     plan.CommandObserved,
+		Confidence: plan.ConfidenceHigh,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityTestRun,
+			Confidence: plan.ConfidenceHigh,
+		}},
+		Variants: []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"rust"})
+	if strings.Contains(got, "nextest is configured") {
+		t.Fatalf("output %q, did not want a nextest gap when cargo nextest run exists", got)
 	}
 }
 

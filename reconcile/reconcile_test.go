@@ -312,6 +312,65 @@ func TestApplyFoldsNewerCIToolchainIntoCargoMSRV(t *testing.T) {
 	}
 }
 
+func TestApplyFoldsCIToolchainWhenDeclaredPinIsSymbolic(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{
+		{
+			Kind:       plan.RequirementRuntime,
+			Name:       "rust",
+			Version:    "stable",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "rust-toolchain.toml"}},
+		},
+		{
+			Kind:       plan.RequirementRuntime,
+			Name:       "rust",
+			Version:    ">=1.74",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "Cargo.toml", Pointer: "/package/rust-version"}},
+		},
+	}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{plan.RequirementFinding{
+			ProjectPath: ".",
+			Requirement: plan.Requirement{
+				Kind:       plan.RequirementRuntime,
+				Name:       "rust",
+				Version:    "1.81.0",
+				Confidence: plan.ConfidenceHigh,
+				Evidence:   []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/test/steps/1/uses"}},
+			},
+		}},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a false conflict against symbolic stable", got[0].Conflicts)
+	}
+	if len(got[0].Requirements) != 2 {
+		t.Fatalf("requirements = %+v, want stable plus the MSRV range", got[0].Requirements)
+	}
+	var rustVersions []string
+	for _, requirement := range got[0].Requirements {
+		if requirement.Name == "rust" {
+			rustVersions = append(rustVersions, requirement.Version)
+		}
+	}
+	if !slices.Equal(rustVersions, []string{"stable", ">=1.74"}) {
+		t.Fatalf("rust versions = %v, want stable plus >=1.74", rustVersions)
+	}
+	var msrvEvidence int
+	for _, requirement := range got[0].Requirements {
+		if requirement.Version == ">=1.74" {
+			msrvEvidence = len(requirement.Evidence)
+		}
+	}
+	if msrvEvidence != 2 {
+		t.Fatalf("MSRV evidence count = %d, want declaration plus the numeric CI toolchain", msrvEvidence)
+	}
+}
+
 func TestApplyConflictsCIPinAgainstExactRustWhenMSRVWouldAccept(t *testing.T) {
 	t.Parallel()
 

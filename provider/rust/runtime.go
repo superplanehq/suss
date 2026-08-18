@@ -30,14 +30,6 @@ func runtimeFindings(ctx provider.Context, manifest cargoManifest) ([]plan.Findi
 		pins = append(pins, *toolchain)
 	}
 
-	rustVersionFile, err := readAncestorRustVersion(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	if rustVersionFile != nil {
-		pins = append(pins, *rustVersionFile)
-	}
-
 	toolVersion, err := readAncestorToolVersion(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -324,22 +316,6 @@ func readToolchainPin(ctx provider.Context) (*runtimePin, error) {
 	}
 	return &runtimePin{
 		version:  channel,
-		exact:    true,
-		evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path},
-	}, nil
-}
-
-func readAncestorRustVersion(ctx provider.Context) (*runtimePin, error) {
-	path, contents, ok, err := readProjectOrAncestor(ctx, "rust-version")
-	if err != nil || !ok {
-		return nil, err
-	}
-	version := firstVersionLine(contents)
-	if version == "" {
-		return nil, nil
-	}
-	return &runtimePin{
-		version:  version,
 		exact:    true,
 		evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path},
 	}, nil

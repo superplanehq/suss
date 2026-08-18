@@ -101,14 +101,14 @@ blocks:
 	})
 
 	commands := commandRuns(result)
-	if !slices.Contains(commands["crates/tool"], "cargo test") {
-		t.Fatalf("commands = %v, want cargo test attached to crates/tool without a nested manifest-path", commands)
+	if !slices.Contains(commands["."], "cargo test --manifest-path crates/tool/Cargo.toml") {
+		t.Fatalf("commands = %v, want the original manifest-path command on the workspace root", commands)
 	}
 	if !slices.Contains(commands["crates/tool"], "cargo build") {
 		t.Fatalf("commands = %v, want cargo build attached to crates/tool without -C", commands)
 	}
-	if slices.Contains(commands["."], "cargo test") || slices.Contains(commands["."], "cargo test --manifest-path crates/tool/Cargo.toml") {
-		t.Fatalf("commands = %v, did not want manifest-path cargo test on the workspace root", commands)
+	if slices.Contains(commands["crates/tool"], "cargo test") {
+		t.Fatalf("commands = %v, did not want a rewritten manifest-path command on crates/tool", commands)
 	}
 }
 
@@ -130,8 +130,8 @@ blocks:
 	})
 
 	commands := commandRuns(result)
-	if !slices.Contains(commands["crates/tool"], "cargo test") {
-		t.Fatalf("commands = %v, want cargo test attached to crates/tool from -C plus a relative manifest path", commands)
+	if !slices.Contains(commands["crates/tool"], "cargo test --manifest-path Cargo.toml") {
+		t.Fatalf("commands = %v, want cargo test on crates/tool with the manifest path kept", commands)
 	}
 	if slices.Contains(commands["."], "cargo test") || slices.Contains(commands["."], "cargo -C crates/tool test --manifest-path Cargo.toml") {
 		t.Fatalf("commands = %v, did not want the composed command on the workspace root", commands)
@@ -156,8 +156,8 @@ blocks:
 	})
 
 	commands := commandRuns(result)
-	if !slices.Contains(commands["crates/tool"], "rustup run nightly cargo test") {
-		t.Fatalf("commands = %v, want rustup-wrapped cargo test on crates/tool without a nested manifest-path", commands)
+	if !slices.Contains(commands["."], "rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml") {
+		t.Fatalf("commands = %v, want the original rustup manifest-path command on the workspace root", commands)
 	}
 }
 

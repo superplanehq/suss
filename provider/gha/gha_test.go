@@ -152,11 +152,11 @@ jobs:
 
 	commands := commandByName(result)
 	testCmd := commands["cargo test"]
-	if testCmd.Directory != "crates/tool" {
-		t.Fatalf("test directory = %q, want crates/tool", testCmd.Directory)
+	if testCmd.Directory != "." {
+		t.Fatalf("test directory = %q, want . so Cargo still reads the parent .cargo config", testCmd.Directory)
 	}
-	if deref(testCmd.Run) != "cargo test --locked" {
-		t.Fatalf("test run = %q, want cargo test --locked without a nested manifest-path", deref(testCmd.Run))
+	if deref(testCmd.Run) != "cargo test --manifest-path crates/tool/Cargo.toml --locked" {
+		t.Fatalf("test run = %q, want the original manifest-path invocation", deref(testCmd.Run))
 	}
 	if !commandHasCapability(testCmd, plan.CapabilityTestRun) {
 		t.Fatalf("test interpretations = %+v, want test.run", testCmd.Interpretations)
@@ -188,8 +188,8 @@ jobs:
 	if testCmd.Directory != "crates/tool" {
 		t.Fatalf("directory = %q, want crates/tool from -C plus a relative manifest path", testCmd.Directory)
 	}
-	if deref(testCmd.Run) != "cargo test" {
-		t.Fatalf("run = %q, want cargo test without directory flags", deref(testCmd.Run))
+	if deref(testCmd.Run) != "cargo test --manifest-path Cargo.toml" {
+		t.Fatalf("run = %q, want cargo test with the manifest path kept after stripping -C", deref(testCmd.Run))
 	}
 }
 
@@ -207,11 +207,11 @@ jobs:
 	})
 
 	got := commandByName(result)["cargo test"]
-	if got.Directory != "crates/tool" {
-		t.Fatalf("directory = %q, want crates/tool", got.Directory)
+	if got.Directory != "." {
+		t.Fatalf("directory = %q, want . so Cargo still reads the parent .cargo config", got.Directory)
 	}
-	if deref(got.Run) != "rustup run nightly cargo test" {
-		t.Fatalf("run = %q, want rustup run nightly cargo test without a nested manifest-path", deref(got.Run))
+	if deref(got.Run) != "rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml" {
+		t.Fatalf("run = %q, want the original rustup manifest-path invocation", deref(got.Run))
 	}
 }
 
