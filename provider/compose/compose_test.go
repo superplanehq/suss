@@ -38,6 +38,8 @@ services:
       - REDIS_URL=redis://redis
   web:
     build: .
+    environment:
+      EMPTY_VAR:
 `,
 	})
 
@@ -58,6 +60,9 @@ services:
 	}
 	if !hasEnv(result, "REDIS_URL", true) {
 		t.Fatalf("missing REDIS_URL default in %+v", result.Findings)
+	}
+	if !hasEnv(result, "EMPTY_VAR", false) {
+		t.Fatalf("missing EMPTY_VAR without default in %+v", result.Findings)
 	}
 	if envValueExposed(result) {
 		t.Fatalf("environment values were exposed in %+v", result.Findings)
