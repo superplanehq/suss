@@ -359,6 +359,7 @@ func configuredWithoutCommandLines(project plan.ProjectPlan) []string {
 		}
 		capabilities, ok := toolCapabilities[fact.Value]
 		if !ok {
+			lines = append(lines, fmt.Sprintf("%s is configured.", fact.Value))
 			continue
 		}
 		if hasAnyCapability(project, capabilities) {

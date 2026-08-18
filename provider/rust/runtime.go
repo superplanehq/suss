@@ -14,14 +14,15 @@ import (
 type runtimePin struct {
 	version  string
 	evidence plan.Evidence
+	exact    bool
 }
 
-func runtimeFindings(ctx provider.Context, manifest cargoManifest) ([]plan.Finding, error) {
+func runtimeFindings(ctx provider.Context, manifest cargoManifest) ([]plan.Finding, []plan.Conflict, error) {
 	var pins []runtimePin
 
 	toolchain, err := readToolchainPin(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if toolchain != nil {
 		pins = append(pins, *toolchain)
@@ -29,7 +30,7 @@ func runtimeFindings(ctx provider.Context, manifest cargoManifest) ([]plan.Findi
 
 	rustVersionFile, err := readAncestorRustVersion(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if rustVersionFile != nil {
 		pins = append(pins, *rustVersionFile)
@@ -37,43 +38,87 @@ func runtimeFindings(ctx provider.Context, manifest cargoManifest) ([]plan.Findi
 
 	toolVersion, err := readAncestorToolVersion(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if toolVersion != nil {
 		pins = append(pins, *toolVersion)
 	}
 
 	if pin, err := cargoRustVersionPin(ctx, manifest); err != nil {
-		return nil, err
+		return nil, nil, err
 	} else if pin != nil {
 		pins = append(pins, *pin)
 	}
 
-	return mergeRuntimePins(ctx, pins), nil
+	findings, conflicts := mergeRuntimePins(ctx, pins)
+	return findings, conflicts, nil
 }
 
-func mergeRuntimePins(ctx provider.Context, pins []runtimePin) []plan.Finding {
-	if len(pins) == 0 {
-		return nil
-	}
-
-	grouped := make(map[string][]plan.Evidence)
-	order := make([]string, 0, len(pins))
+func mergeRuntimePins(ctx provider.Context, pins []runtimePin) ([]plan.Finding, []plan.Conflict) {
+	var exact, msrv []runtimePin
 	for _, pin := range pins {
 		if pin.version == "" {
 			continue
 		}
+		if pin.exact {
+			exact = append(exact, pin)
+		} else {
+			msrv = append(msrv, pin)
+		}
+	}
+	if len(exact) == 0 && len(msrv) == 0 {
+		return nil, nil
+	}
+
+	var findings []plan.Finding
+	var conflicts []plan.Conflict
+	if versionsDisagree(exact) {
+		grouped, order := groupPinEvidence(exact)
+		assertions := make([]plan.Candidate, 0, len(order))
+		for _, version := range order {
+			evidence := grouped[version]
+			findings = append(findings, runtimeFinding(ctx, version, plan.ConfidenceMedium, evidence))
+			assertions = append(assertions, plan.Candidate{Value: version, Evidence: evidence})
+		}
+		conflicts = append(conflicts, plan.Conflict{
+			Subject:    "runtime.rust.version",
+			Message:    "Exact Rust version pins disagree.",
+			Assertions: assertions,
+		})
+	} else if len(exact) > 0 {
+		evidence := make([]plan.Evidence, 0, len(exact))
+		for _, pin := range exact {
+			evidence = append(evidence, pin.evidence)
+		}
+		findings = append(findings, runtimeFinding(ctx, exact[0].version, plan.ConfidenceHigh, evidence))
+	}
+
+	grouped, order := groupPinEvidence(msrv)
+	for _, version := range order {
+		findings = append(findings, runtimeFinding(ctx, version, plan.ConfidenceHigh, grouped[version]))
+	}
+	return findings, conflicts
+}
+
+func groupPinEvidence(pins []runtimePin) (map[string][]plan.Evidence, []string) {
+	grouped := make(map[string][]plan.Evidence)
+	order := make([]string, 0, len(pins))
+	for _, pin := range pins {
 		if _, ok := grouped[pin.version]; !ok {
 			order = append(order, pin.version)
 		}
 		grouped[pin.version] = append(grouped[pin.version], pin.evidence)
 	}
+	return grouped, order
+}
 
-	findings := make([]plan.Finding, 0, len(order))
-	for _, version := range order {
-		findings = append(findings, runtimeFinding(ctx, version, grouped[version]))
+func versionsDisagree(pins []runtimePin) bool {
+	for i := 1; i < len(pins); i++ {
+		if pins[i].version != pins[0].version {
+			return true
+		}
 	}
-	return findings
+	return false
 }
 
 func cargoRustVersionPin(ctx provider.Context, manifest cargoManifest) (*runtimePin, error) {
@@ -146,24 +191,19 @@ func ancestorWorkspaceRustVersion(ctx provider.Context) (string, string, error) 
 }
 
 func readToolchainPin(ctx provider.Context) (*runtimePin, error) {
-	for _, name := range []string{"rust-toolchain.toml", "rust-toolchain"} {
-		path, contents, ok, err := readProjectOrAncestor(ctx, name)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			continue
-		}
-		channel := parseToolchainFile(contents).Channel
-		if channel == "" {
-			continue
-		}
-		return &runtimePin{
-			version:  channel,
-			evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path},
-		}, nil
+	path, contents, ok, err := readNearestNamedFile(ctx, "rust-toolchain.toml", "rust-toolchain")
+	if err != nil || !ok {
+		return nil, err
 	}
-	return nil, nil
+	channel := parseToolchainFile(contents).Channel
+	if channel == "" {
+		return nil, nil
+	}
+	return &runtimePin{
+		version:  channel,
+		exact:    true,
+		evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path},
+	}, nil
 }
 
 func readAncestorRustVersion(ctx provider.Context) (*runtimePin, error) {
@@ -177,6 +217,7 @@ func readAncestorRustVersion(ctx provider.Context) (*runtimePin, error) {
 	}
 	return &runtimePin{
 		version:  version,
+		exact:    true,
 		evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path},
 	}, nil
 }
@@ -193,6 +234,7 @@ func readAncestorToolVersion(ctx provider.Context) (*runtimePin, error) {
 		if len(fields) >= 2 && fields[0] == "rust" {
 			return &runtimePin{
 				version:  fields[1],
+				exact:    true,
 				evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path, Pointer: "/rust"},
 			}, nil
 		}
@@ -204,19 +246,25 @@ func readAncestorToolVersion(ctx provider.Context) (*runtimePin, error) {
 }
 
 func readProjectOrAncestor(ctx provider.Context, name string) (string, string, bool, error) {
+	return readNearestNamedFile(ctx, name)
+}
+
+func readNearestNamedFile(ctx provider.Context, names ...string) (string, string, bool, error) {
 	dir := ctx.ProjectDir()
 	for {
-		path := filepath.Join(dir, name)
-		contents, err := os.ReadFile(path)
-		switch {
-		case err == nil:
-			relative, relErr := filepath.Rel(ctx.RepositoryRoot, path)
-			if relErr != nil {
-				return "", "", false, fmt.Errorf("resolve %s source: %w", name, relErr)
+		for _, name := range names {
+			path := filepath.Join(dir, name)
+			contents, err := os.ReadFile(path)
+			switch {
+			case err == nil:
+				relative, relErr := filepath.Rel(ctx.RepositoryRoot, path)
+				if relErr != nil {
+					return "", "", false, fmt.Errorf("resolve %s source: %w", name, relErr)
+				}
+				return filepath.ToSlash(relative), string(contents), true, nil
+			case !os.IsNotExist(err):
+				return "", "", false, fmt.Errorf("read %s: %w", path, err)
 			}
-			return filepath.ToSlash(relative), string(contents), true, nil
-		case !os.IsNotExist(err):
-			return "", "", false, fmt.Errorf("read %s: %w", path, err)
 		}
 		if dir == ctx.RepositoryRoot || !strings.HasPrefix(dir, ctx.RepositoryRoot+string(filepath.Separator)) {
 			return "", "", false, nil
@@ -229,7 +277,7 @@ func readProjectOrAncestor(ctx provider.Context, name string) (string, string, b
 	}
 }
 
-func runtimeFinding(ctx provider.Context, version string, evidence []plan.Evidence) plan.Finding {
+func runtimeFinding(ctx provider.Context, version string, confidence plan.Confidence, evidence []plan.Evidence) plan.Finding {
 	return plan.RequirementFinding{
 		ProjectPath: ctx.ProjectPath,
 		Detector:    providerName,
@@ -237,7 +285,7 @@ func runtimeFinding(ctx provider.Context, version string, evidence []plan.Eviden
 			Kind:       plan.RequirementRuntime,
 			Name:       "rust",
 			Version:    version,
-			Confidence: plan.ConfidenceHigh,
+			Confidence: confidence,
 			Evidence:   evidence,
 		},
 	}

@@ -4,6 +4,11 @@ import (
 	"strings"
 )
 
+type cargoDependency struct {
+	Name  string
+	Table string
+}
+
 type cargoManifest struct {
 	Name                 string
 	RustVersion          string
@@ -11,7 +16,7 @@ type cargoManifest struct {
 	HasPackage           bool
 	HasWorkspace         bool
 	WorkspaceRustVersion string
-	Dependencies         []string
+	Dependencies         []cargoDependency
 }
 
 type toolchainFile struct {
@@ -36,8 +41,8 @@ func parseCargoTOML(contents string) cargoManifest {
 			if section == "workspace" || strings.HasPrefix(section, "workspace.") {
 				parsed.HasWorkspace = true
 			}
-			if crate, ok := dependencyCrateFromTable(section); ok {
-				addDependency(seenDeps, &parsed.Dependencies, crate)
+			if crate, table, ok := dependencyCrateFromTable(section); ok {
+				addDependency(seenDeps, &parsed.Dependencies, crate, table)
 			}
 			continue
 		}
@@ -70,8 +75,8 @@ func parseCargoTOML(contents string) cargoManifest {
 			}
 		}
 
-		if crate, ok := dependencyCrateFromKey(section, key); ok {
-			addDependency(seenDeps, &parsed.Dependencies, crate)
+		if crate, table, ok := dependencyCrateFromKey(section, key); ok {
+			addDependency(seenDeps, &parsed.Dependencies, crate, table)
 		}
 	}
 	return parsed
@@ -207,34 +212,36 @@ func tomlBool(value string) (bool, bool) {
 	}
 }
 
-func dependencyCrateFromTable(section string) (string, bool) {
-	for _, prefix := range []string{"dependencies.", "workspace.dependencies."} {
+func dependencyCrateFromTable(section string) (string, string, bool) {
+	for _, table := range []string{"dependencies", "workspace.dependencies"} {
+		prefix := table + "."
 		if name, ok := strings.CutPrefix(section, prefix); ok && name != "" && !strings.Contains(name, ".") {
-			return name, true
+			return name, table, true
 		}
 	}
-	return "", false
+	return "", "", false
 }
 
-func dependencyCrateFromKey(section, key string) (string, bool) {
+func dependencyCrateFromKey(section, key string) (string, string, bool) {
 	switch section {
 	case "dependencies", "workspace.dependencies":
 		if key != "" {
-			return key, true
+			return key, section, true
 		}
 	}
-	return "", false
+	return "", "", false
 }
 
-func addDependency(seen map[string]struct{}, deps *[]string, name string) {
+func addDependency(seen map[string]struct{}, deps *[]cargoDependency, name, table string) {
 	if name == "" {
 		return
 	}
-	if _, ok := seen[name]; ok {
+	key := table + "\x00" + name
+	if _, ok := seen[key]; ok {
 		return
 	}
-	seen[name] = struct{}{}
-	*deps = append(*deps, name)
+	seen[key] = struct{}{}
+	*deps = append(*deps, cargoDependency{Name: name, Table: table})
 }
 
 var rustFrameworks = map[string]string{
@@ -243,11 +250,14 @@ var rustFrameworks = map[string]string{
 	"rocket":    "rocket",
 }
 
-func frameworkNames(dependencies []string) []string {
-	var names []string
+func packageFrameworks(dependencies []cargoDependency) []cargoDependency {
+	var found []cargoDependency
 	seen := make(map[string]struct{})
 	for _, dep := range dependencies {
-		framework, ok := rustFrameworks[dep]
+		if dep.Table != "dependencies" {
+			continue
+		}
+		framework, ok := rustFrameworks[dep.Name]
 		if !ok {
 			continue
 		}
@@ -255,7 +265,7 @@ func frameworkNames(dependencies []string) []string {
 			continue
 		}
 		seen[framework] = struct{}{}
-		names = append(names, framework)
+		found = append(found, cargoDependency{Name: framework, Table: dep.Table})
 	}
-	return names
+	return found
 }

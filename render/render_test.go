@@ -293,6 +293,24 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 	}
 }
 
+func TestWriteReportsConfiguredToolsWithoutCapabilityMapping(t *testing.T) {
+	t.Parallel()
+
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "rust"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "cargo-deny",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: "deny.toml"}},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"rust"})
+	if !strings.Contains(got, "cargo-deny is configured.") {
+		t.Fatalf("output %q, want cargo-deny configured notice", got)
+	}
+}
+
 func TestWriteIncludesEvidenceWhenRequested(t *testing.T) {
 	t.Parallel()
 

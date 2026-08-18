@@ -519,6 +519,29 @@ func TestStripDirectoryFlagsStopsAtDoubleDash(t *testing.T) {
 	}
 }
 
+func TestStripDirectoryFlagsNormalizesCargoManifestPath(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		args []string
+		want string
+	}{
+		{args: []string{"test", "--manifest-path", "Cargo.toml"}, want: "."},
+		{args: []string{"test", "--manifest-path", "./Cargo.toml"}, want: "."},
+		{args: []string{"test", "--manifest-path=./Cargo.toml"}, want: "."},
+		{args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml"}, want: "crates/tool"},
+	}
+	for _, tt := range tests {
+		dir, got := StripDirectoryFlags(Invocation{Executable: "cargo", Args: tt.args})
+		if dir != tt.want {
+			t.Fatalf("dir(%v) = %q, want %q", tt.args, dir, tt.want)
+		}
+		if got.Executable != "cargo" || !slices.Equal(got.Args, []string{"test"}) {
+			t.Fatalf("canonical(%v) = %+v, want cargo test", tt.args, got)
+		}
+	}
+}
+
 func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	t.Parallel()
 
@@ -692,6 +715,37 @@ func TestIsRustPlumbing(t *testing.T) {
 	}
 	if IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"test"}}) {
 		t.Fatal("IsRustPlumbing(cargo test) = true, want false")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"-V"}}) {
+		t.Fatal("IsRustPlumbing(cargo -V) = false, want true")
+	}
+	if IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"-v"}}) {
+		t.Fatal("IsRustPlumbing(cargo -v) = true, want false; -v is verbose")
+	}
+	if IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"test", "-v"}}) {
+		t.Fatal("IsRustPlumbing(cargo test -v) = true, want false")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "rustc", Args: []string{"-V"}}) {
+		t.Fatal("IsRustPlumbing(rustc -V) = false, want true")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "rustc", Args: []string{"-Vv"}}) {
+		t.Fatal("IsRustPlumbing(rustc -Vv) = false, want true")
+	}
+	if IsRustPlumbing(Invocation{Executable: "rustup", Args: []string{"run", "nightly", "cargo", "test"}}) {
+		t.Fatal("IsRustPlumbing(rustup run nightly cargo test) = true, want false")
+	}
+}
+
+func TestParseScriptUnwrapsRustupRun(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("rustup run nightly cargo test --locked")
+	if len(got) != 1 || got[0].Executable != "cargo" || !slices.Equal(got[0].Args, []string{"test", "--locked"}) {
+		t.Fatalf("ParseScript(rustup run) = %+v, want cargo test --locked", got)
+	}
+	matches := Interpret(got[0])
+	if !slices.Equal(capabilities(matches), []plan.Capability{plan.CapabilityTestRun}) {
+		t.Fatalf("Interpret(unwrapped rustup run) = %v, want test.run", capabilities(matches))
 	}
 }
 

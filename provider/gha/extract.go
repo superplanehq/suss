@@ -164,12 +164,42 @@ func rustToolchainActionTag(uses string) string {
 	if !ok || name != "dtolnay/rust-toolchain" {
 		return ""
 	}
-	switch tag {
-	case "", "master", "main":
+	if !isRustToolchainRef(tag) {
 		return ""
-	default:
-		return tag
 	}
+	return tag
+}
+
+func isRustToolchainRef(tag string) bool {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return false
+	}
+	switch tag {
+	case "stable", "beta", "nightly":
+		return true
+	}
+	if strings.HasPrefix(tag, "nightly-") || strings.HasPrefix(tag, "beta-") || strings.HasPrefix(tag, "stable-") {
+		return true
+	}
+	if isHexSHA(tag) {
+		return false
+	}
+	return tag[0] >= '0' && tag[0] <= '9'
+}
+
+func isHexSHA(value string) bool {
+	if len(value) < 7 || len(value) > 40 {
+		return false
+	}
+	for _, r := range value {
+		switch {
+		case r >= '0' && r <= '9', r >= 'a' && r <= 'f', r >= 'A' && r <= 'F':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func rustSetupFindings(ctx provider.Context, source, dir, stepPointer string, step step, matrix map[string][]string, tagFallback string) []plan.Finding {

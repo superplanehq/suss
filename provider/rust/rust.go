@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/superplanehq/suss/plan"
@@ -35,11 +36,12 @@ func (Provider) Detect(ctx provider.Context) (provider.Result, error) {
 
 	var result provider.Result
 	result.Findings = append(result.Findings, projectFindings(ctx, manifest)...)
-	runtimes, err := runtimeFindings(ctx, manifest)
+	runtimes, conflicts, err := runtimeFindings(ctx, manifest)
 	if err != nil {
 		return provider.Result{}, err
 	}
 	result.Findings = append(result.Findings, runtimes...)
+	result.Conflicts = append(result.Conflicts, conflicts...)
 	result.Findings = append(result.Findings, toolFindings(ctx)...)
 
 	commands, err := inferredCommands(ctx)
@@ -85,12 +87,12 @@ func projectFindings(ctx provider.Context, manifest cargoManifest) []plan.Findin
 			Pointer: "/workspace",
 		}}))
 	}
-	for _, framework := range frameworkNames(manifest.Dependencies) {
-		findings = append(findings, propertyFinding(ctx, plan.PropertyFramework, framework, "", []plan.Evidence{{
+	for _, framework := range packageFrameworks(manifest.Dependencies) {
+		findings = append(findings, propertyFinding(ctx, plan.PropertyFramework, framework.Name, "", []plan.Evidence{{
 			Kind:        plan.EvidenceDeclaration,
 			Source:      source,
-			Pointer:     "/dependencies/" + pointerToken(framework),
-			Description: "The Cargo dependency list includes " + framework + ".",
+			Pointer:     "/dependencies/" + pointerToken(framework.Name),
+			Description: "The Cargo dependency list includes " + framework.Name + ".",
 		}}))
 	}
 	return findings
@@ -202,6 +204,8 @@ func isRustTestFile(abs, rel, name string) (bool, error) {
 	return rustSourceHasTest(string(contents)), nil
 }
 
+var rustTestAttribute = regexp.MustCompile(`#\[\s*(?:(?:[A-Za-z_][A-Za-z0-9_]*::)*test|rstest)(?:\s*(?:\(|]))`)
+
 func rustSourceHasTest(contents string) bool {
-	return strings.Contains(contents, "#[test]") || strings.Contains(contents, "::test]")
+	return rustTestAttribute.MatchString(contents)
 }

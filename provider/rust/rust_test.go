@@ -257,8 +257,106 @@ func TestParseCargoTOMLReadsPackageWorkspaceAndDependencies(t *testing.T) {
 	if got.Name != "app" || got.RustVersion != "1.81" || !got.HasWorkspace {
 		t.Fatalf("parseCargoTOML() = %+v, want app 1.81 workspace", got)
 	}
-	if !slices.Equal(got.Dependencies, []string{"axum", "actix-web"}) {
+	if !slices.Equal(dependencyNames(got.Dependencies), []string{"axum", "actix-web"}) {
 		t.Fatalf("dependencies = %v, want axum and actix-web", got.Dependencies)
+	}
+}
+
+func TestDetectDoesNotTreatWorkspaceDependenciesAsFrameworks(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml": "" +
+			"[workspace]\n" +
+			"members = [\"crates/tool\"]\n" +
+			"\n" +
+			"[workspace.dependencies]\n" +
+			"axum = \"0.7\"\n",
+	})
+	project := assembleProject(t, ".", result)
+	if len(project.Frameworks) != 0 {
+		t.Fatalf("frameworks = %+v, did not want axum from workspace.dependencies", project.Frameworks)
+	}
+}
+
+func TestDetectPrefersNearestToolchainFile(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "Cargo.toml"), "[workspace]\nmembers = [\"nested\"]\n")
+	writeFile(t, filepath.Join(root, "rust-toolchain.toml"), "[toolchain]\nchannel = \"1.80.0\"\n")
+	writeFile(t, filepath.Join(root, "nested", "Cargo.toml"), "[package]\nname = \"nested\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
+	writeFile(t, filepath.Join(root, "nested", "rust-toolchain"), "1.81.0\n")
+	writeFile(t, filepath.Join(root, "nested", "src", "lib.rs"), "pub fn ok() {}\n")
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "nested"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	project := assembleProject(t, "nested", result)
+	if len(project.Requirements) != 1 || project.Requirements[0].Version != "1.81.0" {
+		t.Fatalf("requirements = %+v, want nearest rust-toolchain 1.81.0", project.Requirements)
+	}
+}
+
+func TestDetectConflictsDisagreeingExactPins(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml":          "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\nrust-version = \"1.74\"\n",
+		"src/lib.rs":          "pub fn ok() {}\n",
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.81.0\"\n",
+		".tool-versions":      "rust 1.80.0\n",
+	})
+	project := assembleProject(t, ".", result)
+
+	if len(project.Conflicts) != 1 || project.Conflicts[0].Subject != "runtime.rust.version" {
+		t.Fatalf("conflicts = %+v, want runtime.rust.version", project.Conflicts)
+	}
+	versions := requirementVersions(project, "rust")
+	if !slices.Equal(versions, []string{"1.74", "1.80.0", "1.81.0"}) {
+		t.Fatalf("rust versions = %v, want MSRV plus both exact pins", versions)
+	}
+	for _, requirement := range project.Requirements {
+		if requirement.Version == "1.74" && requirement.Confidence != plan.ConfidenceHigh {
+			t.Fatalf("MSRV confidence = %s, want high", requirement.Confidence)
+		}
+		if (requirement.Version == "1.80.0" || requirement.Version == "1.81.0") && requirement.Confidence != plan.ConfidenceMedium {
+			t.Fatalf("exact pin %s confidence = %s, want medium", requirement.Version, requirement.Confidence)
+		}
+	}
+}
+
+func TestDetectInfersTestsFromParameterizedAttributes(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml": "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		"src/lib.rs": "#[tokio::test(flavor = \"multi_thread\")]\nasync fn boots() {}\n",
+	})
+	project := assembleProject(t, ".", result)
+	if commandRuns(project.Commands)["test"] != "cargo test" {
+		t.Fatalf("commands = %+v, want cargo test from parameterized #[tokio::test]", project.Commands)
+	}
+}
+
+func TestRustSourceHasTestRecognizesSupportedAttributes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		src  string
+		want bool
+	}{
+		{src: "#[test]\nfn ok() {}", want: true},
+		{src: "#[tokio::test]\nasync fn ok() {}", want: true},
+		{src: "#[tokio::test(flavor = \"multi_thread\")]\nasync fn ok() {}", want: true},
+		{src: "#[rstest]\nfn ok() {}", want: true},
+		{src: "pub fn ok() {}", want: false},
+	}
+	for _, tt := range tests {
+		if got := rustSourceHasTest(tt.src); got != tt.want {
+			t.Fatalf("rustSourceHasTest(%q) = %v, want %v", tt.src, got, tt.want)
+		}
 	}
 }
 
@@ -359,6 +457,14 @@ func writeFile(t *testing.T, path, contents string) {
 	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
 		t.Fatalf("os.WriteFile() error = %v", err)
 	}
+}
+
+func dependencyNames(deps []cargoDependency) []string {
+	out := make([]string, 0, len(deps))
+	for _, dep := range deps {
+		out = append(out, dep.Name)
+	}
+	return out
 }
 
 func names(values []plan.DetectedValue) []string {

@@ -271,7 +271,7 @@ func IsToolPlumbing(inv Invocation) bool {
 		return isDockerPlumbing(inv.Args)
 	case "docker-compose":
 		return isVersionInfoHelp(inv.Args)
-	case "node", "python", "python3", "ruby", "java", "rustc":
+	case "node", "python", "python3", "ruby", "java":
 		return isFlagVersionHelp(inv.Args)
 	case "php":
 		return isPHPPlumbing(inv.Args)
@@ -291,14 +291,67 @@ func IsToolPlumbing(inv Invocation) bool {
 // cargo/rustc version probe rather than a repository command.
 func IsRustPlumbing(inv Invocation) bool {
 	switch inv.Executable {
-	case "rustup", "rustup-init":
+	case "rustup-init":
 		return true
+	case "rustup":
+		return !isRustupRunWrapper(inv.Args)
 	case "cargo":
 		args := stripCargoToolchain(append([]string{"cargo"}, inv.Args...))
-		return isVersionInfoHelp(args[1:])
+		return isCargoVersionProbe(args[1:])
+	case "rustc":
+		return isRustcVersionProbe(inv.Args)
 	default:
 		return false
 	}
+}
+
+func isRustupRunWrapper(args []string) bool {
+	rest := dropLeadingFlags(args)
+	return len(rest) >= 3 && rest[0] == "run"
+}
+
+func isCargoVersionProbe(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if strings.HasPrefix(arg, "-") {
+			name, _, _ := strings.Cut(arg, "=")
+			switch name {
+			case "--version", "-V", "--help", "-h":
+				return true
+			default:
+				// cargo -v / --verbose is not a version probe.
+				continue
+			}
+		}
+		switch arg {
+		case "version", "help":
+			return true
+		default:
+			return false
+		}
+	}
+	return false
+}
+
+func isRustcVersionProbe(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if !strings.HasPrefix(arg, "-") {
+			return false
+		}
+		name, _, _ := strings.Cut(arg, "=")
+		if name == "--version" || name == "--help" || name == "-h" {
+			return true
+		}
+		if name == "-V" || strings.HasPrefix(name, "-V") {
+			return true
+		}
+	}
+	return false
 }
 
 func isDockerPlumbing(args []string) bool {

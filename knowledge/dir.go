@@ -57,16 +57,24 @@ func stripManifestPath(args []string, current string) ([]string, string) {
 	if dir == current || dir == "" {
 		return out, current
 	}
-	normalized := strings.ReplaceAll(dir, "\\", "/")
+	if parent, ok := cargoManifestDirectory(dir); ok {
+		return out, parent
+	}
+	return out, dir
+}
+
+func cargoManifestDirectory(path string) (string, bool) {
+	normalized := strings.ReplaceAll(strings.TrimSpace(path), "\\", "/")
+	normalized = strings.TrimPrefix(normalized, "./")
 	if !strings.HasSuffix(normalized, "Cargo.toml") {
-		return out, dir
+		return "", false
 	}
-	parent, _, ok := strings.Cut(normalized, "/Cargo.toml")
-	if !ok || parent == "" || parent == "." {
-		if strings.EqualFold(normalized, "Cargo.toml") {
-			return out, "."
-		}
-		return out, dir
+	if strings.EqualFold(normalized, "Cargo.toml") {
+		return ".", true
 	}
-	return out, parent
+	parent := strings.TrimSuffix(normalized, "/Cargo.toml")
+	if parent == "" || parent == "." {
+		return ".", true
+	}
+	return parent, true
 }

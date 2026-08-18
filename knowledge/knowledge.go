@@ -543,6 +543,10 @@ func dropWrappers(tokens []string) []string {
 		if len(tokens) >= 2 && tokens[1] == "x" {
 			return dropLeadingFlags(tokens[2:])
 		}
+	case "rustup":
+		if unwrapped := unwrapRustupRun(tokens); len(unwrapped) > 0 {
+			return dropWrappers(unwrapped)
+		}
 	}
 	return tokens
 }
@@ -668,6 +672,17 @@ func phpCLIOptionTakesValue(name string) bool {
 	default:
 		return false
 	}
+}
+
+func unwrapRustupRun(tokens []string) []string {
+	if len(tokens) == 0 || tokens[0] != "rustup" {
+		return nil
+	}
+	rest := dropLeadingFlags(tokens[1:])
+	if len(rest) < 3 || rest[0] != "run" {
+		return nil
+	}
+	return rest[2:]
 }
 
 func stripCargoToolchain(tokens []string) []string {

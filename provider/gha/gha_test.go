@@ -377,6 +377,33 @@ jobs:
 	}
 }
 
+func TestDetectRejectsRustToolchainActionSHA(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: dtolnay/rust-toolchain@0123456789abcdef0123456789abcdef01234567
+      - run: rustup run nightly cargo test
+      - run: rustc -V
+`,
+	})
+
+	versions := runtimeRequirementVersions(result, "rust")
+	if len(versions) != 1 || versions[0] != "" {
+		t.Fatalf("rust versions = %v, want one unversioned requirement", versions)
+	}
+	commands := commandByName(result)
+	if deref(commands["cargo test"].Run) != "rustup run nightly cargo test" {
+		t.Fatalf("commands = %+v, want rustup run nightly cargo test kept as cargo test", commands)
+	}
+	if _, ok := commands["rustc"]; ok {
+		t.Fatalf("rustc -V was emitted as a repository command: %+v", result.Findings)
+	}
+}
+
 func TestDetectReadsRustToolchainFileInput(t *testing.T) {
 	t.Parallel()
 
