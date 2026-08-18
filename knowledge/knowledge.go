@@ -139,9 +139,6 @@ func CommandName(inv Invocation) string {
 		return inv.Executable
 	}
 	for _, arg := range inv.Args {
-		if arg == "--" {
-			break
-		}
 		if strings.HasPrefix(arg, "-") {
 			continue
 		}

@@ -415,7 +415,7 @@
         },
         {
           "id": "cmd_59a8af1eac4067cd162d9d1c1c26deec",
-          "name": "phpunit Elasticsearch,Elastica",
+          "name": "phpunit",
           "run": "composer exec phpunit -- --exclude-group Elasticsearch,Elastica",
           "directory": ".",
           "scope": "project",
@@ -464,7 +464,7 @@
         },
         {
           "id": "cmd_5c8f5a77dcc2eaa6363e9c129d2c8b78",
-          "name": "phpunit Elasticsearch,Elastica",
+          "name": "phpunit",
           "run": "composer exec phpunit -- --group Elasticsearch,Elastica",
           "directory": ".",
           "scope": "project",
@@ -567,7 +567,7 @@
         },
         {
           "id": "cmd_8b9ff10616aff6671933d03275475282",
-          "name": "phpunit Elasticsearch",
+          "name": "phpunit",
           "run": "composer exec phpunit -- --exclude-group Elasticsearch --exclude-group Elastica",
           "directory": ".",
           "scope": "project",
@@ -598,7 +598,7 @@
         },
         {
           "id": "cmd_93373a4582f7e365356c5e53933a2cb9",
-          "name": "phpunit Elasticsearch,Elastica",
+          "name": "phpunit",
           "run": "composer exec phpunit -- --group Elasticsearch,Elastica",
           "directory": ".",
           "scope": "project",
@@ -786,7 +786,7 @@
         },
         {
           "id": "cmd_f0f696e579b30d7bb1e647835b40b1f5",
-          "name": "phpunit Elasticsearch,Elastica",
+          "name": "phpunit",
           "run": "composer exec phpunit -- --group Elasticsearch,Elastica",
           "directory": ".",
           "scope": "project",
