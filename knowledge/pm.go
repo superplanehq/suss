@@ -24,7 +24,7 @@ func ClassifyManager(inv Invocation) (ManagerInvocation, bool) {
 }
 
 func classifyComposer(args []string) ManagerInvocation {
-	_, rest := takeLeadingFlags(args)
+	rest := takeLeadingFlags(args)
 	if len(rest) == 0 {
 		return ManagerInvocation{Manager: "composer"}
 	}
@@ -48,7 +48,7 @@ func classifyComposer(args []string) ManagerInvocation {
 }
 
 func classifyManager(manager string, args []string) ManagerInvocation {
-	_, rest := takeLeadingFlags(args)
+	rest := takeLeadingFlags(args)
 	if len(rest) == 0 {
 		return ManagerInvocation{Manager: manager, Install: isBareInstall(manager) && !isGlobalInstall(args)}
 	}
@@ -87,12 +87,12 @@ func isBareInstall(manager string) bool {
 	}
 }
 
-func takeLeadingFlags(args []string) (flags, rest []string) {
+func takeLeadingFlags(args []string) []string {
 	i := 0
 	for i < len(args) && strings.HasPrefix(args[i], "-") && args[i] != "--" {
 		i = skipManagerFlag(args, i)
 	}
-	return args[:i], args[i:]
+	return args[i:]
 }
 
 func takeScriptName(args []string) (script string, rest []string) {
