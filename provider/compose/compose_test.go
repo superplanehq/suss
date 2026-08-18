@@ -140,9 +140,19 @@ func TestDetectExtractsComposeInterpolationNames(t *testing.T) {
 services:
   db:
     image: postgres:${POSTGRES_VERSION:-16}
+    ports:
+      - "${HOST_PORT}:5432"
+    volumes:
+      - ${DATA_DIR}:/var/lib/postgresql/data
+    build:
+      context: .
+      args:
+        VERSION: ${APP_VERSION:-1}
     environment:
       APP_PASSWORD: ${DB_PASSWORD}
       DATABASE_URL: postgres://app@db/app
+      LITERAL: $$HOSTNAME
+      HOME_DIR: $${HOME}
 `,
 	})
 
@@ -154,6 +164,21 @@ services:
 	}
 	if !hasEnv(result, "POSTGRES_VERSION", true) {
 		t.Fatalf("missing POSTGRES_VERSION with default in %+v", result.Findings)
+	}
+	if !hasEnv(result, "HOST_PORT", false) {
+		t.Fatalf("missing interpolated HOST_PORT from ports in %+v", result.Findings)
+	}
+	if !hasEnv(result, "DATA_DIR", false) {
+		t.Fatalf("missing interpolated DATA_DIR from volumes in %+v", result.Findings)
+	}
+	if !hasEnv(result, "APP_VERSION", true) {
+		t.Fatalf("missing interpolated APP_VERSION from build args in %+v", result.Findings)
+	}
+	if hasEnvName(result, "HOSTNAME") {
+		t.Fatalf("escaped $$HOSTNAME was treated as interpolation in %+v", result.Findings)
+	}
+	if hasEnvName(result, "HOME") {
+		t.Fatalf("escaped $${HOME} was treated as interpolation in %+v", result.Findings)
 	}
 	if envValueExposed(result) {
 		t.Fatalf("interpolation values were exposed in %+v", result.Findings)
@@ -170,7 +195,68 @@ services:
 			if strings.Contains(evidence.Description, "secret") || strings.Contains(evidence.Pointer, "app@") {
 				t.Fatalf("interpolation evidence leaked a value: %+v", evidence)
 			}
+			if strings.Contains(evidence.Description, "/var/lib/postgresql") || strings.Contains(evidence.Pointer, "5432") {
+				t.Fatalf("interpolation evidence retained a field value: %+v", evidence)
+			}
 		}
+	}
+}
+
+func TestDetectMergesComposeOverride(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"compose.yaml": `
+services:
+  db:
+    image: postgres:${BASE_VERSION:-15}
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_DB: app
+    ports:
+      - "${HOST_PORT}:5432"
+`,
+		"compose.override.yaml": `
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: override
+      POSTGRES_PASSWORD: secret
+  cache:
+    image: redis:7
+`,
+	})
+
+	if hasRequirement(result, plan.RequirementService, "db", "15") {
+		t.Fatalf("base image survived the override: %+v", result.Findings)
+	}
+	if !hasRequirement(result, plan.RequirementService, "db", "16") {
+		t.Fatalf("missing overridden db 16 in %+v", result.Findings)
+	}
+	if versions := requirementVersions(result, plan.RequirementService, "db"); len(versions) != 1 {
+		t.Fatalf("db versions = %v, want only the overridden image", versions)
+	}
+	if !hasRequirement(result, plan.RequirementService, "cache", "7") {
+		t.Fatalf("missing override-only cache service in %+v", result.Findings)
+	}
+	if hasEnvName(result, "BASE_VERSION") {
+		t.Fatalf("interpolation from the overridden image was kept: %+v", result.Findings)
+	}
+	if !hasEnv(result, "HOST_PORT", false) {
+		t.Fatalf("missing HOST_PORT from the surviving base ports in %+v", result.Findings)
+	}
+	if !hasEnv(result, "POSTGRES_USER", true) {
+		t.Fatalf("missing merged POSTGRES_USER in %+v", result.Findings)
+	}
+	if !hasEnv(result, "POSTGRES_DB", true) {
+		t.Fatalf("missing base POSTGRES_DB after merge in %+v", result.Findings)
+	}
+	if !hasEnv(result, "POSTGRES_PASSWORD", true) {
+		t.Fatalf("missing override POSTGRES_PASSWORD in %+v", result.Findings)
+	}
+	if envValueExposed(result) {
+		t.Fatalf("merged environment values were exposed in %+v", result.Findings)
 	}
 }
 
@@ -294,6 +380,28 @@ func hasEnv(result provider.Result, name string, hasDefault bool) bool {
 		}
 	}
 	return false
+}
+
+func hasEnvName(result provider.Result, name string) bool {
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if ok && item.Requirement.Kind == plan.RequirementEnvironment && item.Requirement.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func requirementVersions(result provider.Result, kind plan.RequirementKind, name string) []string {
+	var versions []string
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Kind != kind || item.Requirement.Name != name {
+			continue
+		}
+		versions = append(versions, item.Requirement.Version)
+	}
+	return versions
 }
 
 func envValueExposed(result provider.Result) bool {

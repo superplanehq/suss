@@ -1,21 +1,22 @@
 package compose
 
 import (
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
 type composeFile struct {
-	HasInclude bool
-	Services   map[string]composeService
+	HasInclude     bool
+	Services       map[string]composeService
+	Interpolations []locatedVar
+	Root           yaml.Node
 }
 
 type composeService struct {
 	Image       string
 	Environment []envVar
-	ImageVars   []envVar
-	ValueVars   []envVar
 }
 
 type envVar struct {
@@ -23,21 +24,46 @@ type envVar struct {
 	HasDefault bool
 }
 
+type locatedVar struct {
+	Name       string
+	HasDefault bool
+	Pointer    string
+}
+
 func parseCompose(contents []byte) (composeFile, error) {
+	var root yaml.Node
+	if err := yaml.Unmarshal(contents, &root); err != nil {
+		return composeFile{}, err
+	}
+	return composeFromDocument(root)
+}
+
+func composeFromDocument(root yaml.Node) (composeFile, error) {
 	var raw struct {
 		Include  yaml.Node                 `yaml:"include"`
 		Services map[string]composeService `yaml:"services"`
 	}
-	if err := yaml.Unmarshal(contents, &raw); err != nil {
+	if err := root.Decode(&raw); err != nil {
 		return composeFile{}, err
 	}
 	if raw.Services == nil {
 		raw.Services = map[string]composeService{}
 	}
 	return composeFile{
-		HasInclude: !isZeroNode(raw.Include),
-		Services:   raw.Services,
+		HasInclude:     !isZeroNode(raw.Include),
+		Services:       raw.Services,
+		Interpolations: interpolationsFromNode(root, ""),
+		Root:           root,
 	}, nil
+}
+
+func mergeCompose(base, override composeFile) (composeFile, error) {
+	merged, err := composeFromDocument(mergeNodes(base.Root, override.Root))
+	if err != nil {
+		return composeFile{}, err
+	}
+	merged.HasInclude = base.HasInclude || override.HasInclude
+	return merged, nil
 }
 
 func (s *composeService) UnmarshalYAML(value *yaml.Node) error {
@@ -50,43 +76,56 @@ func (s *composeService) UnmarshalYAML(value *yaml.Node) error {
 	}
 	s.Image = raw.Image
 	s.Environment = parseEnvironment(raw.Environment)
-	s.ImageVars = interpolationsFrom(raw.Image)
-	for _, item := range environmentValues(raw.Environment) {
-		s.ValueVars = append(s.ValueVars, interpolationsFrom(item)...)
-	}
 	return nil
 }
 
-func environmentValues(node yaml.Node) []string {
+func interpolationsFromNode(node yaml.Node, pointer string) []locatedVar {
 	node = resolveNode(node)
 	switch node.Kind {
+	case yaml.DocumentNode:
+		if len(node.Content) == 0 {
+			return nil
+		}
+		return interpolationsFromNode(*node.Content[0], pointer)
 	case yaml.MappingNode:
-		var values []string
+		var out []locatedVar
 		for i := 0; i+1 < len(node.Content); i += 2 {
 			key := resolveNode(*node.Content[i])
-			if strings.TrimSpace(key.Value) == "<<" {
-				values = append(values, environmentValues(resolveNode(*node.Content[i+1]))...)
+			value := resolveNode(*node.Content[i+1])
+			name := strings.TrimSpace(key.Value)
+			if name == "<<" {
+				out = append(out, interpolationsFromNode(value, pointer)...)
 				continue
 			}
-			values = append(values, scalarString(node.Content[i+1]))
+			child := pointer
+			if name != "" {
+				child += jsonPointer(name)
+			}
+			if key.Kind == yaml.ScalarNode {
+				out = append(out, locateVars(child, interpolationsFrom(key.Value))...)
+			}
+			out = append(out, interpolationsFromNode(value, child)...)
 		}
-		return values
+		return out
 	case yaml.SequenceNode:
-		var values []string
-		for _, item := range node.Content {
-			resolved := resolveNode(*item)
-			if resolved.Kind != yaml.ScalarNode {
-				continue
-			}
-			_, value, found := strings.Cut(resolved.Value, "=")
-			if found {
-				values = append(values, value)
-			}
+		var out []locatedVar
+		for i, item := range node.Content {
+			out = append(out, interpolationsFromNode(*item, pointer+jsonPointer(strconv.Itoa(i)))...)
 		}
-		return values
+		return out
+	case yaml.ScalarNode:
+		return locateVars(pointer, interpolationsFrom(node.Value))
 	default:
 		return nil
 	}
+}
+
+func locateVars(pointer string, vars []envVar) []locatedVar {
+	out := make([]locatedVar, 0, len(vars))
+	for _, item := range vars {
+		out = append(out, locatedVar{Name: item.Name, HasDefault: item.HasDefault, Pointer: pointer})
+	}
+	return out
 }
 
 func interpolationsFrom(s string) []envVar {
@@ -95,6 +134,10 @@ func interpolationsFrom(s string) []envVar {
 	for i := 0; i < len(s); {
 		if s[i] != '$' {
 			i++
+			continue
+		}
+		if i+1 < len(s) && s[i+1] == '$' {
+			i += 2
 			continue
 		}
 		name, next, hasDefault, ok := readInterpolation(s, i)
@@ -285,6 +328,139 @@ func scalarString(node *yaml.Node) string {
 
 func isZeroNode(node yaml.Node) bool {
 	return node.Kind == 0 && node.Tag == "" && node.Value == "" && len(node.Content) == 0
+}
+
+func mergeNodes(base, override yaml.Node) yaml.Node {
+	base = resolveNode(base)
+	override = resolveNode(override)
+	if isZeroNode(override) {
+		return cloneNode(base)
+	}
+	if isZeroNode(base) {
+		return cloneNode(override)
+	}
+	if base.Kind == yaml.DocumentNode || override.Kind == yaml.DocumentNode {
+		return mergeDocuments(base, override)
+	}
+	if base.Kind == yaml.MappingNode && override.Kind == yaml.MappingNode {
+		return mergeMappings(base, override)
+	}
+	return cloneNode(override)
+}
+
+func mergeDocuments(base, override yaml.Node) yaml.Node {
+	baseRoot, baseOK := documentRoot(base)
+	overrideRoot, overrideOK := documentRoot(override)
+	if !baseOK {
+		return cloneNode(override)
+	}
+	if !overrideOK {
+		return cloneNode(base)
+	}
+	merged := mergeNodes(baseRoot, overrideRoot)
+	return yaml.Node{
+		Kind:    yaml.DocumentNode,
+		Content: []*yaml.Node{&merged},
+	}
+}
+
+func documentRoot(node yaml.Node) (yaml.Node, bool) {
+	node = resolveNode(node)
+	if node.Kind != yaml.DocumentNode {
+		return node, true
+	}
+	if len(node.Content) == 0 {
+		return yaml.Node{}, false
+	}
+	return resolveNode(*node.Content[0]), true
+}
+
+func mergeMappings(base, override yaml.Node) yaml.Node {
+	out := yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+	index := make(map[string]int)
+	for i := 0; i+1 < len(base.Content); i += 2 {
+		key := cloneNode(resolveNode(*base.Content[i]))
+		value := cloneNode(resolveNode(*base.Content[i+1]))
+		index[strings.TrimSpace(key.Value)] = len(out.Content)
+		out.Content = append(out.Content, &key, &value)
+	}
+	for i := 0; i+1 < len(override.Content); i += 2 {
+		keyNode := resolveNode(*override.Content[i])
+		valueNode := resolveNode(*override.Content[i+1])
+		name := strings.TrimSpace(keyNode.Value)
+		if pos, exists := index[name]; exists {
+			merged := mergeMappingValue(name, *out.Content[pos+1], valueNode)
+			out.Content[pos+1] = &merged
+			continue
+		}
+		key := cloneNode(keyNode)
+		value := cloneNode(valueNode)
+		index[name] = len(out.Content)
+		out.Content = append(out.Content, &key, &value)
+	}
+	return out
+}
+
+func mergeMappingValue(key string, base, override yaml.Node) yaml.Node {
+	if key == "environment" || key == "labels" {
+		return mergeNodes(keyValueMapping(base), keyValueMapping(override))
+	}
+	return mergeNodes(base, override)
+}
+
+func keyValueMapping(node yaml.Node) yaml.Node {
+	node = resolveNode(node)
+	if node.Kind == yaml.MappingNode {
+		return node
+	}
+	out := yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+	if node.Kind != yaml.SequenceNode {
+		return out
+	}
+	for _, item := range node.Content {
+		resolved := resolveNode(*item)
+		if resolved.Kind != yaml.ScalarNode {
+			continue
+		}
+		name, value, found := strings.Cut(resolved.Value, "=")
+		name = strings.TrimSpace(name)
+		key := yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: name}
+		val := yaml.Node{Kind: yaml.ScalarNode, Tag: "!!null"}
+		if found {
+			val.Tag = "!!str"
+			val.Value = value
+		}
+		out.Content = append(out.Content, &key, &val)
+	}
+	return out
+}
+
+func cloneNode(node yaml.Node) yaml.Node {
+	node = resolveNode(node)
+	out := yaml.Node{
+		Kind:        node.Kind,
+		Style:       node.Style,
+		Tag:         node.Tag,
+		Value:       node.Value,
+		Anchor:      node.Anchor,
+		HeadComment: node.HeadComment,
+		LineComment: node.LineComment,
+		FootComment: node.FootComment,
+		Line:        node.Line,
+		Column:      node.Column,
+	}
+	if len(node.Content) == 0 {
+		return out
+	}
+	out.Content = make([]*yaml.Node, len(node.Content))
+	for i, child := range node.Content {
+		if child == nil {
+			continue
+		}
+		cloned := cloneNode(*child)
+		out.Content[i] = &cloned
+	}
+	return out
 }
 
 func validEnvName(name string) bool {

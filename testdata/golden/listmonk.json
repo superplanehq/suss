@@ -206,16 +206,25 @@
         },
         {
           "kind": "environment",
-          "name": "LISTMONK_ADMIN_PASSWORD",
+          "name": "GOPATH",
           "isRequired": true,
           "hasDefault": true,
           "confidence": "high",
           "evidence": [
             {
               "kind": "declaration",
-              "source": "docker-compose.yml",
-              "pointer": "/services/app/environment"
-            },
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/backend/volumes/1"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_ADMIN_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
             {
               "kind": "declaration",
               "source": "docker-compose.yml",
@@ -230,11 +239,6 @@
           "hasDefault": true,
           "confidence": "high",
           "evidence": [
-            {
-              "kind": "declaration",
-              "source": "docker-compose.yml",
-              "pointer": "/services/app/environment"
-            },
             {
               "kind": "declaration",
               "source": "docker-compose.yml",

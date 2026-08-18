@@ -184,6 +184,24 @@ func TestParseMakefileExpandsRecursiveAssignments(t *testing.T) {
 	}
 }
 
+func TestParseMakefileDoesNotExpandShellAssignments(t *testing.T) {
+	t.Parallel()
+
+	parsed := parseMakefile("" +
+		"GO != which go\n" +
+		"test:\n" +
+		"\t$(GO) test ./...\n")
+	if len(parsed.targets) != 1 || parsed.targets[0].Name != "test" {
+		t.Fatalf("targets = %+v, want test", parsed.targets)
+	}
+	if parsed.targets[0].Recipe != "$(GO) test ./..." {
+		t.Fatalf("recipe = %q, want unresolved $(GO) rather than the shell command", parsed.targets[0].Recipe)
+	}
+	if !slices.Contains(parsed.limitations, "variable-expansion") {
+		t.Fatalf("limitations = %v, want variable-expansion for != assignment", parsed.limitations)
+	}
+}
+
 func detectFiles(t *testing.T, files map[string]string) provider.Result {
 	t.Helper()
 
