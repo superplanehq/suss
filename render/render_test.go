@@ -30,6 +30,12 @@ func TestWriteExplainsUnclaimedProject(t *testing.T) {
 	if !strings.Contains(got, "Providers that ran: node, go") {
 		t.Fatalf("output %q, want the providers that ran", got)
 	}
+	if !strings.Contains(got, "Repository root\n===============") {
+		t.Fatalf("output %q, want a human heading for the repository root", got)
+	}
+	if strings.Contains(got, "Project: .") {
+		t.Fatalf("output %q, want no JSON-path project heading", got)
+	}
 }
 
 func TestWriteOmitsHighConfidenceFixtureProjects(t *testing.T) {
@@ -47,18 +53,21 @@ func TestWriteOmitsHighConfidenceFixtureProjects(t *testing.T) {
 	}}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root, fixture}), []string{"node"})
-	if !strings.Contains(got, "Projects: 1 (1 fixture project omitted; use --json to inspect)") {
-		t.Fatalf("output %q, want visible and omitted project counts", got)
+	if !strings.Contains(got, "1 fixture project omitted; use --json to inspect") {
+		t.Fatalf("output %q, want an omitted-fixture notice", got)
 	}
 	if strings.Contains(got, "Project: testdata/sample") {
 		t.Fatalf("output %q, want the fixture project omitted", got)
 	}
-	if !strings.Contains(got, "Project: .") {
+	if !strings.Contains(got, "Repository root") {
 		t.Fatalf("output %q, want the primary project", got)
+	}
+	if strings.Contains(got, "Project: .") {
+		t.Fatalf("output %q, want no JSON-path project heading", got)
 	}
 }
 
-func TestWriteKeepsMediumConfidenceFixtureProjectsVisible(t *testing.T) {
+func TestWriteRendersStandaloneExampleProjectsInFull(t *testing.T) {
 	t.Parallel()
 
 	project := plan.NewProjectPlan("examples/demo")
@@ -70,17 +79,99 @@ func TestWriteKeepsMediumConfidenceFixtureProjectsVisible(t *testing.T) {
 	}}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
-	if !strings.Contains(got, "Projects: 1") {
-		t.Fatalf("output %q, want the project count", got)
-	}
 	if strings.Contains(got, "fixture project omitted") {
 		t.Fatalf("output %q, want no omitted project notice", got)
 	}
-	if !strings.Contains(got, "Project: examples/demo") {
-		t.Fatalf("output %q, want the uncertain fixture project kept visible", got)
+	if !strings.Contains(got, "Example: examples/demo") {
+		t.Fatalf("output %q, want the example labeled as an example", got)
+	}
+	if strings.Contains(got, "Project: examples/demo") {
+		t.Fatalf("output %q, want no peer-project heading for an example", got)
 	}
 	if !strings.Contains(got, "project.role: fixture") {
 		t.Fatalf("output %q, want the fixture fact", got)
+	}
+}
+
+func TestWriteIndexesExampleProjectsAfterPrimary(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Languages = []plan.DetectedValue{{Name: "elixir"}}
+	install := "mix deps.get"
+	root.Preparation = []plan.Command{{
+		Run: &install,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityDependenciesInstall,
+		}},
+	}}
+
+	example := plan.NewProjectPlan("examples/friends")
+	example.Languages = []plan.DetectedValue{{Name: "elixir"}}
+	example.PackageManagers = []plan.DetectedTool{{Name: "mix"}}
+	example.Facts = []plan.ProjectFact{{
+		Name:       "project.role",
+		Value:      "fixture",
+		Confidence: plan.ConfidenceMedium,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceFile, Source: "examples/friends"}},
+	}}
+	exampleInstall := "mix deps.get"
+	example.Preparation = []plan.Command{{
+		Run: &exampleInstall,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityDependenciesInstall,
+		}},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root, example}), nil)
+	if strings.Contains(got, "Projects: 2") {
+		t.Fatalf("output %q, want examples excluded from the peer project count", got)
+	}
+	if strings.Contains(got, "Project: examples/friends") {
+		t.Fatalf("output %q, want the example not listed as a peer project", got)
+	}
+	if strings.Count(got, "How to work with this project:") != 1 {
+		t.Fatalf("output %q, want a single primary command section", got)
+	}
+	if !strings.Contains(got, "Example project:\n  examples/friends  (elixir, mix)") {
+		t.Fatalf("output %q, want a compact example index", got)
+	}
+}
+
+func TestWriteUsesRepositoryNameForTheRootHeading(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Languages = []plan.DetectedValue{{Name: "elixir"}}
+
+	var buf bytes.Buffer
+	Write(&buf, plan.NewDocument([]plan.ProjectPlan{root}), Options{RepositoryName: "ecto"})
+	got := buf.String()
+	if !strings.Contains(got, "ecto\n====") {
+		t.Fatalf("output %q, want the repository name as the root heading", got)
+	}
+	if strings.Contains(got, "Repository root") || strings.Contains(got, "Project: .") {
+		t.Fatalf("output %q, want the repository name instead of a generic root heading", got)
+	}
+}
+
+func TestWriteKeepsNestedNonFixtureProjectsAsPeers(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Languages = []plan.DetectedValue{{Name: "go"}}
+	frontend := plan.NewProjectPlan("frontend")
+	frontend.Languages = []plan.DetectedValue{{Name: "javascript"}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root, frontend}), nil)
+	if !strings.Contains(got, "Projects: 2") {
+		t.Fatalf("output %q, want a peer-project count", got)
+	}
+	if !strings.Contains(got, "Repository root\n===============") {
+		t.Fatalf("output %q, want a human heading for the repository root", got)
+	}
+	if !strings.Contains(got, "Project: frontend\n=================") {
+		t.Fatalf("output %q, want the nested project kept as a peer", got)
 	}
 }
 
@@ -95,8 +186,8 @@ func TestWriteExplainsWhenOnlyFixtureProjectsWereDetected(t *testing.T) {
 	}}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{fixture}), []string{"node"})
-	if !strings.Contains(got, "Projects: 0 (1 fixture project omitted; use --json to inspect)") {
-		t.Fatalf("output %q, want the omitted project count", got)
+	if !strings.Contains(got, "1 fixture project omitted; use --json to inspect") {
+		t.Fatalf("output %q, want the omitted project notice", got)
 	}
 	if !strings.Contains(got, "No non-fixture project roots were detected.") {
 		t.Fatalf("output %q, want an explanation for the empty human view", got)
@@ -196,6 +287,9 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 	}
 	if strings.Contains(got, "Providers:") {
 		t.Fatalf("output %q, want no supported-provider catalog on a covered project", got)
+	}
+	if strings.Contains(got, "Project: .") {
+		t.Fatalf("output %q, want no JSON-path project heading", got)
 	}
 }
 

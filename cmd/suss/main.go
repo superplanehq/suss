@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	suss "github.com/superplanehq/suss"
@@ -45,7 +46,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 
-	render.Write(stdout, document, render.Options{Providers: suss.Providers()})
+	render.Write(stdout, document, render.Options{
+		Providers:      suss.Providers(),
+		RepositoryName: repositoryName(opts.path),
+	})
 	return 0
 }
 
@@ -76,6 +80,14 @@ func parseArgs(args []string) (options, error) {
 	}
 
 	return opts, nil
+}
+
+func repositoryName(path string) string {
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return filepath.Base(path)
+	}
+	return filepath.Base(absolute)
 }
 
 func usage() string {

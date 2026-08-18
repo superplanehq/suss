@@ -1,6 +1,6 @@
 // Package render formats a plan document for humans. It does not inspect the
-// repository; every line is derived from the JSON document plus the list of
-// providers that produced it.
+// repository; every line is derived from the JSON document plus renderer
+// options such as provider names and the repository directory name.
 package render
 
 import (
@@ -14,7 +14,8 @@ import (
 
 // Options control labels that are not stored in the document itself.
 type Options struct {
-	Providers []string
+	Providers      []string
+	RepositoryName string
 }
 
 // toolCapabilities maps configured-tool fact values to the capabilities that
@@ -31,64 +32,84 @@ var toolCapabilities = map[string][]plan.Capability{
 	"golangci-lint": {plan.CapabilityCodeLint},
 }
 
+type classifiedProjects struct {
+	primary         []plan.ProjectPlan
+	examples        []plan.ProjectPlan
+	omittedFixtures int
+}
+
 // Write prints a human-readable rendering of document.
 func Write(w io.Writer, document plan.Document, opts Options) {
-	projects, omittedFixtures := projectsForHumanOutput(document.Projects)
-
-	writeProjectCount(w, len(projects), omittedFixtures)
-	fmt.Fprintln(w)
+	classified := classifyProjects(document.Projects)
+	writePreface(w, len(classified.primary), classified.omittedFixtures)
 
 	if len(document.Projects) == 0 {
 		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, mix.exs, Makefile, and .env.example.")
 		return
 	}
-	if len(projects) == 0 {
+	if len(classified.primary) == 0 && len(classified.examples) == 0 {
 		fmt.Fprintln(w, "No non-fixture project roots were detected.")
 		return
 	}
 
-	for i, project := range projects {
+	visible := classified.primary
+	if len(visible) == 0 {
+		visible = classified.examples
+	}
+	for i, project := range visible {
 		if i > 0 {
 			fmt.Fprintln(w)
 			fmt.Fprintln(w)
 		}
-		writeProject(w, project, opts.Providers)
+		writeProject(w, project, opts)
+	}
+	if len(classified.primary) > 0 {
+		writeExampleIndex(w, classified.examples)
 	}
 }
 
-func projectsForHumanOutput(projects []plan.ProjectPlan) ([]plan.ProjectPlan, int) {
-	visible := make([]plan.ProjectPlan, 0, len(projects))
-	omittedFixtures := 0
+func classifyProjects(projects []plan.ProjectPlan) classifiedProjects {
+	var classified classifiedProjects
 	for _, project := range projects {
-		if isHighConfidenceFixture(project) {
-			omittedFixtures++
+		confidence, isFixture := fixtureRole(project)
+		if !isFixture {
+			classified.primary = append(classified.primary, project)
 			continue
 		}
-		visible = append(visible, project)
+		if confidence == plan.ConfidenceHigh {
+			classified.omittedFixtures++
+			continue
+		}
+		classified.examples = append(classified.examples, project)
 	}
-	return visible, omittedFixtures
+	return classified
 }
 
-func isHighConfidenceFixture(project plan.ProjectPlan) bool {
+func fixtureRole(project plan.ProjectPlan) (plan.Confidence, bool) {
 	for _, fact := range project.Facts {
-		if fact.Name == "project.role" && fact.Value == "fixture" && fact.Confidence == plan.ConfidenceHigh {
-			return true
+		if fact.Name == "project.role" && fact.Value == "fixture" {
+			return fact.Confidence, true
 		}
 	}
-	return false
+	return "", false
 }
 
-func writeProjectCount(w io.Writer, visible, omittedFixtures int) {
-	if omittedFixtures == 0 {
-		fmt.Fprintf(w, "Projects: %d\n", visible)
-		return
+func writePreface(w io.Writer, primaryCount, omittedFixtures int) {
+	switch {
+	case primaryCount > 1 && omittedFixtures > 0:
+		fmt.Fprintf(w, "Projects: %d (%d %s omitted; use --json to inspect)\n\n", primaryCount, omittedFixtures, fixtureNoun(omittedFixtures))
+	case primaryCount > 1:
+		fmt.Fprintf(w, "Projects: %d\n\n", primaryCount)
+	case omittedFixtures > 0:
+		fmt.Fprintf(w, "%d %s omitted; use --json to inspect\n\n", omittedFixtures, fixtureNoun(omittedFixtures))
 	}
+}
 
-	fixtureLabel := "fixture projects"
-	if omittedFixtures == 1 {
-		fixtureLabel = "fixture project"
+func fixtureNoun(count int) string {
+	if count == 1 {
+		return "fixture project"
 	}
-	fmt.Fprintf(w, "Projects: %d (%d %s omitted; use --json to inspect)\n", visible, omittedFixtures, fixtureLabel)
+	return "fixture projects"
 }
 
 func joinProviders(names []string) string {
@@ -98,14 +119,14 @@ func joinProviders(names []string) string {
 	return strings.Join(names, ", ")
 }
 
-func writeProject(w io.Writer, project plan.ProjectPlan, providers []string) {
-	heading := "Project: " + project.Path
+func writeProject(w io.Writer, project plan.ProjectPlan, opts Options) {
+	heading := projectHeading(project, opts)
 	fmt.Fprintln(w, heading)
 	fmt.Fprintln(w, strings.Repeat("=", len(heading)))
 
 	if !claimed(project) {
 		fmt.Fprintln(w)
-		fmt.Fprintf(w, "  No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json; a Go project requires go.mod.\n", joinProviders(providers))
+		fmt.Fprintf(w, "  No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json; a Go project requires go.mod.\n", joinProviders(opts.Providers))
 		writeProjectDetails(w, project)
 		writeEvidence(w, project)
 		return
@@ -116,6 +137,55 @@ func writeProject(w io.Writer, project plan.ProjectPlan, providers []string) {
 	writeUninterpretedCommands(w, project.Path, project.Commands)
 	writeProjectDetails(w, project)
 	writeEvidence(w, project)
+}
+
+func projectHeading(project plan.ProjectPlan, opts Options) string {
+	if project.Path == "." {
+		return rootHeading(opts.RepositoryName)
+	}
+	if _, isExample := fixtureRole(project); isExample {
+		return "Example: " + project.Path
+	}
+	return "Project: " + project.Path
+}
+
+func rootHeading(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" || name == "." {
+		return "Repository root"
+	}
+	return name
+}
+
+func writeExampleIndex(w io.Writer, examples []plan.ProjectPlan) {
+	if len(examples) == 0 {
+		return
+	}
+
+	fmt.Fprintln(w)
+	fmt.Fprintln(w)
+	if len(examples) == 1 {
+		fmt.Fprintln(w, "Example project:")
+	} else {
+		fmt.Fprintln(w, "Example projects:")
+	}
+	for _, project := range examples {
+		fmt.Fprintf(w, "  %s\n", exampleIndexLine(project))
+	}
+}
+
+func exampleIndexLine(project plan.ProjectPlan) string {
+	var parts []string
+	if names := joinDetected(project.Languages); names != "" {
+		parts = append(parts, names)
+	}
+	if names := joinTools(project.PackageManagers); names != "" {
+		parts = append(parts, names)
+	}
+	if len(parts) == 0 {
+		return project.Path
+	}
+	return project.Path + "  (" + strings.Join(parts, ", ") + ")"
 }
 
 func claimed(project plan.ProjectPlan) bool {

@@ -68,6 +68,26 @@ func TestRunWithoutJSONRendersThePlan(t *testing.T) {
 	}
 }
 
+func TestRunWithoutJSONNamesTheRepositoryRoot(t *testing.T) {
+	t.Parallel()
+
+	root := filepath.Join(t.TempDir(), "ecto")
+	writeFile(t, filepath.Join(root, "go.mod"), "module example.com/ecto\n\ngo 1.26\n")
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("run() = %d, stderr = %s", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "ecto\n====") {
+		t.Fatalf("stdout = %q, want the repository directory as the root heading", got)
+	}
+	if strings.Contains(got, "Project: .") {
+		t.Fatalf("stdout = %q, want no JSON-path project heading", got)
+	}
+}
+
 func TestRunHelpExitsZero(t *testing.T) {
 	t.Parallel()
 
