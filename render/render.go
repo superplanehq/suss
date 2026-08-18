@@ -35,7 +35,6 @@ var toolCapabilities = map[string][]plan.Capability{
 func Write(w io.Writer, document plan.Document, opts Options) {
 	projects, omittedFixtures := projectsForHumanOutput(document.Projects)
 
-	fmt.Fprintf(w, "Providers: %s\n", joinProviders(opts.Providers))
 	writeProjectCount(w, len(projects), omittedFixtures)
 	fmt.Fprintln(w)
 

@@ -12,11 +12,23 @@ func TestWriteReportsNoProjectRoots(t *testing.T) {
 	t.Parallel()
 
 	got := renderDocument(plan.NewDocument(nil), []string{"node"})
-	if !strings.Contains(got, "Providers: node") {
-		t.Fatalf("output %q, want providers", got)
-	}
 	if !strings.Contains(got, "No project roots were detected") {
 		t.Fatalf("output %q, want an empty-repository explanation", got)
+	}
+	if strings.Contains(got, "Providers:") {
+		t.Fatalf("output %q, want no supported-provider catalog", got)
+	}
+}
+
+func TestWriteExplainsUnclaimedProject(t *testing.T) {
+	t.Parallel()
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{plan.NewProjectPlan(".")}), []string{"node", "go"})
+	if !strings.Contains(got, "No implemented provider produced findings for this project") {
+		t.Fatalf("output %q, want an unclaimed-project explanation", got)
+	}
+	if !strings.Contains(got, "Providers that ran: node, go") {
+		t.Fatalf("output %q, want the providers that ran", got)
 	}
 }
 
@@ -167,7 +179,6 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
 	for _, want := range []string{
-		"Providers: node",
 		"Languages: javascript",
 		"Package managers: npm",
 		"npm ci",
@@ -182,6 +193,9 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Fatalf("output %q, want %q", got, want)
 		}
+	}
+	if strings.Contains(got, "Providers:") {
+		t.Fatalf("output %q, want no supported-provider catalog on a covered project", got)
 	}
 }
 
