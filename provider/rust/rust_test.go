@@ -397,6 +397,41 @@ func TestDetectResolvesRenamedFrameworkDependencies(t *testing.T) {
 	}
 }
 
+func TestDetectResolvesRenamedInheritedWorkspaceFramework(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "Cargo.toml"), ""+
+		"[workspace]\n"+
+		"members = [\"crates/app\"]\n"+
+		"\n"+
+		"[workspace.dependencies]\n"+
+		"web = { package = \"axum\", version = \"0.7\" }\n"+
+		"axum = { package = \"tracing\", version = \"0.1\" }\n")
+	writeFile(t, filepath.Join(root, "crates", "app", "Cargo.toml"), ""+
+		"[package]\n"+
+		"name = \"app\"\n"+
+		"version = \"0.1.0\"\n"+
+		"edition = \"2021\"\n"+
+		"\n"+
+		"[dependencies]\n"+
+		"web.workspace = true\n"+
+		"axum.workspace = true\n")
+	writeFile(t, filepath.Join(root, "crates", "app", "src", "lib.rs"), "pub fn ok() {}\n")
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "crates/app"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	project := assembleProject(t, "crates/app", result)
+	if got := names(project.Frameworks); !slices.Equal(got, []string{"axum"}) {
+		t.Fatalf("frameworks = %v, want axum from workspace key web, not from renamed key axum", got)
+	}
+	if len(project.Frameworks[0].Evidence) == 0 || project.Frameworks[0].Evidence[0].Pointer != "/dependencies/web" {
+		t.Fatalf("framework evidence = %+v, want /dependencies/web", project.Frameworks[0].Evidence)
+	}
+}
+
 func TestDetectFindsInheritedWorkspaceFramework(t *testing.T) {
 	t.Parallel()
 

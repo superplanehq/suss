@@ -140,7 +140,7 @@ func expandStatementDirectories(repo string, currents []string, stmt knowledge.S
 		rel = stmt.WorkingDir
 	}
 	if rel == "" {
-		rel, _ = knowledge.StripDirectoryFlags(stmt.Invocation)
+		rel = knowledge.WorkingDirectory(stmt.Raw, stmt.Invocation)
 	}
 	if rel == "" {
 		return append([]string{}, currents...)

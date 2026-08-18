@@ -500,7 +500,7 @@ func statementDirectories(repo, current string, stmt knowledge.Statement, matrix
 	}
 	rel := stmt.WorkingDir
 	if rel == "" {
-		rel, _ = knowledge.StripDirectoryFlags(stmt.Invocation)
+		rel = knowledge.WorkingDirectory(stmt.Raw, stmt.Invocation)
 	}
 	if rel == "" {
 		return []string{current}

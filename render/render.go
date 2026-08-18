@@ -357,30 +357,57 @@ func configuredWithoutCommandLines(project plan.ProjectPlan) []string {
 		if fact.Name != "tool.configured" {
 			continue
 		}
-		_, ok := toolCapabilities[fact.Value]
-		if !ok {
-			lines = append(lines, fmt.Sprintf("%s is configured.", fact.Value))
-			continue
-		}
 		if commandInvokesConfiguredTool(project, fact.Value) {
 			continue
 		}
-		lines = append(lines, fmt.Sprintf("%s is configured. No command that invokes it was found.", fact.Value))
+		if _, ok := toolCapabilities[fact.Value]; ok {
+			lines = append(lines, fmt.Sprintf("%s is configured. No command that invokes it was found.", fact.Value))
+			continue
+		}
+		lines = append(lines, fmt.Sprintf("%s is configured.", fact.Value))
 	}
 	return lines
 }
 
 func commandInvokesConfiguredTool(project plan.ProjectPlan, tool string) bool {
 	names := configuredToolInvocationNames(tool)
+	phrases := configuredToolMentionPhrases(tool)
 	commands := append(append([]plan.Command{}, project.Preparation...), project.Commands...)
 	for _, command := range commands {
-		if textInvokesConfiguredTool(derefRun(command.Run), names) || textInvokesConfiguredTool(command.Name, names) {
+		if commandTextInvokesConfiguredTool(command, names, phrases) {
 			return true
 		}
-		for _, variant := range command.Variants {
-			if textInvokesConfiguredTool(variant.Run, names) {
-				return true
-			}
+	}
+	return false
+}
+
+func commandTextInvokesConfiguredTool(command plan.Command, names, phrases []string) bool {
+	if textInvokesConfiguredTool(derefRun(command.Run), names) || textInvokesConfiguredTool(command.Name, names) {
+		return true
+	}
+	if evidenceMentionsConfiguredTool(command.Evidence, names, phrases) {
+		return true
+	}
+	for _, interpretation := range command.Interpretations {
+		if evidenceMentionsConfiguredTool(interpretation.Evidence, names, phrases) {
+			return true
+		}
+	}
+	for _, variant := range command.Variants {
+		if textInvokesConfiguredTool(variant.Run, names) || evidenceMentionsConfiguredTool(variant.Evidence, names, phrases) {
+			return true
+		}
+	}
+	return false
+}
+
+func evidenceMentionsConfiguredTool(evidence []plan.Evidence, names, phrases []string) bool {
+	for _, item := range evidence {
+		if textInvokesConfiguredTool(item.Description, names) || textInvokesConfiguredTool(item.Pointer, names) {
+			return true
+		}
+		if descriptionMentionsConfiguredTool(item.Description, phrases) {
+			return true
 		}
 	}
 	return false
@@ -399,6 +426,21 @@ func configuredToolInvocationNames(tool string) []string {
 	}
 }
 
+func configuredToolMentionPhrases(tool string) []string {
+	switch tool {
+	case "tsc":
+		return []string{"tsc", "typescript compiler"}
+	case "nextest":
+		return []string{"nextest", "cargo-nextest"}
+	case "cargo-deny":
+		return []string{"cargo-deny", "cargo deny"}
+	case "rustfmt":
+		return []string{"rustfmt"}
+	default:
+		return []string{strings.ToLower(tool)}
+	}
+}
+
 func textInvokesConfiguredTool(text string, names []string) bool {
 	for _, field := range strings.Fields(text) {
 		field = strings.Trim(field, `"'`)
@@ -406,6 +448,16 @@ func textInvokesConfiguredTool(text string, names []string) bool {
 			field = field[i+1:]
 		}
 		if slices.Contains(names, field) {
+			return true
+		}
+	}
+	return false
+}
+
+func descriptionMentionsConfiguredTool(description string, phrases []string) bool {
+	description = strings.ToLower(description)
+	for _, phrase := range phrases {
+		if phrase != "" && strings.Contains(description, phrase) {
 			return true
 		}
 	}

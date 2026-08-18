@@ -161,6 +161,32 @@ blocks:
 	}
 }
 
+func TestDetectPreservesCargoCWithShellRedirects(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crate/Cargo.toml": "[package]\nname = \"crate\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - cargo -C crate test > result.log
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["."], "cargo -C crate test > result.log") {
+		t.Fatalf("commands = %v, want the original -C redirect command on the repository root", commands)
+	}
+	if slices.Contains(commands["crate"], "cargo test > result.log") || slices.Contains(commands["crate"], "cargo test") {
+		t.Fatalf("commands = %v, did not want a rewritten redirect on crate/", commands)
+	}
+}
+
 func TestDetectPreservesCargoFlagsWhenManifestDirectoryIsMissing(t *testing.T) {
 	t.Parallel()
 

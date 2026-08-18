@@ -6,9 +6,10 @@ import (
 )
 
 type cargoDependency struct {
-	Name  string
-	Key   string
-	Table string
+	Name      string
+	Key       string
+	Table     string
+	Workspace bool
 }
 
 type cargoManifest struct {
@@ -44,7 +45,7 @@ func parseCargoTOML(contents string) cargoManifest {
 				parsed.HasWorkspace = true
 			}
 			if key, table, ok := dependencyCrateFromTable(section); ok {
-				addDependency(seenDeps, &parsed.Dependencies, key, key, table)
+				addDependency(seenDeps, &parsed.Dependencies, key, key, table, false)
 			}
 			continue
 		}
@@ -82,24 +83,45 @@ func parseCargoTOML(contents string) cargoManifest {
 
 		if depKey, table, ok := dependencyCrateFromKey(section, key, quoted); ok {
 			crate := depKey
+			workspace := false
 			if pkg, found := tomlInlineString(value, "package"); found {
 				crate = pkg
 			}
+			if flag, found := tomlInlineBool(value, "workspace"); found {
+				workspace = flag
+			}
 			if !quoted {
-				if _, field, cut := strings.Cut(key, "."); cut && field == "package" {
-					if pkg, found := tomlString(value); found {
-						crate = pkg
+				if _, field, cut := strings.Cut(key, "."); cut {
+					switch field {
+					case "package":
+						if pkg, found := tomlString(value); found {
+							crate = pkg
+						}
+					case "workspace":
+						if flag, found := tomlBool(value); found {
+							workspace = flag
+						}
 					}
 				}
 			}
-			addDependency(seenDeps, &parsed.Dependencies, depKey, crate, table)
+			addDependency(seenDeps, &parsed.Dependencies, depKey, crate, table, workspace)
 			if crate != depKey {
 				setDependencyCrate(&parsed.Dependencies, table, depKey, crate)
 			}
+			if workspace {
+				setDependencyWorkspace(&parsed.Dependencies, table, depKey)
+			}
 		}
-		if depKey, table, ok := dependencyCrateFromTable(section); ok && key == "package" {
-			if pkg, found := tomlString(value); found {
-				setDependencyCrate(&parsed.Dependencies, table, depKey, pkg)
+		if depKey, table, ok := dependencyCrateFromTable(section); ok {
+			switch key {
+			case "package":
+				if pkg, found := tomlString(value); found {
+					setDependencyCrate(&parsed.Dependencies, table, depKey, pkg)
+				}
+			case "workspace":
+				if flag, found := tomlBool(value); found && flag {
+					setDependencyWorkspace(&parsed.Dependencies, table, depKey)
+				}
 			}
 		}
 	}
@@ -290,6 +312,22 @@ func dependencyCrateFromKey(section, key string, quoted bool) (string, string, b
 	return "", "", false
 }
 
+func tomlInlineBool(value, field string) (bool, bool) {
+	value = strings.TrimSpace(value)
+	if !strings.HasPrefix(value, "{") {
+		return false, false
+	}
+	inner := strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(value, "{")), "}")
+	for _, part := range splitTopLevel(inner, ',') {
+		key, fieldValue, ok := parseTOMLAssignment(strings.TrimSpace(part))
+		if !ok || key != field {
+			continue
+		}
+		return tomlBool(fieldValue)
+	}
+	return false, false
+}
+
 func tomlInlineString(value, field string) (string, bool) {
 	value = strings.TrimSpace(value)
 	if !strings.HasPrefix(value, "{") {
@@ -330,7 +368,7 @@ func splitTopLevel(value string, sep byte) []string {
 	return append(parts, value[start:])
 }
 
-func addDependency(seen map[string]struct{}, deps *[]cargoDependency, key, crate, table string) {
+func addDependency(seen map[string]struct{}, deps *[]cargoDependency, key, crate, table string, workspace bool) {
 	if key == "" {
 		return
 	}
@@ -339,10 +377,48 @@ func addDependency(seen map[string]struct{}, deps *[]cargoDependency, key, crate
 	}
 	seenKey := table + "\x00" + key
 	if _, ok := seen[seenKey]; ok {
+		if workspace {
+			setDependencyWorkspace(deps, table, key)
+		}
 		return
 	}
 	seen[seenKey] = struct{}{}
-	*deps = append(*deps, cargoDependency{Name: crate, Key: key, Table: table})
+	*deps = append(*deps, cargoDependency{Name: crate, Key: key, Table: table, Workspace: workspace})
+}
+
+func setDependencyWorkspace(deps *[]cargoDependency, table, key string) {
+	for i := range *deps {
+		if (*deps)[i].Table == table && (*deps)[i].Key == key {
+			(*deps)[i].Workspace = true
+			return
+		}
+	}
+}
+
+func applyWorkspaceDependencyAliases(deps []cargoDependency, aliases map[string]string) []cargoDependency {
+	if len(aliases) == 0 {
+		return deps
+	}
+	out := append([]cargoDependency{}, deps...)
+	for i, dep := range out {
+		if !dep.Workspace || dep.Table != "dependencies" || dep.Name != dep.Key {
+			continue
+		}
+		if crate := aliases[dep.Key]; crate != "" {
+			out[i].Name = crate
+		}
+	}
+	return out
+}
+
+func workspaceDependencyAliases(deps []cargoDependency) map[string]string {
+	aliases := make(map[string]string)
+	for _, dep := range deps {
+		if dep.Table == "workspace.dependencies" && dep.Key != "" && dep.Name != "" {
+			aliases[dep.Key] = dep.Name
+		}
+	}
+	return aliases
 }
 
 func setDependencyCrate(deps *[]cargoDependency, table, key, crate string) {

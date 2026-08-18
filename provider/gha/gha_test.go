@@ -170,6 +170,28 @@ jobs:
 	}
 }
 
+func TestDetectPreservesCargoCWithShellRedirects(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crate/Cargo.toml": "[package]\nname = \"crate\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: cargo -C crate test > result.log
+`,
+	})
+
+	got := commandByName(result)["cargo test"]
+	if got.Directory != "." {
+		t.Fatalf("directory = %q, want . so result.log stays at the repository root", got.Directory)
+	}
+	if deref(got.Run) != "cargo -C crate test > result.log" {
+		t.Fatalf("run = %q, want the original -C redirect invocation", deref(got.Run))
+	}
+}
+
 func TestDetectComposesCargoDirectoryAndManifestPath(t *testing.T) {
 	t.Parallel()
 

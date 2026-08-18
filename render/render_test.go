@@ -293,6 +293,84 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 	}
 }
 
+func TestWriteHidesEslintWhenDeclaredScriptInvokesIt(t *testing.T) {
+	t.Parallel()
+
+	run := "npm run lint"
+	id := plan.CommandID("cmd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "javascript"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "eslint",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: "eslint.config.js"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:        id,
+		Name:      "lint",
+		Run:       &run,
+		Directory: ".",
+		Scope:     plan.ScopeProject,
+		Origin:    plan.CommandDeclared,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityCodeLint,
+			Confidence: plan.ConfidenceHigh,
+			Evidence: []plan.Evidence{{
+				Kind:        plan.EvidenceDeclaration,
+				Source:      "package.json",
+				Pointer:     "/scripts/lint",
+				Description: "The script invokes ESLint.",
+			}},
+		}},
+		Variants: []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
+	if strings.Contains(got, "eslint is configured") {
+		t.Fatalf("output %q, did not want an eslint gap when npm run lint invokes ESLint", got)
+	}
+}
+
+func TestWriteHidesTscWhenDeclaredScriptInvokesTypeScript(t *testing.T) {
+	t.Parallel()
+
+	run := "npm run build"
+	id := plan.CommandID("cmd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "javascript"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "tsc",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: "tsconfig.json"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:        id,
+		Name:      "build",
+		Run:       &run,
+		Directory: ".",
+		Scope:     plan.ScopeProject,
+		Origin:    plan.CommandDeclared,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityCodeTypecheck,
+			Confidence: plan.ConfidenceHigh,
+			Evidence: []plan.Evidence{{
+				Kind:        plan.EvidenceDeclaration,
+				Source:      "package.json",
+				Pointer:     "/scripts/build",
+				Description: "The script invokes the TypeScript compiler.",
+			}},
+		}},
+		Variants: []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
+	if strings.Contains(got, "tsc is configured") {
+		t.Fatalf("output %q, did not want a tsc gap when npm run build invokes the TypeScript compiler", got)
+	}
+}
+
 func TestWriteReportsNextestWhenOnlyCargoTestExists(t *testing.T) {
 	t.Parallel()
 
@@ -376,6 +454,36 @@ func TestWriteReportsConfiguredToolsWithoutCapabilityMapping(t *testing.T) {
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"rust"})
 	if !strings.Contains(got, "cargo-deny is configured.") {
 		t.Fatalf("output %q, want cargo-deny configured notice", got)
+	}
+}
+
+func TestWriteHidesCargoDenyWhenCommandInvokesIt(t *testing.T) {
+	t.Parallel()
+
+	run := "cargo deny check"
+	id := plan.CommandID("cmd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "rust"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "cargo-deny",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: "deny.toml"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:         id,
+		Name:       "cargo deny",
+		Run:        &run,
+		Directory:  ".",
+		Scope:      plan.ScopeProject,
+		Origin:     plan.CommandObserved,
+		Confidence: plan.ConfidenceHigh,
+		Variants:   []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"rust"})
+	if strings.Contains(got, "cargo-deny is configured") {
+		t.Fatalf("output %q, did not want a cargo-deny gap when cargo deny check exists", got)
 	}
 }
 

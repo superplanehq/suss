@@ -48,11 +48,45 @@ func RewriteDirectoryFlags(raw string, inv Invocation) string {
 	if canonicalizeExecutable(inv.Executable) != "cargo" {
 		return redacted
 	}
-	dir, _ := StripDirectoryFlags(inv)
-	if dir == "" {
+	if WorkingDirectory(raw, inv) == "" {
 		return redacted
 	}
 	return stripCargoDirectoryFlagsFromRun(redacted)
+}
+
+// WorkingDirectory returns the package-manager directory flag, or empty
+// when the command should keep the shell's current working directory.
+// Cargo -C is ignored when the statement has redirects or pipes so
+// relative paths stay rooted at the original cwd.
+func WorkingDirectory(raw string, inv Invocation) string {
+	dir, _ := StripDirectoryFlags(inv)
+	if dir == "" {
+		return ""
+	}
+	if canonicalizeExecutable(inv.Executable) == "cargo" && statementHasShellRelativePaths(raw) {
+		return ""
+	}
+	return dir
+}
+
+func statementHasShellRelativePaths(raw string) bool {
+	inSingle, inDouble := false, false
+	for i := 0; i < len(raw); i++ {
+		c := raw[i]
+		switch {
+		case c == '\\' && !inSingle && i+1 < len(raw):
+			i++
+		case c == '\'' && !inDouble:
+			inSingle = !inSingle
+		case c == '"' && !inSingle:
+			inDouble = !inDouble
+		case inSingle || inDouble:
+			continue
+		case c == '|' || c == '<' || c == '>':
+			return true
+		}
+	}
+	return false
 }
 
 func stripCargoDirectoryFlagsFromRun(redacted string) string {

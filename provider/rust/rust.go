@@ -35,6 +35,12 @@ func (Provider) Detect(ctx provider.Context) (provider.Result, error) {
 		return provider.Result{}, nil
 	}
 
+	deps, err := resolveInheritedWorkspaceDependencies(ctx, manifest.Dependencies)
+	if err != nil {
+		return provider.Result{}, err
+	}
+	manifest.Dependencies = deps
+
 	var result provider.Result
 	result.Findings = append(result.Findings, projectFindings(ctx, manifest)...)
 	runtimes, conflicts, err := runtimeFindings(ctx, manifest)

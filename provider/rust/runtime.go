@@ -276,6 +276,52 @@ func cargoMinimumVersion(version string) string {
 	}
 }
 
+func resolveInheritedWorkspaceDependencies(ctx provider.Context, deps []cargoDependency) ([]cargoDependency, error) {
+	need := false
+	for _, dep := range deps {
+		if dep.Workspace && dep.Table == "dependencies" && dep.Name == dep.Key {
+			need = true
+			break
+		}
+	}
+	if !need {
+		return deps, nil
+	}
+	aliases, err := ancestorWorkspaceDependencyCrates(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return applyWorkspaceDependencyAliases(deps, aliases), nil
+}
+
+func ancestorWorkspaceDependencyCrates(ctx provider.Context) (map[string]string, error) {
+	aliases := make(map[string]string)
+	dir := ctx.ProjectDir()
+	for {
+		path := filepath.Join(dir, "Cargo.toml")
+		contents, err := os.ReadFile(path)
+		switch {
+		case err == nil:
+			parsed := parseCargoTOML(string(contents))
+			for key, crate := range workspaceDependencyAliases(parsed.Dependencies) {
+				if _, exists := aliases[key]; !exists {
+					aliases[key] = crate
+				}
+			}
+		case !os.IsNotExist(err):
+			return nil, fmt.Errorf("read %s: %w", path, err)
+		}
+		if dir == ctx.RepositoryRoot || !strings.HasPrefix(dir, ctx.RepositoryRoot+string(filepath.Separator)) {
+			return aliases, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return aliases, nil
+		}
+		dir = parent
+	}
+}
+
 func ancestorWorkspaceRustVersion(ctx provider.Context) (string, string, error) {
 	dir := filepath.Dir(ctx.ProjectDir())
 	for {

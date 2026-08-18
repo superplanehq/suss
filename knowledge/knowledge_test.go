@@ -604,6 +604,35 @@ func TestRewriteDirectoryFlagsStripsCargoPaths(t *testing.T) {
 	if got != "yarn --cwd ./packages/app test" {
 		t.Fatalf("RewriteDirectoryFlags(yarn) = %q, want the original run", got)
 	}
+	got = RewriteDirectoryFlags(
+		"cargo -C crate test > result.log",
+		Invocation{Executable: "cargo", Args: []string{"-C", "crate", "test"}},
+	)
+	if got != "cargo -C crate test > result.log" {
+		t.Fatalf("RewriteDirectoryFlags(redirect) = %q, want the original -C form", got)
+	}
+	got = RewriteDirectoryFlags(
+		"cargo -C crate test | tee result.log",
+		Invocation{Executable: "cargo", Args: []string{"-C", "crate", "test"}},
+	)
+	if got != "cargo -C crate test | tee result.log" {
+		t.Fatalf("RewriteDirectoryFlags(pipe) = %q, want the original -C form", got)
+	}
+}
+
+func TestWorkingDirectoryKeepsShellCwdForCargoRedirects(t *testing.T) {
+	t.Parallel()
+
+	inv := Invocation{Executable: "cargo", Args: []string{"-C", "crate", "test"}}
+	if got := WorkingDirectory("cargo -C crate test", inv); got != "crate" {
+		t.Fatalf("WorkingDirectory(simple) = %q, want crate", got)
+	}
+	if got := WorkingDirectory("cargo -C crate test > result.log", inv); got != "" {
+		t.Fatalf("WorkingDirectory(redirect) = %q, want empty so result.log stays at the shell cwd", got)
+	}
+	if got := WorkingDirectory("cargo -C crate test | tee result.log", inv); got != "" {
+		t.Fatalf("WorkingDirectory(pipe) = %q, want empty", got)
+	}
 }
 
 func TestStripDirectoryFlagsLeavesDynamicCargoPaths(t *testing.T) {
