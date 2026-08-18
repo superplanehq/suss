@@ -3,9 +3,44 @@
   "projects": [
     {
       "path": ".",
-      "languages": [],
-      "frameworks": [],
-      "packageManagers": [],
+      "languages": [
+        {
+          "name": "elixir",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "phoenix",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/deps/phoenix",
+              "description": "The Mix dependency list includes Phoenix."
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "mix",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs"
+            }
+          ]
+        }
+      ],
       "facts": [
         {
           "name": "provider.make.limitation",
@@ -18,9 +53,75 @@
               "description": "Make functions, automatic variables, and predefined variables are not expanded."
             }
           ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "credo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": ".credo.exs"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "dialyzer",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": ".dialyzer_ignore.exs"
+            },
+            {
+              "kind": "configuration",
+              "source": "mix.exs",
+              "pointer": "/project/dialyzer"
+            }
+          ]
         }
       ],
       "requirements": [
+        {
+          "kind": "runtime",
+          "name": "elixir",
+          "version": "1.20.2-otp-28",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".tool-versions",
+              "pointer": "/elixir"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "elixir",
+          "version": "~> 1.18",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/project/elixir"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "erlang",
+          "version": "28.5.0.3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".tool-versions",
+              "pointer": "/erlang"
+            }
+          ]
+        },
         {
           "kind": "runtime",
           "name": "node",
@@ -172,6 +273,37 @@
       ],
       "preparation": [
         {
+          "id": "cmd_0ba66910cc3c5a754e525f98854d6dc4",
+          "name": "setup",
+          "run": "mix setup",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/aliases/setup"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "mix.exs",
+                  "pointer": "/aliases/setup",
+                  "description": "The command fetches Mix dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
           "id": "cmd_1f2821a89b5b6f4b390099740e39f8aa",
           "name": "install",
           "run": "make install",
@@ -196,7 +328,131 @@
                   "kind": "declaration",
                   "source": "Makefile",
                   "pointer": "/targets/install",
-                  "description": "The command installs npm dependencies."
+                  "description": "The command fetches Mix dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_33b0e8a6824714276a031a0701af5208",
+          "name": "mix deps.get",
+          "run": "mix deps.get --only $MIX_ENV",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/steps/8/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/build/steps/8/run",
+                  "description": "The command fetches Mix dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_4b18c2fc119346eb90b9063ad0695d48",
+          "name": "mix deps.get",
+          "run": "mix deps.get --only $MIX_ENV",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/8/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/8/run",
+                  "description": "The command fetches Mix dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_4dce574ec04ad946281efb0d56dcf1df",
+          "name": "mix deps.get",
+          "run": "mix deps.get",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/static/steps/4/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/static/steps/4/run",
+                  "description": "The command fetches Mix dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_53df8f10ca3992e41e85ef0b24591844",
+          "name": "mix deps.get",
+          "run": "mix deps.get",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish-docs.yml",
+              "pointer": "/jobs/build/steps/4/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/publish-docs.yml",
+                  "pointer": "/jobs/build/steps/4/run",
+                  "description": "The command fetches Mix dependencies."
                 }
               ]
             }
@@ -228,6 +484,68 @@
                   "source": ".github/workflows/tracker-script-update.yml",
                   "pointer": "/jobs/tracker-script-update/steps/5/run#command=1",
                   "description": "The command installs npm dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_b85bb12deb7d0dcd0a791809ace75552",
+          "name": "e2e.setup",
+          "run": "mix e2e.setup",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/aliases/e2e.setup"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "mix.exs",
+                  "pointer": "/aliases/e2e.setup",
+                  "description": "The command installs npm dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_bdbea7a118de28fe78ef3dbe908799b0",
+          "name": "mix deps.get",
+          "run": "mix deps.get",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/iana-registry-check.yml",
+              "pointer": "/jobs/check-iana-registries/steps/3/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/iana-registry-check.yml",
+                  "pointer": "/jobs/check-iana-registries/steps/3/run",
+                  "description": "The command fetches Mix dependencies."
                 }
               ]
             }
@@ -344,22 +662,86 @@
           "variants": []
         },
         {
-          "id": "cmd_0c041754219e83645f946d574db37b94",
-          "name": "mix test",
-          "run": "mix test --include slow --include minio --include migrations --max-failures 1 --warnings-as-errors --partitions 6",
+          "id": "cmd_0b19ec1f7f39941bbe29aee0df6143a2",
+          "name": "send_pageview",
+          "run": "mix send_pageview",
           "directory": ".",
           "scope": "project",
-          "origin": "observed",
+          "origin": "declared",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/build/steps/13/run"
+              "kind": "declaration",
+              "source": "lib/mix/tasks/send_pageview.ex",
+              "pointer": "/module"
             }
           ],
           "interpretations": [],
           "variants": []
+        },
+        {
+          "id": "cmd_0bb4367c4af9df91d15f958f7df100d9",
+          "name": "generate_countries_meta",
+          "run": "mix generate_countries_meta",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "lib/mix/tasks/generate_countries_meta.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "mix generate_countries_meta",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/static/steps/8/run#command=0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_0e2046917f2721fe35b4125eae3b22e0",
+          "name": "assets.deploy",
+          "run": "mix assets.deploy",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/aliases/assets.deploy"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "mix assets.deploy",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/11/run"
+                }
+              ]
+            }
+          ]
         },
         {
           "id": "cmd_0e9291a80b00d098cc32631d5b8f48de",
@@ -394,7 +776,20 @@
               "pointer": "/jobs/static/steps/10/run"
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/static/steps/10/run",
+                  "description": "The command runs Dialyzer through Dialyxir."
+                }
+              ]
+            }
+          ],
           "variants": []
         },
         {
@@ -410,24 +805,6 @@
               "kind": "invocation",
               "source": ".github/workflows/elixir.yml",
               "pointer": "/jobs/build/steps/11/run"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_250ad66c16feca98e28e69f0a9c62338",
-          "name": "mix generate_countries_meta",
-          "run": "mix generate_countries_meta",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/static/steps/8/run#command=0"
             }
           ],
           "interpretations": [],
@@ -489,36 +866,18 @@
           "variants": []
         },
         {
-          "id": "cmd_33b0e8a6824714276a031a0701af5208",
-          "name": "mix deps.get",
-          "run": "mix deps.get --only $MIX_ENV",
+          "id": "cmd_372572e6d73b6bf3fda2b52b24320ef2",
+          "name": "clean_postgres",
+          "run": "mix clean_postgres",
           "directory": ".",
           "scope": "project",
-          "origin": "observed",
+          "origin": "declared",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/build/steps/8/run"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_33d9710b698b726a3c29b8cda7915d4a",
-          "name": "mix download_country_database",
-          "run": "mix download_country_database",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/e2e/steps/13/run"
+              "kind": "declaration",
+              "source": "lib/mix/tasks/clean_postgres.ex",
+              "pointer": "/module"
             }
           ],
           "interpretations": [],
@@ -562,72 +921,54 @@
           "variants": []
         },
         {
-          "id": "cmd_433b7f6c0d6237bace4fd075b1d4e0d1",
-          "name": "mix compile",
-          "run": "mix compile --warnings-as-errors --all-warnings",
+          "id": "cmd_458324cec0e490467e874f73066f8144",
+          "name": "test.e2e",
+          "run": "mix test.e2e",
           "directory": ".",
           "scope": "project",
-          "origin": "observed",
+          "origin": "declared",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/e2e/steps/9/run"
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/aliases/test.e2e"
             }
           ],
           "interpretations": [],
           "variants": []
         },
         {
-          "id": "cmd_4b18c2fc119346eb90b9063ad0695d48",
-          "name": "mix deps.get",
-          "run": "mix deps.get --only $MIX_ENV",
+          "id": "cmd_466dfc3ea5fefb66d6e1359c02a4b48b",
+          "name": "cancel_subscription",
+          "run": "mix cancel_subscription",
           "directory": ".",
           "scope": "project",
-          "origin": "observed",
+          "origin": "declared",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/e2e/steps/8/run"
+              "kind": "declaration",
+              "source": "lib/mix/tasks/cancel_subscription.ex",
+              "pointer": "/module"
             }
           ],
           "interpretations": [],
           "variants": []
         },
         {
-          "id": "cmd_4dce574ec04ad946281efb0d56dcf1df",
-          "name": "mix deps.get",
-          "run": "mix deps.get",
+          "id": "cmd_53f55dc159e7d0da1fd76b2f6b4b056d",
+          "name": "create_paddle_sandbox_plans",
+          "run": "mix create_paddle_sandbox_plans",
           "directory": ".",
           "scope": "project",
-          "origin": "observed",
+          "origin": "declared",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/static/steps/4/run"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_53df8f10ca3992e41e85ef0b24591844",
-          "name": "mix deps.get",
-          "run": "mix deps.get",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/publish-docs.yml",
-              "pointer": "/jobs/build/steps/4/run"
+              "kind": "declaration",
+              "source": "lib/mix/tasks/create_paddle_sandbox_plans.ex",
+              "pointer": "/module"
             }
           ],
           "interpretations": [],
@@ -687,8 +1028,96 @@
               "description": "The target recipe invokes mix."
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/server",
+                  "description": "The command starts the Phoenix server."
+                }
+              ]
+            }
+          ],
           "variants": []
+        },
+        {
+          "id": "cmd_6037cbc21c1382e41ac168804a93861c",
+          "name": "compile",
+          "run": "mix compile",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/steps/9/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/9/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/static/steps/5/run"
+            },
+            {
+              "kind": "file",
+              "source": "mix.exs"
+            },
+            {
+              "kind": "convention",
+              "source": "elixir-ecosystem",
+              "pointer": "compile",
+              "description": "Mix projects conventionally compile with mix compile."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "file",
+                  "source": "mix.exs",
+                  "pointer": "/#compile",
+                  "description": "The command compiles a Mix project."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "mix compile --warnings-as-errors --all-warnings",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/build/steps/9/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/9/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/static/steps/5/run"
+                }
+              ]
+            }
+          ]
         },
         {
           "id": "cmd_60d607b6f7db6a784687e6b02f9c87de",
@@ -728,6 +1157,92 @@
           "variants": []
         },
         {
+          "id": "cmd_6d459f08b7bd3b8c0034eaf7c1b81f20",
+          "name": "clean_clickhouse",
+          "run": "mix clean_clickhouse",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "lib/mix/tasks/clean_clickhouse.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6db666b2685de94dac6a4ac215a0f7cf",
+          "name": "assets.typecheck",
+          "run": "mix assets.typecheck",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/aliases/assets.typecheck"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_780de35e9e025a71eabc1c10303ebaad",
+          "name": "ecto.setup",
+          "run": "mix ecto.setup",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/aliases/ecto.setup"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7ef618c4807b9fc8bd1d6376376faf3b",
+          "name": "download_ip_registries",
+          "run": "mix download_ip_registries",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "lib/mix/tasks/download_ip_registries.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "mix download_ip_registries",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/iana-registry-check.yml",
+                  "pointer": "/jobs/check-iana-registries/steps/4/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "id": "cmd_897b4f4083af791c4328d980f25a3673",
           "name": "mix format",
           "run": "mix format --check-formatted",
@@ -742,7 +1257,20 @@
               "pointer": "/jobs/static/steps/6/run"
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/static/steps/6/run",
+                  "description": "The command formats Elixir source with Mix."
+                }
+              ]
+            }
+          ],
           "variants": []
         },
         {
@@ -759,24 +1287,6 @@
               "source": "Makefile",
               "pointer": "/targets/loadtest-server",
               "description": "The target recipe invokes echo and iex."
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_910530d226733c9386cd48b26312ea48",
-          "name": "mix test",
-          "run": "mix test --include slow --include migrations --max-failures 1 --warnings-as-errors --partitions 6",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/build/steps/14/run"
             }
           ],
           "interpretations": [],
@@ -814,6 +1324,24 @@
               "source": "Makefile",
               "pointer": "/targets/help",
               "description": "The target recipe invokes perl, sort, and awk."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_971833d08e80e6a758b33e0bf8700e08",
+          "name": "create_free_subscription",
+          "run": "mix create_free_subscription",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "lib/mix/tasks/create_free_subscription.ex",
+              "pointer": "/module"
             }
           ],
           "interpretations": [],
@@ -858,24 +1386,6 @@
           "variants": []
         },
         {
-          "id": "cmd_a5ccbed0cbdbd5b94316d01a7a51ca4f",
-          "name": "mix compile",
-          "run": "mix compile --warnings-as-errors --all-warnings",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/static/steps/5/run"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
           "id": "cmd_a84ec00440c8806c6aeaf7a3de82bfa9",
           "name": "mix credo",
           "run": "mix credo diff --from-git-merge-base origin/master",
@@ -890,7 +1400,20 @@
               "pointer": "/jobs/static/steps/9/run"
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/static/steps/9/run",
+                  "description": "The command runs Credo."
+                }
+              ]
+            }
+          ],
           "variants": []
         },
         {
@@ -949,36 +1472,18 @@
           "variants": []
         },
         {
-          "id": "cmd_b99d1bcad036e81c9f3f8025029f8933",
-          "name": "mix download_ip_registries",
-          "run": "mix download_ip_registries",
+          "id": "cmd_b8dcd9a70f089556627e56ba69d080ab",
+          "name": "generate_referrer_favicons",
+          "run": "mix generate_referrer_favicons",
           "directory": ".",
           "scope": "project",
-          "origin": "observed",
+          "origin": "declared",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "invocation",
-              "source": ".github/workflows/iana-registry-check.yml",
-              "pointer": "/jobs/check-iana-registries/steps/4/run"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_bdbea7a118de28fe78ef3dbe908799b0",
-          "name": "mix deps.get",
-          "run": "mix deps.get",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/iana-registry-check.yml",
-              "pointer": "/jobs/check-iana-registries/steps/3/run"
+              "kind": "declaration",
+              "source": "lib/mix/tasks/generate_referrer_favicons.ex",
+              "pointer": "/module"
             }
           ],
           "interpretations": [],
@@ -997,6 +1502,24 @@
               "kind": "invocation",
               "source": ".github/workflows/elixir.yml",
               "pointer": "/jobs/build/steps/10/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c8a2a2457f2c0af8d56f13cfb5537d18",
+          "name": "create_paddle_prod_plans",
+          "run": "mix create_paddle_prod_plans",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "lib/mix/tasks/create_paddle_prod_plans.ex",
+              "pointer": "/module"
             }
           ],
           "interpretations": [],
@@ -1039,6 +1562,74 @@
           ],
           "interpretations": [],
           "variants": []
+        },
+        {
+          "id": "cmd_d17e74721c4e5ae2d46705b1857e947b",
+          "name": "assets.build",
+          "run": "mix assets.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/aliases/assets.build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d1e566b6cc857a6ed8c36384c15fc8ff",
+          "name": "assets.setup",
+          "run": "mix assets.setup",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/aliases/assets.setup"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d929dc91e785cf85ede7a13e60515cfb",
+          "name": "download_country_database",
+          "run": "mix download_country_database",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "lib/mix/tasks/download_country_database.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "mix download_country_database",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/13/run"
+                }
+              ]
+            }
+          ]
         },
         {
           "id": "cmd_d9ed9478f89067685f00665969026d74",
@@ -1153,22 +1744,98 @@
           "variants": []
         },
         {
-          "id": "cmd_edb10f68c94d6598dbece5444f8ca485",
-          "name": "mix compile",
-          "run": "mix compile --warnings-as-errors --all-warnings",
+          "id": "cmd_e9d7701ff3500badc3d3104cb4efc953",
+          "name": "ecto.reset",
+          "run": "mix ecto.reset",
           "directory": ".",
           "scope": "project",
-          "origin": "observed",
+          "origin": "declared",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/build/steps/9/run"
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/aliases/ecto.reset"
             }
           ],
           "interpretations": [],
           "variants": []
+        },
+        {
+          "id": "cmd_f32584a9a42abf0d118f89f926d49fb0",
+          "name": "pull_sandbox_subscription",
+          "run": "mix pull_sandbox_subscription",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "lib/mix/tasks/pull_sandbox_subscription.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fa607c4206d45244f73663216997109e",
+          "name": "test",
+          "run": "mix test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mix.exs",
+              "pointer": "/aliases/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "mix.exs",
+                  "pointer": "/aliases/test",
+                  "description": "The command runs ExUnit tests through Mix."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "mix test --include slow --include migrations --max-failures 1 --warnings-as-errors --partitions 6",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/build/steps/14/run"
+                }
+              ]
+            },
+            {
+              "context": "ci",
+              "run": "mix test --include slow --include minio --include migrations --max-failures 1 --warnings-as-errors --partitions 6",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/build/steps/13/run"
+                }
+              ]
+            }
+          ]
         },
         {
           "id": "cmd_fb2208cd3b54da0e80cf70740b6bc74c",
@@ -1183,24 +1850,6 @@
               "kind": "invocation",
               "source": ".github/workflows/tracker-script-update.yml",
               "pointer": "/jobs/tracker-script-update/steps/2/run#command=3"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_fdcc8b2b6d3b286221b4140c5da657e4",
-          "name": "mix assets.deploy",
-          "run": "mix assets.deploy",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/elixir.yml",
-              "pointer": "/jobs/e2e/steps/11/run"
             }
           ],
           "interpretations": [],

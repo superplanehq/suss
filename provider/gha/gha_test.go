@@ -76,7 +76,7 @@ jobs:
 		t.Fatalf("unlinked command = %+v", commands["node scripts/check-generated.mjs"])
 	}
 
-	versions := requirementVersions(result, plan.RequirementRuntime, "node")
+	versions := runtimeRequirementVersions(result, "node")
 	if !slices.Equal(sortedCopy(versions), []string{"22", "24"}) {
 		t.Fatalf("node versions = %v, want 22 and 24", versions)
 	}
@@ -175,6 +175,36 @@ jobs:
 
 	if !hasRequirement(result, plan.RequirementRuntime, "node", "20") {
 		t.Fatalf("missing node 20 from version file in %+v", result.Findings)
+	}
+}
+
+func TestDetectReadsSetupBeamMatrixVersions(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        include:
+          - elixir: "1.18.1"
+            otp: "27.2"
+          - elixir: "1.17.3"
+            otp: "26.2"
+    steps:
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+`,
+	})
+
+	if got := sortedCopy(runtimeRequirementVersions(result, "elixir")); !slices.Equal(got, []string{"1.17.3", "1.18.1"}) {
+		t.Fatalf("Elixir versions = %v, want matrix pins", got)
+	}
+	if got := sortedCopy(runtimeRequirementVersions(result, "erlang")); !slices.Equal(got, []string{"26.2", "27.2"}) {
+		t.Fatalf("Erlang versions = %v, want matrix pins", got)
 	}
 }
 
@@ -518,7 +548,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 `,
 	})
-	versions := requirementVersions(result, plan.RequirementRuntime, "node")
+	versions := runtimeRequirementVersions(result, "node")
 	if !slices.Equal(versions, []string{"18"}) {
 		t.Fatalf("node versions = %v, want only 18", versions)
 	}
@@ -815,11 +845,11 @@ func commandByName(result provider.Result) map[string]plan.Command {
 	return out
 }
 
-func requirementVersions(result provider.Result, kind plan.RequirementKind, name string) []string {
+func runtimeRequirementVersions(result provider.Result, name string) []string {
 	var versions []string
 	for _, finding := range result.Findings {
 		item, ok := finding.(plan.RequirementFinding)
-		if !ok || item.Requirement.Kind != kind || item.Requirement.Name != name {
+		if !ok || item.Requirement.Kind != plan.RequirementRuntime || item.Requirement.Name != name {
 			continue
 		}
 		versions = append(versions, item.Requirement.Version)

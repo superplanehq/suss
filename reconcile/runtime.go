@@ -274,7 +274,7 @@ func splitConstraints(group string) []string {
 	fields := strings.Fields(group)
 	for i := 0; i < len(fields); i++ {
 		field := fields[i]
-		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "^" || field == "~" {
+		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "^" || field == "~" || field == "~>" {
 			if i+1 < len(fields) {
 				tokens = append(tokens, field+fields[i+1])
 				i++
@@ -314,6 +314,8 @@ func constraintSatisfies(token, version string) (ok, known bool) {
 		return compareVersions(version, bound) < 0, true
 	case strings.HasPrefix(token, "^"):
 		return caretSatisfies(strings.TrimSpace(token[1:]), version)
+	case strings.HasPrefix(token, "~>"):
+		return pessimisticSatisfies(strings.TrimSpace(token[2:]), version)
 	case strings.HasPrefix(token, "~"):
 		return tildeSatisfies(strings.TrimSpace(token[1:]), version)
 	case strings.ContainsAny(token, "xX*"):
@@ -324,6 +326,27 @@ func constraintSatisfies(token, version string) (ok, known bool) {
 		}
 		return sameVersion(token, version), true
 	}
+}
+
+// pessimisticSatisfies implements Elixir/Hex's ~> requirement: a two-part
+// requirement permits the next major, while three or more parts permit the
+// next minor.
+func pessimisticSatisfies(raw, version string) (ok, known bool) {
+	raw = strings.TrimPrefix(strings.TrimSpace(raw), "v")
+	base := normalizeVersion(raw)
+	if base == "" || !comparableVersion(base) {
+		return false, false
+	}
+	if compareVersions(version, base) < 0 {
+		return false, true
+	}
+	parts := strings.Split(raw, ".")
+	major := versionPart(parts, 0)
+	if len(parts) <= 2 {
+		return compareVersions(version, formatVersion(major+1, 0, 0)) < 0, true
+	}
+	minor := versionPart(parts, 1)
+	return compareVersions(version, formatVersion(major, minor+1, 0)) < 0, true
 }
 
 func caretSatisfies(base, version string) (ok, known bool) {

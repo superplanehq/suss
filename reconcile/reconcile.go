@@ -1,5 +1,5 @@
-// Package reconcile links GitHub Actions observations to declared and inferred
-// commands. Matching is exact about identity and honest about failure: a CI
+// Package reconcile links CI observations to declared and inferred commands.
+// Matching is exact about identity and honest about failure: a CI
 // invocation that cannot be linked is kept as an observed command rather than
 // guessed into a variant.
 //

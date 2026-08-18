@@ -1,0 +1,3438 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "go",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "go.mod",
+              "pointer": "/module"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [
+        {
+          "name": "provider.make.limitation",
+          "value": "conditionals",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile",
+              "description": "Make conditionals are detected; targets inside them are still enumerated."
+            }
+          ]
+        },
+        {
+          "name": "provider.make.limitation",
+          "value": "include",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile",
+              "description": "Included makefiles are detected but not expanded."
+            }
+          ]
+        },
+        {
+          "name": "provider.make.limitation",
+          "value": "variable-expansion",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile",
+              "description": "Make functions, automatic variables, and predefined variables are not expanded."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "go",
+          "version": "1.26.2",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "go.mod",
+              "pointer": "/go"
+            }
+          ]
+        },
+        {
+          "kind": "tool",
+          "name": "docker",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile"
+            },
+            {
+              "kind": "file",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml"
+            }
+          ]
+        },
+        {
+          "kind": "tool",
+          "name": "make",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "app",
+          "version": "__SUPERPLANE_VERSION__",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/app/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "caddy",
+          "version": "2",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/caddy/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "db",
+          "version": "17.5",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/db/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "rabbitmq",
+          "version": "3.8.17-management-alpine",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/rabbitmq/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "supergit",
+          "version": "0.1.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/image"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DEV_BASE_IMAGE_REPO",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-dev-base-image.yml",
+              "pointer": "/global_job_config/env_vars/1/name"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DOCKER_BUILDKIT",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-app-image.yml",
+              "pointer": "/global_job_config/env_vars/0/name"
+            },
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-dev-base-image.yml",
+              "pointer": "/global_job_config/env_vars/0/name"
+            },
+            {
+              "kind": "invocation",
+              "source": ".semaphore/semaphore.yml",
+              "pointer": "/global_job_config/env_vars/0/name"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GITHUB_REPO",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/tag-release.yml",
+              "pointer": "/global_job_config/env_vars/0/name"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "OIDC_KEYS_CONTAINER_PATH",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/app/volumes/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "OIDC_KEYS_HOST_PATH",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/app/volumes/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PGDATA",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/db/environment/PGDATA"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "STANDARD_IMAGE_REPO",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-app-image.yml",
+              "pointer": "/global_job_config/env_vars/1/name"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SUPERGIT_DEFAULT_BRANCH",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/environment/SUPERGIT_DEFAULT_BRANCH"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SUPERGIT_MAX_COMMIT_BYTES",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/environment/SUPERGIT_MAX_COMMIT_BYTES"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SUPERGIT_MAX_FILE_BYTES",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/environment/SUPERGIT_MAX_FILE_BYTES"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SUPERGIT_PORT",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/environment/SUPERGIT_PORT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SUPERGIT_ROOT",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/environment/SUPERGIT_ROOT"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_434182fbe71faa6538575cb6ef26ea4d",
+          "name": "ui.setup",
+          "run": "make ui.setup",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/ui.setup",
+              "description": "The target recipe invokes npm."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/ui.setup",
+                  "description": "The command installs npm dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_f4cb64ba4b3e04981f7c1c2c79d82120",
+          "name": "start services",
+          "run": "docker compose up -d",
+          "directory": "release/superplane-single-host-tarball/templates",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml"
+            },
+            {
+              "kind": "convention",
+              "source": "compose",
+              "pointer": "up",
+              "description": "Docker Compose services are started with docker compose up -d."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_0318e0b9d39505667efc8d4eef391686",
+          "name": "dev.start.ephemeral",
+          "run": "make dev.start.ephemeral",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.start.ephemeral",
+              "description": "The target recipe invokes bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_051c69b00c05914cddeff2307bde8f44",
+          "name": "test.watch",
+          "run": "make test.watch",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.watch",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_052f90edc006b2f508b78d239e546bbb",
+          "name": "db.recreate.all.dangerous",
+          "run": "make db.recreate.all.dangerous",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/db.recreate.all.dangerous",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_05968d2c3ddd759e8ab72578e093acb3",
+          "name": "dev.test.is.running",
+          "run": "make dev.test.is.running",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.test.is.running",
+              "description": "The target recipe invokes test and exit."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0622b3745f37636911ae9e9608dfef28",
+          "name": "bash release/superplane-image/build.sh",
+          "run": "bash release/superplane-image/build.sh \"$REL_VERSION\" \"amd64\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-app-image.yml",
+              "pointer": "/blocks/0/task/jobs/0/commands/0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0ae490408c5aca8ccde18a9181fac58e",
+          "name": "check.models.tx.debt.baseline.update",
+          "run": "make check.models.tx.debt.baseline.update",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.models.tx.debt.baseline.update",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0ba5a81359b6107fa6e455f3e85ffedc",
+          "name": "format.js.check",
+          "run": "make format.js.check",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/format.js.check",
+              "description": "The target recipe invokes npm."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1042c7caca1a23d27f035d9f417a0211",
+          "name": "format.go",
+          "run": "make format.go",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/format.go",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1655be217992d3d0aad991ed7db0d65e",
+          "name": "image.build",
+          "run": "make image.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/image.build",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_16c9b6d14b91fba628e0afa9f67d8af3",
+          "name": "dev.db",
+          "run": "make dev.db",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.db",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1b2fe703d5b85637ac9f8906fcc11a5e",
+          "name": "check.configuration.fields",
+          "run": "make check.configuration.fields",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.configuration.fields",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.configuration.fields",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/3/commands/6"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_1f10b20a2f652ff5a3db8e6facafb968",
+          "name": "check.generated.artifacts",
+          "run": "make check.generated.artifacts",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.generated.artifacts",
+              "description": "The target recipe invokes if, then, echo, exit, and fi."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.generated.artifacts",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/3/commands/9"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_1f7d56f1f572a9c28bef9b84e52cd0aa",
+          "name": "check.coverage.go",
+          "run": "make check.coverage.go",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.coverage.go",
+              "description": "The target recipe invokes go."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_205456dcb631e71ae2e4a049004b6b83",
+          "name": "check.proto.field.numbers",
+          "run": "make check.proto.field.numbers",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.proto.field.numbers",
+              "description": "The target recipe invokes bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.proto.field.numbers",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/3/commands/5"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_22345f5e387b0c1c3d30a89e00e68b64",
+          "name": "profile.goroutines",
+          "run": "make profile.goroutines",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/profile.goroutines",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_23d8a5ef298a607d5fe69d22e180739d",
+          "name": "gen",
+          "run": "make gen",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_24160709707b81e443cb3bd10095f044",
+          "name": "check.models.tx.debt",
+          "run": "make check.models.tx.debt",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.models.tx.debt",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.models.tx.debt",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/3/commands/8"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_2c801ad82a46938582ecc26a4dc98d93",
+          "name": "check.build.app",
+          "run": "make check.build.app",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.build.app",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2e3647e2c4c40cab9963c484cd868d5c",
+          "name": "pb.gen",
+          "run": "make pb.gen",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/pb.gen",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_31dbc15e6a6e152ffa3edefb211cf99d",
+          "name": "format.js",
+          "run": "make format.js",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/format.js",
+              "description": "The target recipe invokes npm."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_33a3282f3cadbdc5ea6cc1eee9d174e5",
+          "name": "test",
+          "run": "go test ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "file",
+              "source": "pkg/agents/agent_tools/actions/canvas_test.go"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "test",
+              "description": "Go modules with test files conventionally run all package tests with go test ./...."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_34eadf16ba44355a3442fa295b6be681",
+          "name": "bash release/superplane-image/build.sh",
+          "run": "bash release/superplane-image/build.sh \"$REL_VERSION\" \"arm64\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-app-image.yml",
+              "pointer": "/blocks/1/task/jobs/0/commands/0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_357d0b1c0bdc12a258b41ffc871a2033",
+          "name": "bash release/superplane-dev-base/build.sh",
+          "run": "bash release/superplane-dev-base/build.sh \"amd64\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-dev-base-image.yml",
+              "pointer": "/blocks/0/task/jobs/0/commands/0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3babe0229c232866e3cda0487340fd30",
+          "name": "gofmt .",
+          "run": "gofmt -s -w .",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/fix-formatting.yaml",
+              "pointer": "/blocks/0/task/jobs/0/commands/4"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/fix-formatting.yaml",
+                  "pointer": "/blocks/0/task/jobs/0/commands/4",
+                  "description": "The command formats Go source with gofmt."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_5125b9d7b9b9ffa21d3b08ebd0df46bf",
+          "name": "dev.down",
+          "run": "make dev.down",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.down",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_544fccaf413df18818eb7dd775447be8",
+          "name": "dev.setup.go",
+          "run": "make dev.setup.go",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.setup.go",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_551c88ad5619e9648cc47fc35e843b81",
+          "name": "check.lint.ui.knip",
+          "run": "make check.lint.ui.knip",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.lint.ui.knip",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.lint.ui.knip",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/5/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_55c2df38788435f6714d018180ad4d27",
+          "name": "dev.logs",
+          "run": "make dev.logs",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.logs",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_586a1f49731cf03f372bec83fd08eb5b",
+          "name": "test.e2e.single",
+          "run": "make test.e2e.single",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.e2e.single",
+              "description": "The target recipe invokes bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_5c134f0fb91e546754156d2ac8522b27",
+          "name": "check.components.docs",
+          "run": "make check.components.docs",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.components.docs",
+              "description": "The target recipe invokes rm, docker, and git."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.components.docs",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/3/commands/2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_5ceb0d54ab1ec6dfcba6ec5ded58277a",
+          "name": "test.shell",
+          "run": "make test.shell",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.shell",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_5eb2c07677b28490cfcae940bf135fc2",
+          "name": "storybook",
+          "run": "make storybook",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/storybook",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_64d79336962fe247ed6a60a439fff3eb",
+          "name": "pb.gen.gateway",
+          "run": "make pb.gen.gateway",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/pb.gen.gateway",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6dd0aafb30c37991265f91c2669054e9",
+          "name": "dev.up",
+          "run": "make dev.up",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.up",
+              "description": "The target recipe invokes mkdir and docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make dev.up",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/release-app-image.yml",
+                  "pointer": "/global_job_config/prologue/commands/3"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/global_job_config/prologue/commands/4"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_6f97742d8eaffec22c88b84d9aca848e",
+          "name": "db.delete",
+          "run": "make db.delete",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/db.delete",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6fc991c34c33fd98c292b2164a6a55c8",
+          "name": "profile.cpu",
+          "run": "make profile.cpu",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/profile.cpu",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6fdf5604e1ccb73961be0c8e8224787e",
+          "name": "dev.setup",
+          "run": "make dev.setup",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.setup"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make dev.setup",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/release-app-image.yml",
+                  "pointer": "/global_job_config/prologue/commands/4"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/global_job_config/prologue/commands/5"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_712086e3b977ae1156905434aabb1a2a",
+          "name": "cli.build",
+          "run": "make cli.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/cli.build",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7545ea0ac812244a1e834a3f51cbb471",
+          "name": "check.configuration.fields.baseline.update",
+          "run": "make check.configuration.fields.baseline.update",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.configuration.fields.baseline.update",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_771e916f311f45ac53eeb33ca2ee8376",
+          "name": "vet",
+          "run": "go vet ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "vet",
+              "description": "Go modules conventionally run go vet ./... to check packages."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "vet"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_77480a2beaa605eb1c4d2f5716142279",
+          "name": "db.migration.create",
+          "run": "make db.migration.create",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/db.migration.create",
+              "description": "The target recipe invokes docker and ls."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7c537c4376353fc29aeca6683d629eb8",
+          "name": "pb.gen.models",
+          "run": "make pb.gen.models",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/pb.gen.models",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7e9d797d8093df427abeb4e6a403f2b1",
+          "name": "check.lint.ui.baseline.update",
+          "run": "make check.lint.ui.baseline.update",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.lint.ui.baseline.update",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_814795c0b80789b058c527c3855a27b9",
+          "name": "check.build.storybook",
+          "run": "make check.build.storybook",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.build.storybook",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.build.storybook",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/1/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_82198ba1643af66a9cf91533a7533cab",
+          "name": "test.coverage.baseline.update",
+          "run": "make test.coverage.baseline.update",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.coverage.baseline.update"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_83f04cafcb805a13f524eeeeae1f1872",
+          "name": "dev.logs.app",
+          "run": "make dev.logs.app",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.logs.app",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_877c31ed173b70affc954f9e211c6f45",
+          "name": "docker manifest",
+          "run": "docker manifest push \"$STANDARD_IMAGE_REPO:$REL_VERSION\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-app-image.yml",
+              "pointer": "/blocks/2/task/jobs/0/commands/1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_89ad7f36abcf465b4aa37851ae264afd",
+          "name": "tag.create.patch",
+          "run": "make tag.create.patch",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/tag.create.patch",
+              "description": "The target recipe invokes create_tag.sh."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8cbdafecf38a7131bf70f5f1ef68d30c",
+          "name": "test.coverage.check",
+          "run": "make test.coverage.check",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.coverage.check"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.coverage.check",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/1/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_8f63d9fe55816f2043b6ad74b9ce670a",
+          "name": "db.migrate",
+          "run": "make db.migrate",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/db.migrate",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_90f4f9c54c5edb83be030acdeb40d8be",
+          "name": "test",
+          "run": "make test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_912cfaeadf2d776e403b930297feadb4",
+          "name": "build",
+          "run": "go build ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "build",
+              "description": "Go modules conventionally compile packages with go build ./...."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_947dd4bc72e837f8f15e6e2327dacac7",
+          "name": "check.test.ui.shard",
+          "run": "make check.test.ui.shard",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.test.ui.shard",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.test.ui.shard INDEX=$SEMAPHORE_JOB_INDEX TOTAL=$SEMAPHORE_JOB_COUNT",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/2/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_94d8142c6d9fcae17fc0100cf3b61626",
+          "name": "openapi.client.gen",
+          "run": "make openapi.client.gen",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/openapi.client.gen",
+              "description": "The target recipe invokes rm, trap, if, then, exit, fi, and docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_976f40e38f4ed0a29fc3bb82cfd6ea66",
+          "name": "test.e2e.autoparallel",
+          "run": "make test.e2e.autoparallel",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.e2e.autoparallel",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.e2e.autoparallel INDEX=$SEMAPHORE_JOB_INDEX TOTAL=$SEMAPHORE_JOB_COUNT",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/2/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_981159e9034b2fcace31c0bcf2a26b2a",
+          "name": "bash release/superplane-dev-base/build.sh",
+          "run": "bash release/superplane-dev-base/build.sh \"arm64\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-dev-base-image.yml",
+              "pointer": "/blocks/1/task/jobs/0/commands/0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9be713bb183ea186315a5a29de4556c2",
+          "name": "dev.server.fg",
+          "run": "make dev.server.fg",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.server.fg",
+              "description": "The target recipe invokes test, exit, and docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9f5fa1079138d3dcc8cfe8968d8d00c9",
+          "name": "dev.db.console",
+          "run": "make dev.db.console",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.db.console"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a2e8ab77b771315ab202509bc449939f",
+          "name": "test.license.check",
+          "run": "make test.license.check",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.license.check",
+              "description": "The target recipe invokes bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a6bb98a9a95f9d9dac12aa4d08d3204b",
+          "name": "tag.create.minor",
+          "run": "make tag.create.minor",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/tag.create.minor",
+              "description": "The target recipe invokes create_tag.sh."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a8db609a0ebab9a6443391efd24ead8a",
+          "name": "docker manifest",
+          "run": "docker manifest create \"$DEV_BASE_IMAGE_REPO:app-latest\" \"$DEV_BASE_IMAGE_REPO:app-latest-amd64\" \"$DEV_BASE_IMAGE_REPO:app-latest-arm64\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-dev-base-image.yml",
+              "pointer": "/blocks/2/task/jobs/0/commands/0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a985e1e33b5094d1c779e8c4bd978127",
+          "name": "check.lint.ui",
+          "run": "make check.lint.ui",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.lint.ui",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.lint.ui",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/4/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_abca24ae623a8cc77c3e147de57b8f84",
+          "name": "dev.console",
+          "run": "make dev.console",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.console",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ad5134d32d953c51d692d39a162069db",
+          "name": "check.format.js",
+          "run": "make check.format.js",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.format.js",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.format.js",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/3/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_af3d9804f79dc1222bc9fdbeda98838c",
+          "name": "check.db.structure",
+          "run": "make check.db.structure",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.db.structure",
+              "description": "The target recipe invokes bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.db.structure",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/3/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_affaa173d0d96378558b7784fd7d445b",
+          "name": "dev.pr.clean.checkout",
+          "run": "make dev.pr.clean.checkout",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.pr.clean.checkout",
+              "description": "The target recipe invokes bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b103b268fad7ce0f9f7e6b1ad0f142e2",
+          "name": "image.push",
+          "run": "make image.push",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/image.push",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b15aaef37081681996962780e4c5f1f3",
+          "name": "test.e2e",
+          "run": "make test.e2e",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.e2e",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b1a5df3608318102baeb248ba080e956",
+          "name": "dev.setup.no.cache",
+          "run": "make dev.setup.no.cache",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.setup.no.cache",
+              "description": "The target recipe invokes rm and docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b625b654cac070e73128f260671ef74d",
+          "name": "db.console",
+          "run": "make db.console",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/db.console",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b9848a28f1d3d17821dff7ee42d403e6",
+          "name": "lint",
+          "run": "make lint",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/lint",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make lint",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/0/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_bc38cb86d0a564c184de6aaf8d0879c5",
+          "name": "image.auth",
+          "run": "make image.auth",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/image.auth",
+              "description": "The target recipe invokes printf and docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_bd48b35b6b736a2acd1ec0e4ee121c8c",
+          "name": "ui.start",
+          "run": "make ui.start",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/ui.start",
+              "description": "The target recipe invokes npm."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c1f2f19aeacd1518c75d8d0066205a73",
+          "name": "gen.components.docs",
+          "run": "make gen.components.docs",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen.components.docs",
+              "description": "The target recipe invokes rm and go."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c2abdc43293d9781fd8ad34ecebecd8a",
+          "name": "db.data_migration.create",
+          "run": "make db.data_migration.create",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/db.data_migration.create",
+              "description": "The target recipe invokes docker and ls."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c46fb8b8db1d3ed7b335198cae514b8a",
+          "name": "openapi.web.client.gen",
+          "run": "make openapi.web.client.gen",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/openapi.web.client.gen",
+              "description": "The target recipe invokes rm and docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cd018a8642dd0191dd8c4fec82034af9",
+          "name": "dev.server",
+          "run": "make dev.server",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.server",
+              "description": "The target recipe invokes test, exit, docker, and bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cd25424eaecdb9ee5832e755bce13bee",
+          "name": "check.format.go",
+          "run": "make check.format.go",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.format.go",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.format.go",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/3/commands/3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_d5498038f07b12af27a023a177a909ce",
+          "name": "dev.logs.otel",
+          "run": "make dev.logs.otel",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.logs.otel",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d7b95425942ca2e2dbba8c86bf47d234",
+          "name": "test.coverage",
+          "run": "make test.coverage",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.coverage",
+              "description": "The target recipe invokes docker and grep."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e44fc94b7b137a4cbdc94e0384fbecea",
+          "name": "check.db.migrations",
+          "run": "make check.db.migrations",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.db.migrations",
+              "description": "The target recipe invokes bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.db.migrations",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/3/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_e7822de64549a9c1dc219bcfe81fe984",
+          "name": "dev.setup.npm",
+          "run": "make dev.setup.npm",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.setup.npm",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e7843ca657080a0ba76686d03224641a",
+          "name": "profile.heap",
+          "run": "make profile.heap",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/profile.heap",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e997d08201b29657c4fd592348c613af",
+          "name": "docker manifest",
+          "run": "docker manifest push \"$DEV_BASE_IMAGE_REPO:app-latest\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-dev-base-image.yml",
+              "pointer": "/blocks/2/task/jobs/0/commands/1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_eb3664e099281e82cf2c9b7d1a5d67ce",
+          "name": "check.example.payloads",
+          "run": "make check.example.payloads",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.example.payloads",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.example.payloads",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/3/commands/4"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_ed81a52a5d91352b84385c1920521276",
+          "name": "docker manifest",
+          "run": "docker manifest create \"$STANDARD_IMAGE_REPO:$REL_VERSION\" \"$STANDARD_IMAGE_REPO:$REL_VERSION-amd64\" \"$STANDARD_IMAGE_REPO:$REL_VERSION-arm64\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-app-image.yml",
+              "pointer": "/blocks/2/task/jobs/0/commands/0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ef19e9acb6df857dcdb725ac0583244d",
+          "name": "check.test.ui",
+          "run": "make check.test.ui",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.test.ui",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ef4ba811b0f402603f0f9873aad11227",
+          "name": "docker manifest",
+          "run": "docker manifest inspect \"$DEV_BASE_IMAGE_REPO:app-latest\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/release-dev-base-image.yml",
+              "pointer": "/blocks/3/task/jobs/0/commands/0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f12161baa66561ea5a904a196c65aa27",
+          "name": "cli.build.m1",
+          "run": "make cli.build.m1",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/cli.build.m1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f1ef9e6267d441fd4f7211727a71ce2e",
+          "name": "db.create",
+          "run": "make db.create",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/db.create",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f3dec994be0c6c147ab123a79b613d43",
+          "name": "db.migrate.all",
+          "run": "make db.migrate.all",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/db.migrate.all"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f6261309f961cc4bf67843a35789ad1e",
+          "name": "openapi.spec.gen",
+          "run": "make openapi.spec.gen",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/openapi.spec.gen",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f6dca17a5b07d46b50b394e602037d59",
+          "name": "tidy",
+          "run": "make tidy",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/tidy",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f732d20d6094e7826a4510b2f2273749",
+          "name": "check.grpc.actions.status",
+          "run": "make check.grpc.actions.status",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.grpc.actions.status",
+              "description": "The target recipe invokes bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.grpc.actions.status",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/3/commands/7"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_f84f9e4d3ab0939595037f6bde997b63",
+          "name": "check.build.ui",
+          "run": "make check.build.ui",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.build.ui",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make check.build.ui",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/0/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_fab663b8514a74a0085c40c09971030f",
+          "name": "check.coverage.go.baseline.update",
+          "run": "make check.coverage.go.baseline.update",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/check.coverage.go.baseline.update",
+              "description": "The target recipe invokes go."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": [
+        {
+          "subject": "runtime.go.version",
+          "message": "CI pins a different go version than the repository declaration.",
+          "assertions": [
+            {
+              "value": "1.22",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/fix-formatting.yaml",
+                  "pointer": "/blocks/0/task/jobs/0/commands/0",
+                  "description": "Semaphore selects this runtime for the CI job."
+                }
+              ]
+            },
+            {
+              "value": "1.26.2",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "go.mod",
+                  "pointer": "/go"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "release/superplane-cli-npm",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-cli-npm/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-cli-npm/package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": ">=18",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-cli-npm/package.json",
+              "pointer": "/engines/node"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_0057053ac209fbd84ea0549822642e8e",
+          "name": "install dependencies",
+          "run": "npm install",
+          "directory": "release/superplane-cli-npm",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-cli-npm/package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-install"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_63c829f9150260c72e305d2cf3ad011b",
+          "name": "postinstall",
+          "run": "npm run postinstall",
+          "directory": "release/superplane-cli-npm",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-cli-npm/package.json",
+              "pointer": "/scripts/postinstall"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "release/superplane-helm-chart/helm",
+      "languages": [],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [],
+      "requirements": [
+        {
+          "kind": "tool",
+          "name": "make",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "release/superplane-helm-chart/helm/Makefile"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_41d485a2fe046094edd6cf89650c2fd2",
+          "name": "helm.create",
+          "run": "make helm.create",
+          "directory": "release/superplane-helm-chart/helm",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-helm-chart/helm/Makefile",
+              "pointer": "/targets/helm.create",
+              "description": "The target recipe invokes helm."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_972836abd8119c5adbb9470a3bfafbf4",
+          "name": "helm.cleanup",
+          "run": "make helm.cleanup",
+          "directory": "release/superplane-helm-chart/helm",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-helm-chart/helm/Makefile",
+              "pointer": "/targets/helm.cleanup",
+              "description": "The target recipe invokes rm."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "web_src",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "web_src/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "web_src/vite.config.ts"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "web_src/package-lock.json"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "web_src/eslint.config.js"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "prettier",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/prettier"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "web_src/tsconfig.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "web_src/vite.config.ts"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vitest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "web_src/vitest.config.ts"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_25742c8588737967d825d1f554659c53",
+          "name": "install dependencies",
+          "run": "npm ci",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/fix-formatting.yaml",
+              "pointer": "/blocks/0/task/jobs/0/commands/5#command=1"
+            },
+            {
+              "kind": "file",
+              "source": "web_src/package-lock.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-ci"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-ci"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm install",
+              "directory": "web_src",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/fix-formatting.yaml",
+                  "pointer": "/blocks/0/task/jobs/0/commands/5#command=1"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_0e074247763edc7a761eef3b1467ce96",
+          "name": "prettier .",
+          "run": "npx prettier --write .",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/fix-formatting.yaml",
+              "pointer": "/blocks/0/task/jobs/0/commands/6#command=1"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/fix-formatting.yaml",
+                  "pointer": "/blocks/0/task/jobs/0/commands/6#command=1",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_26894732c6dbcfa0648045bde599e9f8",
+          "name": "format",
+          "run": "npm run format",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/format"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/format",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_287d2f069a8f8613c68c39061b298163",
+          "name": "test:coverage",
+          "run": "npm run test:coverage",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/test:coverage"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/test:coverage",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_29f58b4c48bca9d36425be4b78b82144",
+          "name": "test",
+          "run": "npm test",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/test",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_2e1ac3acafe8ace0bccfad99626cac5d",
+          "name": "clean",
+          "run": "npm run clean",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3448fa0e61bcbb45ea757c72e89c283b",
+          "name": "lint:knip",
+          "run": "npm run lint:knip",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/lint:knip"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_35173c0e0443708ce8e2d3d6cdd35cdb",
+          "name": "test:ui",
+          "run": "npm run test:ui",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/test:ui"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/test:ui",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_392b55f261adecc79def7ce79955c747",
+          "name": "lint",
+          "run": "npm run lint",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/lint",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_39bfa5583c6ba8610d24ef9e88709c05",
+          "name": "generate:api",
+          "run": "npm run generate:api",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/generate:api"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4322d98c350b6cbc61e4a5ec4f82c6e1",
+          "name": "preview",
+          "run": "npm run preview",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/preview"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/preview",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_470cc49884770ee0a136ed1f0450b236",
+          "name": "build",
+          "run": "npm run build",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/build",
+                  "description": "The script invokes vite build."
+                }
+              ]
+            },
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/build",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_56892d4a7ed9d57d43dab02c891afefd",
+          "name": "dev",
+          "run": "npm run dev",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/dev",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_5d1c7dca01d385056d27a1365c063750",
+          "name": "build-storybook",
+          "run": "npm run build-storybook",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/build-storybook"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_80d536c41a20084611bb36edf521ffd7",
+          "name": "storybook",
+          "run": "npm run storybook",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/storybook"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9f80ab66c9c81aced22ff701d9f1bdf7",
+          "name": "test:run",
+          "run": "npm run test:run",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/test:run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/test:run",
+                  "description": "The script invokes Vitest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_a86a21ab46a6d99b6163d786048631a5",
+          "name": "format:check",
+          "run": "npm run format:check",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/format:check"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "web_src/package.json",
+                  "pointer": "/scripts/format:check",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_ad3d9ba77825f2f8c2ef8d853230b415",
+          "name": "lint:budget",
+          "run": "npm run lint:budget",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/lint:budget"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fc3006fdc10da4445e69acda6715229c",
+          "name": "lint:baseline:update",
+          "run": "npm run lint:baseline:update",
+          "directory": "web_src",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "web_src/package.json",
+              "pointer": "/scripts/lint:baseline:update"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

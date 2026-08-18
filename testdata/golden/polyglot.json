@@ -3,13 +3,72 @@
   "projects": [
     {
       "path": "apps/web",
-      "languages": [],
+      "languages": [
+        {
+          "name": "elixir",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "apps/web/mix.exs"
+            }
+          ]
+        }
+      ],
       "frameworks": [],
-      "packageManagers": [],
+      "packageManagers": [
+        {
+          "name": "mix",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "apps/web/mix.exs"
+            }
+          ]
+        }
+      ],
       "facts": [],
       "requirements": [],
       "preparation": [],
-      "commands": [],
+      "commands": [
+        {
+          "id": "cmd_5105afded137699aaf69170b9d2b9699",
+          "name": "compile",
+          "run": "mix compile",
+          "directory": "apps/web",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "apps/web/mix.exs"
+            },
+            {
+              "kind": "convention",
+              "source": "elixir-ecosystem",
+              "pointer": "compile",
+              "description": "Mix projects conventionally compile with mix compile."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "file",
+                  "source": "apps/web/mix.exs",
+                  "pointer": "/#compile",
+                  "description": "The command compiles a Mix project."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
       "ambiguities": [],
       "conflicts": []
     },

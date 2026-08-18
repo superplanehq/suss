@@ -1,0 +1,4673 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "package-lock.json"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "provider.make.limitation",
+          "value": "variable-expansion",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile",
+              "description": "Make functions, automatic variables, and predefined variables are not expanded."
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "prettier",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "package.json",
+              "pointer": "/prettier"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "tool",
+          "name": "docker",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile"
+            },
+            {
+              "kind": "file",
+              "source": "docker-compose.yml"
+            }
+          ]
+        },
+        {
+          "kind": "tool",
+          "name": "make",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "app",
+          "version": "latest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "db",
+          "version": "14.5",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/db/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "mailhog",
+          "version": "v1.0.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/mailhog/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "pgweb",
+          "version": "0.15.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/pgweb/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "s3mock",
+          "version": "3.9.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/s3mock/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "screenshots-server",
+          "version": "3",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/screenshots-server/image"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CERT_DB_DIR",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/8"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CERT_DOMAIN",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/7"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DB_HOST",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DB_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/2"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "DB_USERNAME",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/1"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GROUP_ID",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/user"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "NOTIFICATION_EMAIL",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/3"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "OPERATELY_DEMO_BUILDER_ALLOWED",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/6"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "OPERATELY_JS_SENTRY_DSN",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/5"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "OPERATELY_JS_SENTRY_ENABLED",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/4"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PGDATA",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/db/environment/PGDATA"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PGWEB_DATABASE_URL",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/pgweb/environment/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PORT_ACME_DEV",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/ports/4"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PORT_ACME_TEST",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/ports/5"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PORT_DEV_SERVER",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/ports/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PORT_PGWEB",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/pgweb/ports/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PORT_S3MOCK",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/s3mock/ports/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PORT_SCREENSHOTS",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/screenshots-server/ports/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PORT_STORYBOOK_SERVER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/environment/9"
+            },
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/ports/3"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PORT_TEST_SERVER",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/ports/1"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PORT_VITE_SERVER",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/ports/2"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/db/environment/POSTGRES_PASSWORD"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_USER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/db/environment/POSTGRES_USER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "USER_ID",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/app/user"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "debug",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/s3mock/environment/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "initialBuckets",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/s3mock/environment/3"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "retainFilesOnExit",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/s3mock/environment/1"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "root",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/s3mock/environment/2"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_2a49c08cb6e05e972cef3f77ec5e790e",
+          "name": "start services",
+          "run": "docker compose up -d",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "docker-compose.yml"
+            },
+            {
+              "kind": "convention",
+              "source": "compose",
+              "pointer": "up",
+              "description": "Docker Compose services are started with docker compose up -d."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9c96a8d27136c457a33b55a71e643120",
+          "name": "install dependencies",
+          "run": "npm ci",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "package-lock.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-ci"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-ci"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_010977a43ed753b320c7adabca1e1ebc",
+          "name": "test.setup.dialyzer",
+          "run": "make test.setup.dialyzer",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.setup.dialyzer"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.setup.dialyzer",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/1/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_0188951c0c65aa8853a4f4ff82395198",
+          "name": "gen.api.docs.ci",
+          "run": "make gen.api.docs.ci",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen.api.docs.ci",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_03e0a1a862cfee6c9d609a5ec742f73f",
+          "name": "publish_retries_report.sh app/testreports/retries.md",
+          "run": "./scripts/publish_retries_report.sh app/testreports/retries.md",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/semaphore.yml",
+              "pointer": "/blocks/4/task/epilogue/always/commands/1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_051c69b00c05914cddeff2307bde8f44",
+          "name": "test.watch",
+          "run": "make test.watch",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.watch",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0c319520034e2a351d2ca6a0758fbae2",
+          "name": "test.timings.extract",
+          "run": "make test.timings.extract",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.timings.extract",
+              "description": "The target recipe invokes ruby."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.timings.extract TEST_TIMINGS_SUITE=feature TEST_TIMINGS_SHARD=$SEMAPHORE_JOB_INDEX",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/4/task/jobs/1/commands/3"
+                }
+              ]
+            },
+            {
+              "context": "ci",
+              "run": "make test.timings.extract TEST_TIMINGS_SUITE=unit TEST_TIMINGS_SHARD=$SEMAPHORE_JOB_INDEX",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/4/task/jobs/0/commands/3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_113eeb8871bab9709332def4c0fa5b4d",
+          "name": "dev.shell",
+          "run": "make dev.shell",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.shell",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_11d9fd12d8694d3a009a0f3af6f1624c",
+          "name": "dev.db.create",
+          "run": "make dev.db.create",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.db.create",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1297135e68c49cb6ea20246e6fe72d8d",
+          "name": "test.db.reset",
+          "run": "make test.db.reset",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.db.reset",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_14a625b5aac621d9e639e43153d88cba",
+          "name": "test.mix.features",
+          "run": "make test.mix.features",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.mix.features",
+              "description": "The target recipe invokes if, then, else, and fi."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.mix.features MANIFEST=test-manifests/feature-$SEMAPHORE_JOB_INDEX.txt",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/4/task/jobs/1/commands/2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_163654124c26b0608881d62104f063d3",
+          "name": "devimage.build",
+          "run": "make devimage.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/devimage.build",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make devimage.build",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/devimage.yml",
+                  "pointer": "/blocks/0/task/jobs/0/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_1a65c77d2afb5aeaa46ce61a87df14cf",
+          "name": "test.setup.ee",
+          "run": "make test.setup.ee",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.setup.ee"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.setup.ee",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/2/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_1d4e06884831abee7e70685e25fe6715",
+          "name": "test.timings",
+          "run": "make test.timings",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.timings",
+              "description": "The target recipe invokes ruby."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.timings",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/0/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_1e7a552f05e532325d4c40e6a0414f49",
+          "name": "release.push.github.release",
+          "run": "make release.push.github.release",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/release.push.github.release",
+              "description": "The target recipe invokes elixir."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1e8e83abe39953cd58b365020b14f1fa",
+          "name": "publish_retries_report.sh app/testreports/retries.md",
+          "run": "./scripts/publish_retries_report.sh app/testreports/retries.md",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/semaphore.yml",
+              "pointer": "/blocks/5/task/epilogue/always/commands/1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_220c93979e1e256ee6e01c70a940a712",
+          "name": "test.app.elixir.build",
+          "run": "make test.app.elixir.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.app.elixir.build",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2320d47493f85197cb8d0d56de58da69",
+          "name": "test.icons.check",
+          "run": "make test.icons.check",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.icons.check",
+              "description": "The target recipe invokes bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.icons.check",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/0/commands/8"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_23aafbb44b1da912453fb740f7591d2f",
+          "name": "test.app.build",
+          "run": "make test.app.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.app.build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_23d8a5ef298a607d5fe69d22e180739d",
+          "name": "gen",
+          "run": "make gen",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_27c5a344576c0f382b11390ffc3c5359",
+          "name": "gen.activity.email",
+          "run": "make gen.activity.email",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen.activity.email",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_291df569f08f007024ab713568e55d38",
+          "name": "gen.api.catalog",
+          "run": "make gen.api.catalog",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen.api.catalog",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2aa825e1a452e31957848741e2a6d6be",
+          "name": "test.manifests.prepare",
+          "run": "make test.manifests.prepare",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.manifests.prepare",
+              "description": "The target recipe invokes node."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.manifests.prepare TEST_TIMINGS_INPUT=/tmp/test-timings-v1.json",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/3/task/jobs/0/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_3197ffb7c87de49f54a48720ecec0e10",
+          "name": "test.timings.merge",
+          "run": "make test.timings.merge",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.timings.merge",
+              "description": "The target recipe invokes ruby."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.timings.merge",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/7/task/jobs/0/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_345378dba896e174ca4f666ca36d26c9",
+          "name": "test.mix",
+          "run": "make test.mix",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.mix",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_362ba685a6bbe0035d9eea9d9e066599",
+          "name": "gen.page",
+          "run": "make gen.page",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen.page",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_37b5491dbffca1c1bde47a3592a517c6",
+          "name": "gen.activity",
+          "run": "make gen.activity",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen.activity",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3d902dca154edbe1b06b886cb194ded7",
+          "name": "test.setup.lint",
+          "run": "make test.setup.lint",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.setup.lint"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.setup.lint",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/0/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_3e81b736fea8f6031cdf45b4489d1108",
+          "name": "dev.db.export.schema",
+          "run": "make dev.db.export.schema",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.db.export.schema",
+              "description": "The target recipe invokes devenv, cat, pbcopy, and echo."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4141ca7d39ca86159a72339964396e87",
+          "name": "cli.test",
+          "run": "make cli.test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/cli.test"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_449edc3f7e71bbecdf91ad69e5826726",
+          "name": "turboui.storybook",
+          "run": "make turboui.storybook",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/turboui.storybook",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_52e71fb218e2d4b0d319b41f34d9db2c",
+          "name": "dev.db.rollback",
+          "run": "make dev.db.rollback",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.db.rollback",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_56aba2f33eaca4c321eb5f2e9cb5089b",
+          "name": "test.build",
+          "run": "make test.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.build"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.build",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/cache.yml",
+                  "pointer": "/blocks/0/task/jobs/0/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_5cba7d2257584ef65f6bae96167c137d",
+          "name": "test.app.elixir.deps",
+          "run": "make test.app.elixir.deps",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.app.elixir.deps",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6046e0374d70172a12f6a404af891757",
+          "name": "test.js.dead.code",
+          "run": "make test.js.dead.code",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.js.dead.code",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.js.dead.code",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/0/commands/3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_64530ee128cbdc2939782baf95ec51fd",
+          "name": "dev.db.reset",
+          "run": "make dev.db.reset",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.db.reset",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_674d3eaca66eacdc4ced9baf895d8ef3",
+          "name": "dev.build",
+          "run": "make dev.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.build",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6a365860cdad7cea5b6b5925a32db987",
+          "name": "docker pull",
+          "run": "docker pull operately/operately:latest",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/semaphore.yml",
+              "pointer": "/blocks/6/task/jobs/0/commands/0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6b73b36578a18930556f2864fbecc36a",
+          "name": "cli.node_modules",
+          "run": "make cli.node_modules",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/cli.node_modules",
+              "description": "The target recipe invokes ensure_node_modules.sh."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make cli.node_modules",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/cache.yml",
+                  "pointer": "/blocks/0/task/jobs/0/commands/2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_6dd0aafb30c37991265f91c2669054e9",
+          "name": "dev.up",
+          "run": "make dev.up",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.up",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6e016d3dbfc9a65b73cc14547531109f",
+          "name": "cli.test.unit",
+          "run": "make cli.test.unit",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/cli.test.unit",
+              "description": "The target recipe invokes npm."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make cli.test.unit",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/5/task/jobs/0/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_6f8f1085319cec7dc4c774fbef7df197",
+          "name": "test.screenshots.clear",
+          "run": "make test.screenshots.clear",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.screenshots.clear",
+              "description": "The target recipe invokes rm."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_712086e3b977ae1156905434aabb1a2a",
+          "name": "cli.build",
+          "run": "make cli.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/cli.build",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_714ba2bbb0ca6e18614d77ac8fef4a09",
+          "name": "app.node_modules",
+          "run": "make app.node_modules",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/app.node_modules",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_759fd6fe992c332ff2b2c9d28d5399e2",
+          "name": "test.assets.compile",
+          "run": "make test.assets.compile",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.assets.compile",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7a5fb4a9d5f2e0ecfcf9483eebb4e80a",
+          "name": "test.manifests",
+          "run": "make test.manifests",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.manifests",
+              "description": "The target recipe invokes node."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.manifests",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/0/commands/2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_7abfe3375f94404f518668bb7cdc3d95",
+          "name": "release.tag.docker",
+          "run": "make release.tag.docker",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/release.tag.docker",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7c9b58a3979d12729bd7191c5509f894",
+          "name": "test.js.fmt.check",
+          "run": "make test.js.fmt.check",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.js.fmt.check",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7d4d2265e906d192106d54f5e8dd35b2",
+          "name": "mcp.test.e2e",
+          "run": "make mcp.test.e2e",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/mcp.test.e2e",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make mcp.test.e2e",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/5/task/jobs/2/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_7fe988bb13420a8ee4360bab20405010",
+          "name": "test.turboui.node_modules",
+          "run": "make test.turboui.node_modules",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.turboui.node_modules"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_80387ba3278dba0a6d7d802ae501d34a",
+          "name": "turboui.build",
+          "run": "make turboui.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/turboui.build",
+              "description": "The target recipe invokes rm and devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make turboui.build",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/0/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_82142579f169f7a6941ed0de19a15353",
+          "name": "dev.run.script",
+          "run": "make dev.run.script",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.run.script",
+              "description": "The target recipe invokes cp and devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_824d7f2dd51611b79b0be171b74fcb7e",
+          "name": "test.tsc.lint",
+          "run": "make test.tsc.lint",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.tsc.lint",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.tsc.lint",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/0/commands/4"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_828b25fce4e0d83ee2a9ce916c46acde",
+          "name": "test.turboui.build",
+          "run": "make test.turboui.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.turboui.build",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_84923069576dce9ba2bdf26bbe97f926",
+          "name": "test.init",
+          "run": "make test.init",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.init",
+              "description": "The target recipe invokes mkdir."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_849ecfa9f9141f206e9bfc75869d911d",
+          "name": "test.setup.license",
+          "run": "make test.setup.license",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.setup.license"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.setup.license",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/prologue/commands/7"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_88f81641edce2b03bf12e143c2d3aad6",
+          "name": "dev.mix.console",
+          "run": "make dev.mix.console",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.mix.console",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8ccaf8091080c854863f517d6aaeebd4",
+          "name": "test.setup.turboui",
+          "run": "make test.setup.turboui",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.setup.turboui"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.setup.turboui",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/0/commands/0"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/1/commands/0"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/2/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_8d688e38080e6703e84b2ff51eef6c64",
+          "name": "test.app.js.build",
+          "run": "make test.app.js.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.app.js.build",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8e37cae2b14bea30997525cf348a09b4",
+          "name": "test.dialyzer",
+          "run": "make test.dialyzer",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.dialyzer",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.dialyzer",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/1/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_90e710767f16d9dc0057e9a00e45db14",
+          "name": "cache-fix-for-erlang",
+          "run": "./scripts/cache-fix-for-erlang",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/semaphore.yml",
+              "pointer": "/blocks/5/task/prologue/commands/7"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_90f4f9c54c5edb83be030acdeb40d8be",
+          "name": "test",
+          "run": "make test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test",
+              "description": "The target recipe invokes if, then, elif, [[, else, and fi."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_99c7c26fdf45c48ad554db85d983fdbe",
+          "name": "release.build.singlehost",
+          "run": "make release.build.singlehost",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/release.build.singlehost",
+              "description": "The target recipe invokes elixir."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9b1719497a2a3f7419e6aa651794638a",
+          "name": "test.npm",
+          "run": "make test.npm",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.npm",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.npm",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/3/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_9bdeafb4c1edea4a682978d119df5ad6",
+          "name": "dev.teardown",
+          "run": "make dev.teardown",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.teardown",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a024b52b0d0ca08f0db9ddfefc4e7016",
+          "name": "docker.build",
+          "run": "make docker.build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/docker.build",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make docker.build",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/6/task/jobs/0/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_a2e8ab77b771315ab202509bc449939f",
+          "name": "test.license.check",
+          "run": "make test.license.check",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.license.check",
+              "description": "The target recipe invokes bash."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.license.check",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/0/task/jobs/0/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_a3f6661512e3e7aed052cd890190e1fb",
+          "name": "cache-fix-for-erlang",
+          "run": "./scripts/cache-fix-for-erlang",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/semaphore.yml",
+              "pointer": "/blocks/4/task/prologue/commands/7"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a49d1a379a1fc855340ff2e1e997a7c1",
+          "name": "docker buildx",
+          "run": "docker buildx inspect --bootstrap",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/devimage.yml",
+              "pointer": "/blocks/0/task/prologue/commands/3"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a5ea6f209e3c0b5daa58edd65849b447",
+          "name": "test.elixir.warnings",
+          "run": "make test.elixir.warnings",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.elixir.warnings",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.elixir.warnings",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/0/commands/6"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_a77cef55e6d7d518e9e6851b0de84a00",
+          "name": "dev.mix.deps.clean",
+          "run": "make dev.mix.deps.clean",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.mix.deps.clean",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a8377c7a364527f88a3a5da372f8d3b1",
+          "name": "test.setup.cli_e2e",
+          "run": "make test.setup.cli_e2e",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.setup.cli_e2e"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.setup.cli_e2e",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/5/task/jobs/1/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_aaae72eb9493a18bc11345859d6116f0",
+          "name": "test.seed.env",
+          "run": "make test.seed.env",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.seed.env",
+              "description": "The target recipe invokes touch and echo."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b03cb79bed0cfdc7cf976f93883e704b",
+          "name": "test.pr.name",
+          "run": "make test.pr.name",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.pr.name",
+              "description": "The target recipe invokes ruby."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.pr.name",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/0/commands/7"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_b33e694a83939ff7f369d38172d1e62a",
+          "name": "turboui.test",
+          "run": "make turboui.test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/turboui.test",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make turboui.test",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/1/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_bcd6095aef34162ff8566fc1c4318953",
+          "name": "cache-fix-for-erlang",
+          "run": "./scripts/cache-fix-for-erlang",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/semaphore.yml",
+              "pointer": "/blocks/0/task/prologue/commands/6"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_bd3952fb83f7c7282b82563bdf8a4ff3",
+          "name": "test.setup.js",
+          "run": "make test.setup.js",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.setup.js"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.setup.js",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/3/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_c473ecbfa18857d0987113c215d8e870",
+          "name": "inject.rel.version",
+          "run": "make inject.rel.version",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/inject.rel.version",
+              "description": "The target recipe invokes sed."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c96ae96534d7f73b3fe35573e9b5f160",
+          "name": "test.db.create",
+          "run": "make test.db.create",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.db.create",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c9cddfea0b4e59516f1f10f20246e18b",
+          "name": "test.setup.features",
+          "run": "make test.setup.features",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.setup.features"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.setup.features",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/4/task/jobs/1/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_ca05a7eba3734a39b140af5194aff727",
+          "name": "gen.migration",
+          "run": "make gen.migration",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen.migration",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cb438cabf8734db984d18486a2f72e09",
+          "name": "test.db.migrate",
+          "run": "make test.db.migrate",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.db.migrate",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cbfff4a77edde3f581bdba76e1d39d8c",
+          "name": "migrate",
+          "run": "make migrate",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/migrate"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cc637680620f727e0a6bf590e04be484",
+          "name": "docker.push",
+          "run": "make docker.push",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/docker.push",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cd018a8642dd0191dd8c4fec82034af9",
+          "name": "dev.server",
+          "run": "make dev.server",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.server",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cd6ec643eec4c9463a3fd95e7d51a882",
+          "name": "turboui.node_modules",
+          "run": "make turboui.node_modules",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/turboui.node_modules",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cfeffde6747947e8c5cd37cabcfaffa1",
+          "name": "dev.mix.task",
+          "run": "make dev.mix.task",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.mix.task",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d120a16df5928fa9afd3ac9ca94117fa",
+          "name": "publish_retries_report.sh app/testreports/retries.md",
+          "run": "./scripts/publish_retries_report.sh app/testreports/retries.md",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/semaphore.yml",
+              "pointer": "/blocks/2/task/epilogue/always/commands/1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d1abee4bea9a3ef934bef770eb3b10da",
+          "name": "dev.seed.env",
+          "run": "make dev.seed.env",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.seed.env",
+              "description": "The target recipe invokes touch, mkdir, grep, echo, and printf."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d4a80820b61d6ceebc58a36b34f9b0e5",
+          "name": "cli.test.e2e",
+          "run": "make cli.test.e2e",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/cli.test.e2e",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make cli.test.e2e",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/5/task/jobs/1/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_d8f52eb41cb67251d9b58f18581f9084",
+          "name": "test.mix.unit",
+          "run": "make test.mix.unit",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.mix.unit",
+              "description": "The target recipe invokes if, then, else, and fi."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.mix.unit MANIFEST=test-manifests/unit-$SEMAPHORE_JOB_INDEX.txt",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/4/task/jobs/0/commands/2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_d9240a46ce0b0114d9f2846acecbe78c",
+          "name": "turboui.test.storybook",
+          "run": "make turboui.test.storybook",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/turboui.test.storybook",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make turboui.test.storybook",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/1/task/jobs/2/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_d9b637ad5bf16541868285a2dac03a81",
+          "name": "cache-fix-for-erlang",
+          "run": "./scripts/cache-fix-for-erlang",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/semaphore.yml",
+              "pointer": "/blocks/2/task/prologue/commands/7"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_dc6d2a609907e0b70353a4b2c658acad",
+          "name": "gen.api.docs",
+          "run": "make gen.api.docs",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen.api.docs",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_df0e6907802b7f9747c9a3a365e913ec",
+          "name": "gen.cli.catalog",
+          "run": "make gen.cli.catalog",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/gen.cli.catalog",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e1189079e93c93bba2e62b5031a40e5d",
+          "name": "test.all",
+          "run": "make test.all",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.all"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e17eec050349a074a58688d7cecb1b27",
+          "name": "bash scripts/sync_api_docs_to_website.sh",
+          "run": "bash scripts/sync_api_docs_to_website.sh",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/sync_docs.yaml",
+              "pointer": "/blocks/0/task/jobs/0/commands/1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e3778444ae3aff154b49ca251a313dcd",
+          "name": "js.fmt.fix",
+          "run": "make js.fmt.fix",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/js.fmt.fix",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e68a198df81ab0fdcf5d28f5df57b300",
+          "name": "test.ee",
+          "run": "make test.ee",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.ee",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.ee",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/2/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_e6c7b142f5ac0526ddfab484bb55776a",
+          "name": "test.setup.unit",
+          "run": "make test.setup.unit",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.setup.unit"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.setup.unit",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/4/task/jobs/0/commands/1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_e98f3aa7612279482c51dc3788b4b594",
+          "name": "test.up",
+          "run": "make test.up",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.up",
+              "description": "The target recipe invokes for, do, if, then, break, else, sleep, exit, fi, and done."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ea0e4a8fbbb186c7c74a281e66cef0e8",
+          "name": "test.setup.mcp_e2e",
+          "run": "make test.setup.mcp_e2e",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.setup.mcp_e2e"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.setup.mcp_e2e",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/5/task/jobs/2/commands/0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_ece982117c4c1678845a09ff37827298",
+          "name": "dev.db.migrate",
+          "run": "make dev.db.migrate",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/dev.db.migrate",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ee07fa6e22eb0d301cb82409139e39e4",
+          "name": "build_retries_report.sh /tmp/retries-md",
+          "run": "./scripts/build_retries_report.sh /tmp/retries-md > /tmp/REPORT.md",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/semaphore.yml",
+              "pointer": "/after_pipeline/task/jobs/0/commands/4"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f0599d94cc99477f7ae3b543450a1125",
+          "name": "test.app.node_modules",
+          "run": "make test.app.node_modules",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.app.node_modules"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_f7523b95eaa55967b405175282c29a4a",
+          "name": "test.cli.catalog.sync",
+          "run": "make test.cli.catalog.sync",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test.cli.catalog.sync",
+              "description": "The target recipe invokes devenv."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make test.cli.catalog.sync",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".semaphore/semaphore.yml",
+                  "pointer": "/blocks/2/task/jobs/0/commands/5"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_ffd8cc2dcc9e20a26729b6f0daebb745",
+          "name": "docker buildx",
+          "run": "docker buildx create --name devimage-builder --driver docker-container --use",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".semaphore/devimage.yml",
+              "pointer": "/blocks/0/task/prologue/commands/2"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "app",
+      "languages": [
+        {
+          "name": "elixir",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs"
+            }
+          ]
+        },
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "app/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "phoenix",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs",
+              "pointer": "/deps/phoenix",
+              "description": "The Mix dependency list includes Phoenix."
+            }
+          ]
+        },
+        {
+          "name": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "app/vite.config.mjs"
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "mix",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs"
+            }
+          ]
+        },
+        {
+          "name": "npm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "app/package-lock.json"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "dialyzer",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "app/mix.exs",
+              "pointer": "/project/dialyzer"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "jest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "app/jest.config.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "prettier",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/package.json",
+              "pointer": "/prettier"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "app/tsconfig.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "vite",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "app/vite.config.mjs"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "elixir",
+          "version": "1.18.1-otp-27",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".tool-versions",
+              "pointer": "/elixir"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "elixir",
+          "version": "~> 1.18",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs",
+              "pointer": "/project/elixir"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "erlang",
+          "version": "27.2",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".tool-versions",
+              "pointer": "/erlang"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_ef608549198c942018ae3d91e6dda72a",
+          "name": "setup",
+          "run": "mix setup",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs",
+              "pointer": "/aliases/setup"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "app/mix.exs",
+                  "pointer": "/aliases/setup",
+                  "description": "The command fetches Mix dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_04b0601cf4e0c6cfed7c8d5d27e0267a",
+          "name": "junit.merge_reports",
+          "run": "mix junit.merge_reports",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/junit.merge_reports.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0c0b89154f7f2106fe34596c3e2b1e24",
+          "name": "knip",
+          "run": "npm run knip",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/package.json",
+              "pointer": "/scripts/knip"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_15fbd79f44baa6b75234cc6b2d827d75",
+          "name": "preview",
+          "run": "npm run preview",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/package.json",
+              "pointer": "/scripts/preview"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "app/package.json",
+                  "pointer": "/scripts/preview",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_1883eb1b00f496688d5bbdec4c226dec",
+          "name": "test",
+          "run": "npm test",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "app/package.json",
+                  "pointer": "/scripts/test",
+                  "description": "The script invokes Jest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_288687048f3c38322a879e770b3b9609",
+          "name": "operately.gen.api.query",
+          "run": "mix operately.gen.api.query",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.api.query.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_303da80a222bb3e720a7c094a1637a78",
+          "name": "assets.build",
+          "run": "mix assets.build",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs",
+              "pointer": "/aliases/assets.build"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_345de132a37a19ba8489684cb448f6af",
+          "name": "dev",
+          "run": "npm run dev",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "app/package.json",
+                  "pointer": "/scripts/dev",
+                  "description": "The script invokes the Vite development server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_383c7e033eecade7ce6ce0b5598a181a",
+          "name": "assets.setup",
+          "run": "mix assets.setup",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs",
+              "pointer": "/aliases/assets.setup"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3c799182ba1d638a271b03e05a742f21",
+          "name": "operately.gen.typescript.api",
+          "run": "mix operately.gen.typescript.api",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.typescript.api.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3f104596406e1f9b61b5ac610ab6c23d",
+          "name": "operation.gen_activity_item",
+          "run": "mix operation.gen_activity_item",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operation/gen_activity_item.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_41cb7631b9f3f25875de7eff95d9b973",
+          "name": "build",
+          "run": "npm run build",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "app/package.json",
+                  "pointer": "/scripts/build",
+                  "description": "The script invokes vite build."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_45a56b568143a50b9630a9e37f59da1a",
+          "name": "ecto.reset",
+          "run": "mix ecto.reset",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs",
+              "pointer": "/aliases/ecto.reset"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_53bbf1bb960dc10070cf154e90937e07",
+          "name": "operation.gen_api_mutation",
+          "run": "mix operation.gen_api_mutation",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operation/gen_api_mutation.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_5f57e4974beaec8af86805f25d14fa37",
+          "name": "operately.gen.api.catalog",
+          "run": "mix operately.gen.api.catalog",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.api.catalog.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_78455125cdaf1a3e180d513c36cb3885",
+          "name": "operately.gen.api.docs",
+          "run": "mix operately.gen.api.docs",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.api.docs.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_797e2f6765aac8a522d4a3cdbf31aa8b",
+          "name": "operately.utils.string_utils",
+          "run": "mix operately.utils.string_utils",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/utils/string_utils.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7ae748c6212371a7bd73034ad467b3b3",
+          "name": "tests_with_retries",
+          "run": "mix tests_with_retries",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/tests_with_retries.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7cefc3956d2c2cb4f6fa36336641eb53",
+          "name": "test",
+          "run": "mix test",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs",
+              "pointer": "/aliases/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "app/mix.exs",
+                  "pointer": "/aliases/test",
+                  "description": "The command compiles a Mix project."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "app/mix.exs",
+                  "pointer": "/aliases/test",
+                  "description": "The command runs ExUnit tests through Mix."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_87c92b4abfaf63ff48514b2ddf389d24",
+          "name": "operation.gen_activity_schema",
+          "run": "mix operation.gen_activity_schema",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operation/gen_activity_schema.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_99ef8d36050b247e2951e73c0eec7d6c",
+          "name": "assets.deploy",
+          "run": "mix assets.deploy",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs",
+              "pointer": "/aliases/assets.deploy"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9aa4aa6de6c2b693690586f450944a59",
+          "name": "operately.gen.page.index",
+          "run": "mix operately.gen.page.index",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.page.index.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9d8394cd118225502c0745f09707ff45",
+          "name": "operately.gen.page",
+          "run": "mix operately.gen.page",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.page.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_abe5f310c03d5f1ae7c359484fe622ab",
+          "name": "operately.gen.activity",
+          "run": "mix operately.gen.activity",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.activity.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ad0e6319774360e754eab3bde9e5a212",
+          "name": "operately.gen.api.mutation",
+          "run": "mix operately.gen.api.mutation",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.api.mutation.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b0ea9148309ad3ac0b93bd65fe766e40",
+          "name": "operation.gen_serializer",
+          "run": "mix operation.gen_serializer",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operation/gen_serializer.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b109438d9e44a218eb6612ded5904699",
+          "name": "operately.gen.turboui.api_types",
+          "run": "mix operately.gen.turboui.api_types",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.turboui.api_types.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b7da0760670c4fcfc362fc84f597b8f2",
+          "name": "operation.gen_api_types",
+          "run": "mix operation.gen_api_types",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operation/gen_api_types.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b8b48a69221157e114eab710966b6985",
+          "name": "operately.gen.notification.items.index",
+          "run": "mix operately.gen.notification.items.index",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.notification.items.index.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ba9bbeaad8d8811d6c72c7bbd299c8f0",
+          "name": "operation.gen_operation_module",
+          "run": "mix operation.gen_operation_module",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operation/gen_operation_module.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c197c44104c6949eec2af999d9d93bc0",
+          "name": "ecto.setup",
+          "run": "mix ecto.setup",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/mix.exs",
+              "pointer": "/aliases/ecto.setup"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c461228baaeb5fb7c9d6549b69210d13",
+          "name": "operately.gen.activity.email",
+          "run": "mix operately.gen.activity.email",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.activity.email.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c80ca3908f90e1e559b8cffbf3b633ba",
+          "name": "operation.gen_notification_handler",
+          "run": "mix operation.gen_notification_handler",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operation/gen_notification_handler.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d9d03efb26798f84eb08cdce01ffdcee",
+          "name": "prettier:check",
+          "run": "npm run prettier:check",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/package.json",
+              "pointer": "/scripts/prettier:check"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "app/package.json",
+                  "pointer": "/scripts/prettier:check",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_e0af8a188e9147378454e916185ab11e",
+          "name": "operately.gen.operation",
+          "run": "mix operately.gen.operation",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operately.gen.operation.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e241587d9deddb5e4f7eae25624869f5",
+          "name": "build:prod",
+          "run": "npm run build:prod",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/package.json",
+              "pointer": "/scripts/build:prod"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "app/package.json",
+                  "pointer": "/scripts/build:prod",
+                  "description": "The script invokes vite build."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_ff8db6dc6b062af67a31e52f138f20e8",
+          "name": "operation.gen_email_handler",
+          "run": "mix operation.gen_email_handler",
+          "directory": "app",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "app/lib/mix/tasks/operation/gen_email_handler.ex",
+              "pointer": "/module"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "cli",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "cli/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "cli/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "cli/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "cli/package-lock.json"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "cli/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": ">=18",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "cli/package.json",
+              "pointer": "/engines/node"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_389b400655294e837d0a2765788c414e",
+          "name": "install dependencies",
+          "run": "npm ci",
+          "directory": "cli",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "cli/package-lock.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-ci"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-ci"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_23d6790205573d3b5c3aa9c6a25f1ebe",
+          "name": "gen:commands",
+          "run": "npm run gen:commands",
+          "directory": "cli",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "cli/package.json",
+              "pointer": "/scripts/gen:commands"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3f5000f74ee8585e8f95fad33843a1aa",
+          "name": "check:catalog",
+          "run": "npm run check:catalog",
+          "directory": "cli",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "cli/package.json",
+              "pointer": "/scripts/check:catalog"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_759df8e98ff39d5afa182457756ec5f0",
+          "name": "build",
+          "run": "npm run build",
+          "directory": "cli",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "cli/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "cli/package.json",
+                  "pointer": "/scripts/build",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_7f14635451d3c55475d191570318b52d",
+          "name": "test",
+          "run": "npm test",
+          "directory": "cli",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "cli/package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_dfdd3e65770ce3aa794e754773fb51f8",
+          "name": "dev",
+          "run": "npm run dev",
+          "directory": "cli",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "cli/package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "cli/package.json",
+                  "pointer": "/scripts/dev",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_f6c7b052e7978978607226a22afc60f9",
+          "name": "gen:catalog",
+          "run": "npm run gen:catalog",
+          "directory": "cli",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "cli/package.json",
+              "pointer": "/scripts/gen:catalog"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "turboui",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "turboui/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "turboui/package-lock.json"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "jest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "turboui/jest.config.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "turboui/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_1deec6233e6ab2354f840b399e00df71",
+          "name": "install dependencies",
+          "run": "npm ci",
+          "directory": "turboui",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "turboui/package-lock.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-ci"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-ci"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_11a0c1324112799ce5de1fcc43e91420",
+          "name": "test-storybook",
+          "run": "npm run test-storybook",
+          "directory": "turboui",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json",
+              "pointer": "/scripts/test-storybook"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2255b2e6d65b86877edebce24eaf0d30",
+          "name": "build-storybook",
+          "run": "npm run build-storybook",
+          "directory": "turboui",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json",
+              "pointer": "/scripts/build-storybook"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_70a297c846e2a93d0d6351634c47602d",
+          "name": "dev",
+          "run": "npm run dev",
+          "directory": "turboui",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json",
+              "pointer": "/scripts/dev"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "turboui/package.json",
+                  "pointer": "/scripts/dev",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_822a4f74e06fd17f80372ed7b807221f",
+          "name": "clean",
+          "run": "npm run clean",
+          "directory": "turboui",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json",
+              "pointer": "/scripts/clean"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9cbb60a93b02959e32eff73d2bd1d0b0",
+          "name": "storybook",
+          "run": "npm run storybook",
+          "directory": "turboui",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json",
+              "pointer": "/scripts/storybook"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ae5fe2325b29073393caac1719720744",
+          "name": "test",
+          "run": "npm test",
+          "directory": "turboui",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "turboui/package.json",
+                  "pointer": "/scripts/test",
+                  "description": "The script invokes Jest."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_e0d8c2d157e4b8313b088e1dfe7a2c73",
+          "name": "test-storybook:ci",
+          "run": "npm run test-storybook:ci",
+          "directory": "turboui",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json",
+              "pointer": "/scripts/test-storybook:ci"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e0e7c2e415d942cac457c536f3571279",
+          "name": "build",
+          "run": "npm run build",
+          "directory": "turboui",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json",
+              "pointer": "/scripts/build"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "turboui/package.json",
+                  "pointer": "/scripts/build",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_f9c8e7863ad4775bff2c379db032c6e7",
+          "name": "lint",
+          "run": "npm run lint",
+          "directory": "turboui",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "turboui/package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "turboui/package.json",
+                  "pointer": "/scripts/lint",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

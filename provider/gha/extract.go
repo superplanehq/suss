@@ -134,6 +134,9 @@ func usesFindings(ctx provider.Context, source, dir, stepPointer string, step st
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "node", step.With, matrix, []string{"node-version", "node-version-file"})
 	case "actions/setup-go":
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "go", step.With, matrix, []string{"go-version", "go-version-file"})
+	case "erlef/setup-beam":
+		findings := setupRuntimeFindings(ctx, source, dir, stepPointer, "elixir", step.With, matrix, []string{"elixir-version"})
+		return append(findings, setupRuntimeFindings(ctx, source, dir, stepPointer, "erlang", step.With, matrix, []string{"otp-version"})...)
 	case "golangci/golangci-lint-action":
 		return golangciActionFindings(source, dir, stepPointer, step)
 	default:
@@ -162,9 +165,12 @@ func golangciActionFindings(source, dir, stepPointer string, step step) []plan.F
 }
 
 func setupRuntimeFindings(ctx provider.Context, source, dir, stepPointer, runtime string, with stringMap, matrix map[string][]string, keys []string) []plan.Finding {
-	versionKey, fileKey := keys[0], keys[1]
-	if file := strings.TrimSpace(with[fileKey]); file != "" {
-		return versionFileFindings(ctx, source, dir, stepPointer, runtime, fileKey, file)
+	versionKey := keys[0]
+	if len(keys) > 1 {
+		fileKey := keys[1]
+		if file := strings.TrimSpace(with[fileKey]); file != "" {
+			return versionFileFindings(ctx, source, dir, stepPointer, runtime, fileKey, file)
+		}
 	}
 
 	raw := strings.TrimSpace(with[versionKey])
