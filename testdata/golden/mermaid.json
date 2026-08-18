@@ -291,6 +291,51 @@
               "pointer": "/packageManager"
             },
             {
+              "kind": "invocation",
+              "source": ".github/workflows/autofix.yml",
+              "pointer": "/jobs/autofix/steps/3/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build-docs.yml",
+              "pointer": "/jobs/build-docs/steps/3/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/e2e.yml",
+              "pointer": "/jobs/argos-batch/steps/3/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/lint/steps/3/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish-docs.yml",
+              "pointer": "/jobs/build-docs/steps/3/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview-publish.yml",
+              "pointer": "/jobs/publish-preview/steps/3/run#command=1"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release-preview.yml",
+              "pointer": "/jobs/preview/steps/3/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/3/run#command=0"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/unit-test/steps/3/run"
+            },
+            {
               "kind": "file",
               "source": "pnpm-lock.yaml"
             },

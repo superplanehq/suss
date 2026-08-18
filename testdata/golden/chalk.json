@@ -79,6 +79,11 @@
           "confidence": "high",
           "evidence": [
             {
+              "kind": "invocation",
+              "source": ".github/workflows/main.yml",
+              "pointer": "/jobs/test/steps/2/run"
+            },
+            {
               "kind": "file",
               "source": ".npmrc",
               "description": "The file sets npm's package-lock option to false."

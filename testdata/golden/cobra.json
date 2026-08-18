@@ -1,0 +1,294 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "go",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "go.mod",
+              "pointer": "/module"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [
+        {
+          "name": "ci.matrix.go",
+          "value": "^1.22",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/golangci-lint/steps/1/with/go-version"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "golangci-lint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": ".golangci.yml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "go",
+          "version": "1.15",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "go.mod",
+              "pointer": "/go"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GO111MODULE",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/env/GO111MODULE"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_3c33ddd10248e94f1b03d746409efbc8",
+          "name": "download dependencies",
+          "run": "go mod download",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "dependencies",
+              "description": "Go modules conventionally download dependencies with go mod download."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_33a3282f3cadbdc5ea6cc1eee9d174e5",
+          "name": "test",
+          "run": "go test ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "active_help_test.go"
+            },
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "test",
+              "description": "Go modules with test files conventionally run all package tests with go test ./...."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_394b7afee19c82ee3cecb66f7a6363f6",
+          "name": "golangci-lint run",
+          "run": "golangci-lint run --verbose",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/golangci-lint/steps/2/uses"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test.yml",
+                  "pointer": "/jobs/golangci-lint/steps/2/uses",
+                  "description": "The command runs golangci-lint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_771e916f311f45ac53eeb33ca2ee8376",
+          "name": "vet",
+          "run": "go vet ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "vet",
+              "description": "Go modules conventionally run go vet ./... to check packages."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "vet"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_912cfaeadf2d776e403b930297feadb4",
+          "name": "build",
+          "run": "go build ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "build",
+              "description": "Go modules conventionally compile packages with go build ./...."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_ecc155bdce05cb726c80a0719e005f3d",
+          "name": "make richtest",
+          "run": "RICHGO_FORCE_COLOR=$RICHGO_FORCE_COLOR PATH=$PATH make richtest",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/test-unix/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ff4a9eb1fb3626cf293f9d4acafe13dc",
+          "name": "make richtest",
+          "run": "RICHGO_FORCE_COLOR=$RICHGO_FORCE_COLOR PATH=$PATH make richtest",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/test-win/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

@@ -70,7 +70,7 @@ func TestFindProjectRootsSkipsSymlinkedDirectories(t *testing.T) {
 	}
 }
 
-func TestDetectFillsANodeProjectAndLeavesUncoveredRootsEmpty(t *testing.T) {
+func TestDetectFillsNodeAndGoProjectRoots(t *testing.T) {
 	t.Parallel()
 
 	root := t.TempDir()
@@ -87,8 +87,14 @@ func TestDetectFillsANodeProjectAndLeavesUncoveredRootsEmpty(t *testing.T) {
 	}
 
 	backend := document.Projects[0]
-	if backend.Path != "backend" || len(backend.Languages) != 0 || len(backend.Commands) != 0 {
-		t.Fatalf("backend = %+v, want an uncovered Go project root", backend)
+	if backend.Path != "backend" {
+		t.Fatalf("backend path = %q", backend.Path)
+	}
+	if len(backend.Languages) != 1 || backend.Languages[0].Name != "go" {
+		t.Fatalf("backend languages = %+v, want go", backend.Languages)
+	}
+	if len(backend.Commands) == 0 || len(backend.Preparation) == 0 {
+		t.Fatalf("backend = %+v, want Go inferred commands", backend)
 	}
 
 	frontend := document.Projects[1]

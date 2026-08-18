@@ -31,6 +31,9 @@ type corpusEntry struct {
 var corpus = []corpusEntry{
 	{name: "empty", fixture: "empty", golden: "empty.json"},
 	{name: "go-root", fixture: "go-root", golden: "go-root.json"},
+	{name: "go-simple", fixture: "go-simple", golden: "go-simple.json"},
+	{name: "go-workspace", fixture: "go-workspace", golden: "go-workspace.json"},
+	{name: "go-gha", fixture: "go-gha", golden: "go-gha.json"},
 	{name: "polyglot", fixture: "polyglot", golden: "polyglot.json"},
 	{name: "nested-ignored", fixture: "nested-ignored", golden: "nested-ignored.json"},
 	{name: "node-simple", fixture: "node-simple", golden: "node-simple.json"},
@@ -56,6 +59,18 @@ var corpus = []corpusEntry{
 		gitURL: "https://github.com/mermaid-js/mermaid.git",
 		commit: "9ac963518542234a23a6bd2880d74391aaa06236",
 		golden: "mermaid.json",
+	},
+	{
+		name:   "cobra",
+		gitURL: "https://github.com/spf13/cobra.git",
+		commit: "adbc8813901bba65827259daa8e22ff94ec1f30e",
+		golden: "cobra.json",
+	},
+	{
+		name:   "caddy",
+		gitURL: "https://github.com/caddyserver/caddy.git",
+		commit: "0bbda5c728e7694ba929aa4fa0c549f1387d3a3f",
+		golden: "caddy.json",
 	},
 }
 

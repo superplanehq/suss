@@ -107,6 +107,11 @@
               "pointer": "/packageManager"
             },
             {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/2/run"
+            },
+            {
               "kind": "file",
               "source": "package-lock.json"
             },

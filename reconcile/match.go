@@ -71,10 +71,21 @@ func classifyPair(observed, existing plan.Command) matchKind {
 	if observedInv.Executable == "" || observedInv.Executable != existingInv.Executable {
 		return matchNone
 	}
-	if hasArgsPrefix(existingInv.Args, observedInv.Args) {
+	if hasArgsPrefix(positionalArgs(existingInv.Args), positionalArgs(observedInv.Args)) {
 		return matchVariant
 	}
 	return matchNone
+}
+
+func positionalArgs(args []string) []string {
+	out := make([]string, 0, len(args))
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		out = append(out, arg)
+	}
+	return out
 }
 
 func classifyManagerPair(observed, existing knowledge.ManagerInvocation) matchKind {

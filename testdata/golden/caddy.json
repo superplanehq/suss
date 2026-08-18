@@ -1,0 +1,701 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "go",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "go.mod",
+              "pointer": "/module"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [
+        {
+          "name": "ci.matrix.go",
+          "value": "~1.26",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/goreleaser-check/steps/3/with/go-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/golangci/steps/2/with/go-version"
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.go",
+          "value": "~1.26.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/2/with/go-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/cross-build.yml",
+              "pointer": "/jobs/build/steps/2/with/go-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/2/with/go-version"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "golangci-lint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": ".golangci.yml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "go",
+          "version": "1.25.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "go.mod",
+              "pointer": "/go"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CGO_ENABLED",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/cross-build.yml",
+              "pointer": "/env/CGO_ENABLED"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CI_USER",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/s390x-test/steps/2/env/CI_USER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CLOUDSMITH_API_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/13/env/CLOUDSMITH_API_KEY"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/14/env/CLOUDSMITH_API_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GEMFURY_PUSH_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/12/env/GEMFURY_PUSH_TOKEN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GOFLAGS",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/env/GOFLAGS"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/cross-build.yml",
+              "pointer": "/env/GOFLAGS"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GOTOOLCHAIN",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/env/GOTOOLCHAIN"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/cross-build.yml",
+              "pointer": "/env/GOTOOLCHAIN"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/env/GOTOOLCHAIN"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/env/GOTOOLCHAIN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MAINTAINER_LOGINS",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/auto-release-pr.yml",
+              "pointer": "/jobs/check-approvals/steps/0/env/MAINTAINER_LOGINS"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SSH_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/s390x-test/steps/2/env/SSH_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "signing_keys",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/verify-tag/steps/4/env/signing_keys"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_3c33ddd10248e94f1b03d746409efbc8",
+          "name": "download dependencies",
+          "run": "go mod download",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "dependencies",
+              "description": "Go modules conventionally download dependencies with go mod download."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_077353972b64955d089502a5a9244df4",
+          "name": "cloudsmith push",
+          "run": "cloudsmith push deb caddy/testing/any-distro/any-version $filename",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/14/run#command=10"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0bcbc74707d6c107f6f0dc3d0a21d9b7",
+          "name": "go get",
+          "run": "go get -v -t -d ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_171533b727401ff6e81e3c8c0fb699ce",
+          "name": "xcaddy version",
+          "run": "xcaddy version",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/10/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2700d85367b9a85cce9ea52ab0f2a043",
+          "name": "xcaddy version",
+          "run": "xcaddy version",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/goreleaser-check/steps/4/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_33a3282f3cadbdc5ea6cc1eee9d174e5",
+          "name": "test",
+          "run": "go test ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/8/run"
+            },
+            {
+              "kind": "file",
+              "source": "admin_test.go"
+            },
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "test",
+              "description": "Go modules with test files conventionally run all package tests with go test ./...."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "go test -coverprofile=\"cover-profile.out\" -short -race ./...",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/8/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_6ad95dd99ec53bfac6f97c2f66b51697",
+          "name": "pip install",
+          "run": "pip install --upgrade cloudsmith-cli",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_771e916f311f45ac53eeb33ca2ee8376",
+          "name": "vet",
+          "run": "go vet ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "vet",
+              "description": "Go modules conventionally run go vet ./... to check packages."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "vet"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_912cfaeadf2d776e403b930297feadb4",
+          "name": "build",
+          "run": "go build ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "build",
+              "description": "Go modules conventionally compile packages with go build ./...."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_9b1fb530f0a8d6ca3ecf17e04730a696",
+          "name": "go build",
+          "run": "go build -trimpath -ldflags=\"-w -s\" -v",
+          "directory": "cmd/caddy",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/5/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/5/run",
+                  "description": "The command builds Go packages."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_ada3884727e1747f3c234acb287b67f5",
+          "name": "caddy stop",
+          "run": "./caddy stop",
+          "directory": "cmd/caddy",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/6/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b623e6d572e4421b8259e3232235c51b",
+          "name": "cosign version",
+          "run": "cosign version",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/7/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b780a92e2fa791de769e85101c10d219",
+          "name": "cloudsmith push",
+          "run": "cloudsmith push deb caddy/testing/any-distro/any-version $filename",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/13/run#command=8"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d932b23aafba3664f86bccceb9d54d47",
+          "name": "syft version",
+          "run": "syft version",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/9/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e2beacf6d98b8fca3cee382eaa82242d",
+          "name": "golangci-lint run",
+          "run": "golangci-lint run --timeout 10m",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/golangci/steps/3/uses"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint.yml",
+                  "pointer": "/jobs/golangci/steps/3/uses",
+                  "description": "The command runs golangci-lint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_e375194c2f97f4fd69f16b7808c84272",
+          "name": "cloudsmith push",
+          "run": "cloudsmith push deb caddy/stable/any-distro/any-version $filename",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/release/steps/14/run#command=8"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e8d82f06ca60c79deb39291320100742",
+          "name": "caddy start",
+          "run": "./caddy start",
+          "directory": "cmd/caddy",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/6/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fbdc7ca47f9801bdae0409187149806f",
+          "name": "go build",
+          "run": "go build -trimpath -o caddy-\"$GOOS\"-$GOARCH 2> /dev/null",
+          "directory": "cmd/caddy",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/cross-build.yml",
+              "pointer": "/jobs/build/steps/4/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/cross-build.yml",
+                  "pointer": "/jobs/build/steps/4/run",
+                  "description": "The command builds Go packages."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

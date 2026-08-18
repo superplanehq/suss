@@ -18,12 +18,24 @@
       ],
       "frameworks": [],
       "packageManagers": [],
-      "facts": [],
+      "facts": [
+        {
+          "name": "workspace.orchestrator",
+          "value": "go",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "go.work"
+            }
+          ]
+        }
+      ],
       "requirements": [
         {
           "kind": "runtime",
           "name": "go",
-          "version": "1.26",
+          "version": "1.22",
           "confidence": "high",
           "evidence": [
             {
@@ -40,7 +52,7 @@
           "name": "download dependencies",
           "run": "go mod download",
           "directory": ".",
-          "scope": "project",
+          "scope": "repository",
           "origin": "inferred",
           "confidence": "medium",
           "evidence": [
@@ -77,7 +89,7 @@
           "name": "vet",
           "run": "go vet ./...",
           "directory": ".",
-          "scope": "project",
+          "scope": "repository",
           "origin": "inferred",
           "confidence": "medium",
           "evidence": [
@@ -112,7 +124,7 @@
           "name": "build",
           "run": "go build ./...",
           "directory": ".",
-          "scope": "project",
+          "scope": "repository",
           "origin": "inferred",
           "confidence": "medium",
           "evidence": [

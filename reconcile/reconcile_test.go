@@ -51,6 +51,34 @@ func TestApplyLinksInstallFlagDifferencesAsVariants(t *testing.T) {
 	}
 }
 
+func TestApplyLinksGoTestFlagsAsAVariantAndRaisesConfidence(t *testing.T) {
+	t.Parallel()
+
+	inferred := command(t, "go", ".", "/#test", "test", "go test ./...", plan.CommandInferred, plan.CapabilityTestRun)
+	inferred.Confidence = plan.ConfidenceMedium
+	observed := command(t, "github-actions", ".", "/jobs/test/steps/2/run", "go test", "go test -v -short -race ./...", plan.CommandObserved, plan.CapabilityTestRun)
+	observed.Evidence = []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/test/steps/2/run"}}
+
+	root := plan.NewProjectPlan(".")
+	root.Commands = []plan.Command{inferred}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{plan.CommandFinding{Command: observed}},
+	})
+
+	if len(got[0].Commands) != 1 {
+		t.Fatalf("commands = %+v, want the inferred command only", got[0].Commands)
+	}
+	if got[0].Commands[0].Confidence != plan.ConfidenceHigh {
+		t.Fatalf("confidence = %s, want high after CI confirmation", got[0].Commands[0].Confidence)
+	}
+	if len(got[0].Commands[0].Variants) != 1 || got[0].Commands[0].Variants[0].Run != "go test -v -short -race ./..." {
+		t.Fatalf("variants = %+v, want go test -v -short -race ./...", got[0].Commands[0].Variants)
+	}
+	if len(got[0].Commands[0].Evidence) < 2 {
+		t.Fatalf("evidence = %+v, want convention plus CI invocation", got[0].Commands[0].Evidence)
+	}
+}
+
 func TestApplyKeepsUnrelatedCICommandsObserved(t *testing.T) {
 	t.Parallel()
 

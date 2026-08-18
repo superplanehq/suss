@@ -106,6 +106,41 @@ func IsGlobalInstall(inv Invocation) bool {
 	return isGlobalInstall(inv.Args)
 }
 
+// IsRemoteGoInstall reports whether inv installs a remote Go module
+// (`go install github.com/foo/bar@latest`). Those install a CI helper, not
+// a repository package. `go install ./cmd/foo` is kept.
+func IsRemoteGoInstall(inv Invocation) bool {
+	if inv.Executable != "go" || len(inv.Args) < 2 || inv.Args[0] != "install" {
+		return false
+	}
+	for _, arg := range inv.Args[1:] {
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		pkg, _, _ := strings.Cut(arg, "@")
+		if strings.HasPrefix(pkg, ".") || strings.HasPrefix(pkg, "/") {
+			return false
+		}
+		first, _, _ := strings.Cut(pkg, "/")
+		return strings.Contains(first, ".")
+	}
+	return false
+}
+
+// IsGoPlumbing reports whether inv is a Go diagnostic (`go env`, `go version`,
+// `go help`) rather than a repository build or test command.
+func IsGoPlumbing(inv Invocation) bool {
+	if inv.Executable != "go" || len(inv.Args) == 0 {
+		return false
+	}
+	switch inv.Args[0] {
+	case "env", "version", "help":
+		return true
+	default:
+		return false
+	}
+}
+
 func isGlobalInstall(args []string) bool {
 	for _, arg := range args {
 		if arg == "--" {
