@@ -1,6 +1,7 @@
 // Package makefile detects GNU Make targets and uses recipe text as evidence.
 // Variable expansion is limited to simple $(VAR) / ${VAR} assignments;
-// functions, includes, and automatic variables are recorded as limitations.
+// functions, includes, automatic variables, and shell assignments (`!=`)
+// are recorded as limitations.
 package makefile
 
 import (

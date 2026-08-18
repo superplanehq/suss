@@ -8,12 +8,13 @@ import (
 )
 
 type makefile struct {
-	targets     []makeTarget
-	limitations []string
-	usesDocker  bool
-	limitSeen   map[string]struct{}
-	vars        map[string]string
-	rawVars     map[string]string
+	targets       []makeTarget
+	limitations   []string
+	usesDocker    bool
+	limitSeen     map[string]struct{}
+	vars          map[string]string
+	rawVars       map[string]string
+	shellAssigned map[string]struct{}
 }
 
 type makeTarget struct {
@@ -31,9 +32,10 @@ const (
 
 func parseMakefile(contents string) makefile {
 	parsed := makefile{
-		limitSeen: make(map[string]struct{}),
-		vars:      make(map[string]string),
-		rawVars:   make(map[string]string),
+		limitSeen:     make(map[string]struct{}),
+		vars:          make(map[string]string),
+		rawVars:       make(map[string]string),
+		shellAssigned: make(map[string]struct{}),
 	}
 	lines := joinContinuations(strings.Split(contents, "\n"))
 
@@ -139,15 +141,17 @@ func (m *makefile) applyAssignment(key, value, op string) {
 	case ":=":
 		m.vars[key] = m.expand(value)
 		delete(m.rawVars, key)
+		delete(m.shellAssigned, key)
 	case "?=":
-		if _, ok := m.vars[key]; ok {
-			return
-		}
-		if _, ok := m.rawVars[key]; ok {
+		if m.variableDefined(key) {
 			return
 		}
 		m.rawVars[key] = value
 	case "+=":
+		if _, ok := m.shellAssigned[key]; ok {
+			m.addLimitation("variable-expansion")
+			return
+		}
 		if current, ok := m.vars[key]; ok {
 			m.vars[key] = strings.TrimSpace(current + " " + m.expand(value))
 			return
@@ -157,10 +161,27 @@ func (m *makefile) applyAssignment(key, value, op string) {
 			return
 		}
 		m.rawVars[key] = value
+	case "!=":
+		m.addLimitation("variable-expansion")
+		m.shellAssigned[key] = struct{}{}
+		delete(m.vars, key)
+		delete(m.rawVars, key)
 	default:
 		m.rawVars[key] = value
 		delete(m.vars, key)
+		delete(m.shellAssigned, key)
 	}
+}
+
+func (m *makefile) variableDefined(key string) bool {
+	if _, ok := m.vars[key]; ok {
+		return true
+	}
+	if _, ok := m.rawVars[key]; ok {
+		return true
+	}
+	_, ok := m.shellAssigned[key]
+	return ok
 }
 
 func (m *makefile) expandTargets() {
@@ -270,6 +291,13 @@ func (m *makefile) expandRef(name string, depth int) string {
 	}
 	if _, ok := predefinedVars[name]; ok {
 		m.addLimitation("variable-expansion")
+		return "$(" + name + ")"
+	}
+	if _, ok := m.shellAssigned[name]; ok {
+		m.addLimitation("variable-expansion")
+		if len(name) == 1 {
+			return "$" + name
+		}
 		return "$(" + name + ")"
 	}
 	if value, ok := m.vars[name]; ok {

@@ -204,7 +204,7 @@
             {
               "kind": "declaration",
               "source": "docker-compose.yml",
-              "pointer": "/services/excalidraw/environment/NODE_ENV"
+              "pointer": "/services/excalidraw/environment/0"
             }
           ]
         },

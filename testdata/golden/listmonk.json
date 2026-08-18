@@ -206,16 +206,39 @@
         },
         {
           "kind": "environment",
-          "name": "LISTMONK_ADMIN_PASSWORD",
+          "name": "GOPATH",
           "isRequired": true,
           "hasDefault": true,
           "confidence": "high",
           "evidence": [
             {
               "kind": "declaration",
-              "source": "docker-compose.yml",
-              "pointer": "/services/app/environment"
-            },
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/backend/volumes/1"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "HOME",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/backend/volumes/1"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_ADMIN_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
             {
               "kind": "declaration",
               "source": "docker-compose.yml",
@@ -233,11 +256,6 @@
             {
               "kind": "declaration",
               "source": "docker-compose.yml",
-              "pointer": "/services/app/environment"
-            },
-            {
-              "kind": "declaration",
-              "source": "docker-compose.yml",
               "pointer": "/services/app/environment/LISTMONK_ADMIN_USER"
             }
           ]
@@ -252,7 +270,7 @@
             {
               "kind": "declaration",
               "source": "dev/docker-compose.yml",
-              "pointer": "/services/front/environment/LISTMONK_API_URL"
+              "pointer": "/services/front/environment/0"
             }
           ]
         },
@@ -406,7 +424,7 @@
             {
               "kind": "declaration",
               "source": "dev/docker-compose.yml",
-              "pointer": "/services/db/environment/POSTGRES_DB"
+              "pointer": "/services/db/environment/2"
             },
             {
               "kind": "declaration",
@@ -425,7 +443,7 @@
             {
               "kind": "declaration",
               "source": "dev/docker-compose.yml",
-              "pointer": "/services/db/environment/POSTGRES_PASSWORD"
+              "pointer": "/services/db/environment/0"
             },
             {
               "kind": "declaration",
@@ -444,7 +462,7 @@
             {
               "kind": "declaration",
               "source": "dev/docker-compose.yml",
-              "pointer": "/services/db/environment/POSTGRES_USER"
+              "pointer": "/services/db/environment/1"
             },
             {
               "kind": "declaration",

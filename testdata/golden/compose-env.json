@@ -129,7 +129,7 @@
             {
               "kind": "declaration",
               "source": "compose.yaml",
-              "pointer": "/services/redis/environment/REDIS_URL"
+              "pointer": "/services/redis/environment/0"
             }
           ]
         }

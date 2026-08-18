@@ -306,7 +306,21 @@
             {
               "kind": "declaration",
               "source": "docker-compose.yml",
-              "pointer": "/services/cypress/environment/DISPLAY"
+              "pointer": "/services/cypress/environment/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "MERMAID_PORT",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "docker-compose.yml",
+              "pointer": "/services/mermaid/ports/0"
             }
           ]
         },

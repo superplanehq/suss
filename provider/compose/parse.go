@@ -1,92 +1,213 @@
 package compose
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
 type composeFile struct {
-	HasInclude bool
-	Services   map[string]composeService
+	HasInclude     bool
+	Services       map[string]composeService
+	Interpolations []locatedVar
+	Root           sourcedNode
 }
 
 type composeService struct {
 	Image       string
+	ImageSource string
+	Source      string
 	Environment []envVar
-	ImageVars   []envVar
-	ValueVars   []envVar
 }
 
 type envVar struct {
 	Name       string
 	HasDefault bool
+	Source     string
+	Pointer    string
 }
 
-func parseCompose(contents []byte) (composeFile, error) {
-	var raw struct {
-		Include  yaml.Node                 `yaml:"include"`
-		Services map[string]composeService `yaml:"services"`
-	}
-	if err := yaml.Unmarshal(contents, &raw); err != nil {
+type locatedVar struct {
+	Name       string
+	HasDefault bool
+	Pointer    string
+	Source     string
+}
+
+func parseCompose(contents []byte, source string) (composeFile, error) {
+	var root yaml.Node
+	if err := yaml.Unmarshal(contents, &root); err != nil {
 		return composeFile{}, err
 	}
-	if raw.Services == nil {
-		raw.Services = map[string]composeService{}
+	file, err := extractCompose(resolveMergeKeys(yamlToSourced(root, source, "")))
+	if err != nil {
+		return composeFile{}, err
+	}
+	file.Interpolations = interpolationsFromSourced(file.Root, "")
+	return file, nil
+}
+
+func mergeCompose(base, override composeFile) (composeFile, error) {
+	merged, err := extractCompose(resolveMergeKeys(mergeSourced(base.Root, override.Root, nil)))
+	if err != nil {
+		return composeFile{}, err
+	}
+	merged.HasInclude = base.HasInclude || override.HasInclude
+	merged.Interpolations = append(append([]locatedVar{}, base.Interpolations...), override.Interpolations...)
+	return merged, nil
+}
+
+func extractCompose(root sourcedNode) (composeFile, error) {
+	doc := unwrapDocument(root)
+	if err := validateCompose(doc); err != nil {
+		return composeFile{}, err
+	}
+	services := map[string]composeService{}
+	for _, pair := range mappingPairs(mappingValue(doc, "services")) {
+		name := strings.TrimSpace(pair.key.Value)
+		if name == "" {
+			continue
+		}
+		services[name] = serviceFromNode(pair.value)
 	}
 	return composeFile{
-		HasInclude: !isZeroNode(raw.Include),
-		Services:   raw.Services,
+		HasInclude: !isZeroSourced(mappingValue(doc, "include")),
+		Services:   services,
+		Root:       root,
 	}, nil
 }
 
-func (s *composeService) UnmarshalYAML(value *yaml.Node) error {
-	var raw struct {
-		Image       string    `yaml:"image"`
-		Environment yaml.Node `yaml:"environment"`
+func validateCompose(doc sourcedNode) error {
+	if isZeroSourced(doc) {
+		return nil
 	}
-	if err := value.Decode(&raw); err != nil {
-		return err
+	if doc.Kind != yaml.MappingNode {
+		return fmt.Errorf("compose file must be a mapping")
 	}
-	s.Image = raw.Image
-	s.Environment = parseEnvironment(raw.Environment)
-	s.ImageVars = interpolationsFrom(raw.Image)
-	for _, item := range environmentValues(raw.Environment) {
-		s.ValueVars = append(s.ValueVars, interpolationsFrom(item)...)
+	services := mappingValue(doc, "services")
+	if isZeroSourced(services) {
+		return nil
+	}
+	if services.Kind != yaml.MappingNode {
+		return fmt.Errorf("services must be a mapping")
+	}
+	for _, pair := range mappingPairs(services) {
+		name := strings.TrimSpace(pair.key.Value)
+		if isZeroSourced(pair.value) {
+			continue
+		}
+		if pair.value.Kind != yaml.MappingNode {
+			return fmt.Errorf("service %s must be a mapping", name)
+		}
+		if err := validateServiceFields(name, pair.value); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func environmentValues(node yaml.Node) []string {
-	node = resolveNode(node)
+func validateServiceFields(name string, service sourcedNode) error {
+	if err := validateImageField(name, mappingValue(service, "image")); err != nil {
+		return err
+	}
+	return validateEnvironmentField(name, mappingValue(service, "environment"))
+}
+
+func validateImageField(name string, image sourcedNode) error {
+	if isAbsentOrReset(image) {
+		return nil
+	}
+	if image.Kind != yaml.ScalarNode {
+		return fmt.Errorf("service %s image must be a string", name)
+	}
+	return nil
+}
+
+func validateEnvironmentField(name string, environment sourcedNode) error {
+	if isAbsentOrReset(environment) {
+		return nil
+	}
+	if environment.Kind != yaml.MappingNode && environment.Kind != yaml.SequenceNode {
+		return fmt.Errorf("service %s environment must be a mapping or sequence", name)
+	}
+	return nil
+}
+
+func isAbsentOrReset(node sourcedNode) bool {
+	return isZeroSourced(node) || isReset(node)
+}
+
+func serviceFromNode(node sourcedNode) composeService {
+	image := mappingValue(node, "image")
+	svc := composeService{Source: node.Source}
+	if image.Kind == yaml.ScalarNode && image.Tag != "!!null" {
+		svc.Image = image.Value
+		svc.ImageSource = image.Source
+	}
+	svc.Environment = parseEnvironment(mappingValue(node, "environment"))
+	return svc
+}
+
+func interpolationsFromSourced(node sourcedNode, pointer string) []locatedVar {
 	switch node.Kind {
+	case yaml.DocumentNode:
+		if len(node.Content) == 0 {
+			return nil
+		}
+		return interpolationsFromSourced(node.Content[0], pointer)
 	case yaml.MappingNode:
-		var values []string
+		node = flattenMapping(node)
+		var out []locatedVar
 		for i := 0; i+1 < len(node.Content); i += 2 {
-			key := resolveNode(*node.Content[i])
-			if strings.TrimSpace(key.Value) == "<<" {
-				values = append(values, environmentValues(resolveNode(*node.Content[i+1]))...)
-				continue
+			key := node.Content[i]
+			value := node.Content[i+1]
+			name := strings.TrimSpace(key.Value)
+			child := value.Pointer
+			if child == "" {
+				child = pointer
+				if name != "" && name != "<<" {
+					child += jsonPointer(name)
+				}
 			}
-			values = append(values, scalarString(node.Content[i+1]))
+			out = append(out, interpolationsFromSourced(value, child)...)
 		}
-		return values
+		return out
 	case yaml.SequenceNode:
-		var values []string
-		for _, item := range node.Content {
-			resolved := resolveNode(*item)
-			if resolved.Kind != yaml.ScalarNode {
-				continue
+		var out []locatedVar
+		for i, item := range node.Content {
+			child := item.Pointer
+			if child == "" {
+				child = pointer + jsonPointer(strconv.Itoa(i))
 			}
-			_, value, found := strings.Cut(resolved.Value, "=")
-			if found {
-				values = append(values, value)
-			}
+			out = append(out, interpolationsFromSourced(item, child)...)
 		}
-		return values
+		return out
+	case yaml.ScalarNode:
+		if node.Style == yaml.SingleQuotedStyle {
+			return nil
+		}
+		if node.Pointer != "" {
+			pointer = node.Pointer
+		}
+		return locateVars(node.Source, pointer, interpolationsFrom(node.Value))
 	default:
 		return nil
 	}
+}
+
+func locateVars(source, pointer string, vars []envVar) []locatedVar {
+	out := make([]locatedVar, 0, len(vars))
+	for _, item := range vars {
+		out = append(out, locatedVar{
+			Name:       item.Name,
+			HasDefault: item.HasDefault,
+			Pointer:    pointer,
+			Source:     source,
+		})
+	}
+	return out
 }
 
 func interpolationsFrom(s string) []envVar {
@@ -95,6 +216,10 @@ func interpolationsFrom(s string) []envVar {
 	for i := 0; i < len(s); {
 		if s[i] != '$' {
 			i++
+			continue
+		}
+		if i+1 < len(s) && s[i+1] == '$' {
+			i += 2
 			continue
 		}
 		name, next, hasDefault, ok := readInterpolation(s, i)
@@ -109,6 +234,16 @@ func interpolationsFrom(s string) []envVar {
 			} else {
 				seen[name] = len(out)
 				out = append(out, item)
+			}
+		}
+		if s[i+1] == '{' && next > i+3 {
+			for _, nested := range interpolationsFrom(s[i+2 : next-1]) {
+				if idx, exists := seen[nested.Name]; exists {
+					out[idx].HasDefault = out[idx].HasDefault || nested.HasDefault
+					continue
+				}
+				seen[nested.Name] = len(out)
+				out = append(out, nested)
 			}
 		}
 		i = next
@@ -185,9 +320,8 @@ func interpNamePart(b byte, allowDigit bool) bool {
 	return allowDigit && b >= '0' && b <= '9'
 }
 
-func parseEnvironment(node yaml.Node) []envVar {
-	node = resolveNode(node)
-	if isZeroNode(node) {
+func parseEnvironment(node sourcedNode) []envVar {
+	if isZeroSourced(node) {
 		return nil
 	}
 	switch node.Kind {
@@ -200,91 +334,54 @@ func parseEnvironment(node yaml.Node) []envVar {
 	}
 }
 
-func environmentFromMap(node yaml.Node) []envVar {
+func environmentFromMap(node sourcedNode) []envVar {
 	var out []envVar
-	seen := make(map[string]int)
-	for i := 0; i+1 < len(node.Content); i += 2 {
-		key := resolveNode(*node.Content[i])
-		value := resolveNode(*node.Content[i+1])
-		name := strings.TrimSpace(key.Value)
-		if name == "<<" {
-			for _, item := range mergeEnvironment(value) {
-				if _, exists := seen[item.Name]; exists {
-					continue
-				}
-				seen[item.Name] = len(out)
-				out = append(out, item)
-			}
-			continue
-		}
+	for _, pair := range mappingPairs(node) {
+		name := strings.TrimSpace(pair.key.Value)
 		if !validEnvName(name) {
 			continue
 		}
-		item := envVar{Name: name, HasDefault: scalarString(&value) != ""}
-		if idx, exists := seen[name]; exists {
-			out[idx] = item
-			continue
-		}
-		seen[name] = len(out)
-		out = append(out, item)
+		out = append(out, envVar{
+			Name:       name,
+			HasDefault: sourcedScalar(pair.value) != "",
+			Source:     firstNonEmpty(pair.value.Source, pair.key.Source),
+			Pointer:    firstNonEmpty(pair.value.Pointer, pair.key.Pointer),
+		})
 	}
 	return out
 }
 
-func mergeEnvironment(node yaml.Node) []envVar {
-	node = resolveNode(node)
-	switch node.Kind {
-	case yaml.MappingNode:
-		return parseEnvironment(node)
-	case yaml.SequenceNode:
-		var out []envVar
-		for _, item := range node.Content {
-			out = append(out, parseEnvironment(*item)...)
-		}
-		return out
-	default:
-		return nil
-	}
-}
-
-func environmentFromList(node yaml.Node) []envVar {
+func environmentFromList(node sourcedNode) []envVar {
 	var out []envVar
 	for _, item := range node.Content {
-		resolved := resolveNode(*item)
-		if resolved.Kind != yaml.ScalarNode || resolved.Tag == "!!null" {
+		if item.Kind != yaml.ScalarNode || item.Tag == "!!null" {
 			continue
 		}
-		name, value, found := strings.Cut(resolved.Value, "=")
+		name, value, found := strings.Cut(item.Value, "=")
 		name = strings.TrimSpace(name)
 		if !validEnvName(name) {
 			continue
 		}
 		hasDefault := found && strings.TrimSpace(value) != ""
-		out = append(out, envVar{Name: name, HasDefault: hasDefault})
+		out = append(out, envVar{Name: name, HasDefault: hasDefault, Source: item.Source, Pointer: item.Pointer})
 	}
 	return out
 }
 
-func resolveNode(node yaml.Node) yaml.Node {
-	if node.Kind == yaml.AliasNode && node.Alias != nil {
-		return resolveNode(*node.Alias)
-	}
-	return node
-}
-
-func scalarString(node *yaml.Node) string {
-	if node == nil {
+func sourcedScalar(node sourcedNode) string {
+	if node.Kind != yaml.ScalarNode || node.Tag == "!!null" {
 		return ""
 	}
-	resolved := resolveNode(*node)
-	if resolved.Kind != yaml.ScalarNode || resolved.Tag == "!!null" {
-		return ""
-	}
-	return resolved.Value
+	return node.Value
 }
 
-func isZeroNode(node yaml.Node) bool {
-	return node.Kind == 0 && node.Tag == "" && node.Value == "" && len(node.Content) == 0
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func validEnvName(name string) bool {
