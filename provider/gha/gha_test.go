@@ -388,6 +388,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@0123456789abcdef0123456789abcdef01234567
       - run: rustup run nightly cargo test
       - run: rustc -V
+      - run: rustc -vV
 `,
 	})
 
@@ -400,7 +401,79 @@ jobs:
 		t.Fatalf("commands = %+v, want rustup run nightly cargo test kept as cargo test", commands)
 	}
 	if _, ok := commands["rustc"]; ok {
-		t.Fatalf("rustc -V was emitted as a repository command: %+v", result.Findings)
+		t.Fatalf("rustc version probes were emitted as repository commands: %+v", result.Findings)
+	}
+}
+
+func TestDetectUsesSetupRustToolchainStableDefault(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.80.0\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+`,
+	})
+
+	versions := runtimeRequirementVersions(result, "rust")
+	if !slices.Contains(versions, "stable") {
+		t.Fatalf("rust versions = %v, want the action default stable", versions)
+	}
+	if slices.Contains(versions, "1.80.0") {
+		t.Fatalf("rust versions = %v, did not want the repository toolchain file", versions)
+	}
+}
+
+func TestDetectExpandsMatrixToolchainFile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.80.0\"\n",
+		"ci/msrv.toml":        "[toolchain]\nchannel = \"1.74.0\"\n",
+		"ci/current.toml":     "[toolchain]\nchannel = \"1.81.0\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        toolchain_file: ["ci/msrv.toml", "ci/current.toml"]
+    steps:
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain-file: ${{ matrix.toolchain_file }}
+`,
+	})
+
+	got := sortedCopy(runtimeRequirementVersions(result, "rust"))
+	if !slices.Equal(got, []string{"1.74.0", "1.81.0"}) {
+		t.Fatalf("rust versions = %v, want matrix toolchain files", got)
+	}
+	if slices.Contains(got, "1.80.0") {
+		t.Fatalf("rust versions = %v, did not want the default rust-toolchain.toml", got)
+	}
+}
+
+func TestDetectLeavesUnresolvedToolchainFileExpression(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.80.0\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain-file: ${{ vars.TOOLCHAIN_FILE }}
+`,
+	})
+
+	versions := runtimeRequirementVersions(result, "rust")
+	if len(versions) != 1 || versions[0] != "" {
+		t.Fatalf("rust versions = %v, want one unresolved requirement", versions)
 	}
 }
 

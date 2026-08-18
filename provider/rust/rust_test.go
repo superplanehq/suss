@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/superplanehq/suss/plan"
@@ -262,6 +263,49 @@ func TestParseCargoTOMLReadsPackageWorkspaceAndDependencies(t *testing.T) {
 	}
 }
 
+func TestParseCargoTOMLResolvesRenamedDependencies(t *testing.T) {
+	t.Parallel()
+
+	got := parseCargoTOML("" +
+		"[dependencies]\n" +
+		"web = { package = \"axum\", version = \"0.7\" }\n" +
+		"axum = { package = \"tracing\", version = \"0.1\" }\n" +
+		"\n" +
+		"[dependencies.api]\n" +
+		"package = \"actix-web\"\n" +
+		"version = \"4\"\n")
+	if !slices.Equal(dependencyNames(got.Dependencies), []string{"axum", "tracing", "actix-web"}) {
+		t.Fatalf("dependencies = %v, want crate names axum, tracing, actix-web", dependencyNames(got.Dependencies))
+	}
+	if !slices.Equal(dependencyKeys(got.Dependencies), []string{"web", "axum", "api"}) {
+		t.Fatalf("dependency keys = %v, want web, axum, api", dependencyKeys(got.Dependencies))
+	}
+}
+
+func TestDetectResolvesRenamedFrameworkDependencies(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml": "" +
+			"[package]\n" +
+			"name = \"app\"\n" +
+			"version = \"0.1.0\"\n" +
+			"edition = \"2021\"\n" +
+			"\n" +
+			"[dependencies]\n" +
+			"web = { package = \"axum\", version = \"0.7\" }\n" +
+			"axum = { package = \"tracing\", version = \"0.1\" }\n",
+		"src/lib.rs": "pub fn ok() {}\n",
+	})
+	project := assembleProject(t, ".", result)
+	if got := names(project.Frameworks); !slices.Equal(got, []string{"axum"}) {
+		t.Fatalf("frameworks = %v, want axum from the renamed crate", got)
+	}
+	if len(project.Frameworks[0].Evidence) == 0 || project.Frameworks[0].Evidence[0].Pointer != "/dependencies/web" {
+		t.Fatalf("framework evidence = %+v, want /dependencies/web", project.Frameworks[0].Evidence)
+	}
+}
+
 func TestDetectDoesNotTreatWorkspaceDependenciesAsFrameworks(t *testing.T) {
 	t.Parallel()
 
@@ -296,6 +340,67 @@ func TestDetectPrefersNearestToolchainFile(t *testing.T) {
 	project := assembleProject(t, "nested", result)
 	if len(project.Requirements) != 1 || project.Requirements[0].Version != "1.81.0" {
 		t.Fatalf("requirements = %+v, want nearest rust-toolchain 1.81.0", project.Requirements)
+	}
+}
+
+func TestDetectConflictsToolchainOlderThanMSRV(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml":          "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\nrust-version = \"1.81\"\n",
+		"src/lib.rs":          "pub fn ok() {}\n",
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.80.0\"\n",
+	})
+	project := assembleProject(t, ".", result)
+
+	if len(project.Conflicts) != 1 || project.Conflicts[0].Subject != "runtime.rust.version" {
+		t.Fatalf("conflicts = %+v, want runtime.rust.version for toolchain below MSRV", project.Conflicts)
+	}
+	if !strings.Contains(project.Conflicts[0].Message, "rust-version") {
+		t.Fatalf("conflict message = %q, want rust-version incompatibility", project.Conflicts[0].Message)
+	}
+	versions := requirementVersions(project, "rust")
+	if !slices.Equal(versions, []string{"1.80.0", ">=1.81"}) {
+		t.Fatalf("rust versions = %v, want pinned 1.80.0 and MSRV >=1.81", versions)
+	}
+	for _, requirement := range project.Requirements {
+		if requirement.Version == "1.80.0" && requirement.Confidence != plan.ConfidenceMedium {
+			t.Fatalf("incompatible pin confidence = %s, want medium", requirement.Confidence)
+		}
+		if requirement.Version == ">=1.81" && requirement.Confidence != plan.ConfidenceHigh {
+			t.Fatalf("MSRV confidence = %s, want high", requirement.Confidence)
+		}
+	}
+}
+
+func TestDetectDoesNotConflictCompatibleToolchainAndMSRV(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml":          "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\nrust-version = \"1.81\"\n",
+		"src/lib.rs":          "pub fn ok() {}\n",
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.82.0\"\n",
+	})
+	project := assembleProject(t, ".", result)
+	if len(project.Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a conflict when the pin satisfies the MSRV", project.Conflicts)
+	}
+	if !slices.Equal(requirementVersions(project, "rust"), []string{"1.82.0", ">=1.81"}) {
+		t.Fatalf("rust versions = %v, want pin plus MSRV", requirementVersions(project, "rust"))
+	}
+}
+
+func TestDetectDoesNotConflictUnevaluableToolchainChannel(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Cargo.toml":          "[package]\nname = \"lib\"\nversion = \"0.1.0\"\nedition = \"2021\"\nrust-version = \"1.81\"\n",
+		"src/lib.rs":          "pub fn ok() {}\n",
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"stable\"\n",
+	})
+	project := assembleProject(t, ".", result)
+	if len(project.Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a guessed conflict for channel stable", project.Conflicts)
 	}
 }
 
@@ -463,6 +568,14 @@ func dependencyNames(deps []cargoDependency) []string {
 	out := make([]string, 0, len(deps))
 	for _, dep := range deps {
 		out = append(out, dep.Name)
+	}
+	return out
+}
+
+func dependencyKeys(deps []cargoDependency) []string {
+	out := make([]string, 0, len(deps))
+	for _, dep := range deps {
+		out = append(out, dep.Key)
 	}
 	return out
 }

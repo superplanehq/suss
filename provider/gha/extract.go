@@ -149,9 +149,11 @@ func usesFindings(ctx provider.Context, source, dir, stepPointer string, step st
 	case "shivammathur/setup-php":
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "php", step.With, matrix, []string{"php-version"})
 	case "dtolnay/rust-toolchain":
-		return rustSetupFindings(ctx, source, dir, stepPointer, step, matrix, rustToolchainActionTag(step.Uses))
-	case "actions-rs/toolchain", "actions-rust-lang/setup-rust-toolchain":
-		return rustSetupFindings(ctx, source, dir, stepPointer, step, matrix, "")
+		return rustSetupFindings(ctx, source, dir, stepPointer, step, matrix, rustToolchainActionTag(step.Uses), "")
+	case "actions-rs/toolchain":
+		return rustSetupFindings(ctx, source, dir, stepPointer, step, matrix, "", "")
+	case "actions-rust-lang/setup-rust-toolchain":
+		return rustSetupFindings(ctx, source, dir, stepPointer, step, matrix, "", "stable")
 	case "golangci/golangci-lint-action":
 		return golangciActionFindings(source, dir, stepPointer, step)
 	default:
@@ -202,9 +204,9 @@ func isHexSHA(value string) bool {
 	return true
 }
 
-func rustSetupFindings(ctx provider.Context, source, dir, stepPointer string, step step, matrix map[string][]string, tagFallback string) []plan.Finding {
-	if file := strings.TrimSpace(step.With["toolchain-file"]); file != "" && !isExpression(file) {
-		return rustToolchainFileFindings(ctx, source, dir, stepPointer, "toolchain-file", file)
+func rustSetupFindings(ctx provider.Context, source, dir, stepPointer string, step step, matrix map[string][]string, tagFallback, defaultChannel string) []plan.Finding {
+	if file := strings.TrimSpace(step.With["toolchain-file"]); file != "" {
+		return rustToolchainFileInputFindings(ctx, source, dir, stepPointer, file, matrix)
 	}
 
 	versionKeys := []string{"toolchain"}
@@ -217,6 +219,9 @@ func rustSetupFindings(ctx provider.Context, source, dir, stepPointer string, st
 
 	if tagFallback != "" {
 		return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/uses", "rust", tagFallback, "The rust-toolchain action tag selects the toolchain.")}
+	}
+	if defaultChannel != "" {
+		return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/uses", "rust", defaultChannel, "The setup-rust-toolchain action defaults to stable.")}
 	}
 
 	for _, name := range []string{"rust-toolchain.toml", "rust-toolchain"} {
@@ -251,6 +256,31 @@ func rustSetupFindings(ctx provider.Context, source, dir, stepPointer string, st
 	}
 
 	return []plan.Finding{runtimeFinding(source, dir, stepPointer+"/uses", "rust", "", "The setup action does not pin a version.")}
+}
+
+func rustToolchainFileInputFindings(ctx provider.Context, source, dir, stepPointer, file string, matrix map[string][]string) []plan.Finding {
+	if !isExpression(file) {
+		return rustToolchainFileFindings(ctx, source, dir, stepPointer, "toolchain-file", file)
+	}
+
+	pointer := stepPointer + "/with/toolchain-file"
+	if axis, ok := matrixAxis(file); ok {
+		if values := matrix[axis]; len(values) > 0 {
+			var findings []plan.Finding
+			for _, value := range values {
+				value = strings.TrimSpace(value)
+				if value == "" || isExpression(value) {
+					continue
+				}
+				findings = append(findings, rustToolchainFileFindings(ctx, source, dir, stepPointer, "toolchain-file", value)...)
+			}
+			if len(findings) > 0 {
+				return findings
+			}
+		}
+		return []plan.Finding{runtimeFinding(source, dir, pointer, "rust", "", "The setup action takes its toolchain file from a matrix axis that was not enumerated.")}
+	}
+	return []plan.Finding{runtimeFinding(source, dir, pointer, "rust", "", "The setup action takes its toolchain file from an expression that was not resolved.")}
 }
 
 func rustToolchainFileFindings(ctx provider.Context, source, dir, stepPointer, fileKey, file string) []plan.Finding {

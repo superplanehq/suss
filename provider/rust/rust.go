@@ -88,10 +88,14 @@ func projectFindings(ctx provider.Context, manifest cargoManifest) []plan.Findin
 		}}))
 	}
 	for _, framework := range packageFrameworks(manifest.Dependencies) {
+		pointer := framework.Key
+		if pointer == "" {
+			pointer = framework.Name
+		}
 		findings = append(findings, propertyFinding(ctx, plan.PropertyFramework, framework.Name, "", []plan.Evidence{{
 			Kind:        plan.EvidenceDeclaration,
 			Source:      source,
-			Pointer:     "/dependencies/" + pointerToken(framework.Name),
+			Pointer:     "/dependencies/" + pointerToken(pointer),
 			Description: "The Cargo dependency list includes " + framework.Name + ".",
 		}}))
 	}

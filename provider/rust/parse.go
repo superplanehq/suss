@@ -6,6 +6,7 @@ import (
 
 type cargoDependency struct {
 	Name  string
+	Key   string
 	Table string
 }
 
@@ -41,8 +42,8 @@ func parseCargoTOML(contents string) cargoManifest {
 			if section == "workspace" || strings.HasPrefix(section, "workspace.") {
 				parsed.HasWorkspace = true
 			}
-			if crate, table, ok := dependencyCrateFromTable(section); ok {
-				addDependency(seenDeps, &parsed.Dependencies, crate, table)
+			if key, table, ok := dependencyCrateFromTable(section); ok {
+				addDependency(seenDeps, &parsed.Dependencies, key, key, table)
 			}
 			continue
 		}
@@ -75,8 +76,17 @@ func parseCargoTOML(contents string) cargoManifest {
 			}
 		}
 
-		if crate, table, ok := dependencyCrateFromKey(section, key); ok {
-			addDependency(seenDeps, &parsed.Dependencies, crate, table)
+		if depKey, table, ok := dependencyCrateFromKey(section, key); ok {
+			crate := depKey
+			if pkg, found := tomlInlineString(value, "package"); found {
+				crate = pkg
+			}
+			addDependency(seenDeps, &parsed.Dependencies, depKey, crate, table)
+		}
+		if depKey, table, ok := dependencyCrateFromTable(section); ok && key == "package" {
+			if pkg, found := tomlString(value); found {
+				setDependencyCrate(&parsed.Dependencies, table, depKey, pkg)
+			}
 		}
 	}
 	return parsed
@@ -232,16 +242,71 @@ func dependencyCrateFromKey(section, key string) (string, string, bool) {
 	return "", "", false
 }
 
-func addDependency(seen map[string]struct{}, deps *[]cargoDependency, name, table string) {
-	if name == "" {
+func tomlInlineString(value, field string) (string, bool) {
+	value = strings.TrimSpace(value)
+	if !strings.HasPrefix(value, "{") {
+		return "", false
+	}
+	inner := strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(value, "{")), "}")
+	for _, part := range splitTopLevel(inner, ',') {
+		key, fieldValue, ok := parseTOMLAssignment(strings.TrimSpace(part))
+		if !ok || key != field {
+			continue
+		}
+		return tomlString(fieldValue)
+	}
+	return "", false
+}
+
+func splitTopLevel(value string, sep byte) []string {
+	var parts []string
+	start := 0
+	inSingle, inDouble := false, false
+	for i := 0; i < len(value); i++ {
+		switch value[i] {
+		case '"':
+			if !inSingle {
+				inDouble = !inDouble
+			}
+		case '\'':
+			if !inDouble {
+				inSingle = !inSingle
+			}
+		default:
+			if value[i] == sep && !inSingle && !inDouble {
+				parts = append(parts, value[start:i])
+				start = i + 1
+			}
+		}
+	}
+	return append(parts, value[start:])
+}
+
+func addDependency(seen map[string]struct{}, deps *[]cargoDependency, key, crate, table string) {
+	if key == "" {
 		return
 	}
-	key := table + "\x00" + name
-	if _, ok := seen[key]; ok {
+	if crate == "" {
+		crate = key
+	}
+	seenKey := table + "\x00" + key
+	if _, ok := seen[seenKey]; ok {
 		return
 	}
-	seen[key] = struct{}{}
-	*deps = append(*deps, cargoDependency{Name: name, Table: table})
+	seen[seenKey] = struct{}{}
+	*deps = append(*deps, cargoDependency{Name: crate, Key: key, Table: table})
+}
+
+func setDependencyCrate(deps *[]cargoDependency, table, key, crate string) {
+	if crate == "" {
+		return
+	}
+	for i := range *deps {
+		if (*deps)[i].Table == table && (*deps)[i].Key == key {
+			(*deps)[i].Name = crate
+			return
+		}
+	}
 }
 
 var rustFrameworks = map[string]string{
@@ -265,7 +330,7 @@ func packageFrameworks(dependencies []cargoDependency) []cargoDependency {
 			continue
 		}
 		seen[framework] = struct{}{}
-		found = append(found, cargoDependency{Name: framework, Table: dep.Table})
+		found = append(found, cargoDependency{Name: framework, Key: dep.Key, Table: dep.Table})
 	}
 	return found
 }

@@ -347,11 +347,18 @@ func isRustcVersionProbe(args []string) bool {
 		if name == "--version" || name == "--help" || name == "-h" {
 			return true
 		}
-		if name == "-V" || strings.HasPrefix(name, "-V") {
+		if rustcShortFlagHasVersion(name) {
 			return true
 		}
 	}
 	return false
+}
+
+func rustcShortFlagHasVersion(name string) bool {
+	if !strings.HasPrefix(name, "-") || strings.HasPrefix(name, "--") {
+		return false
+	}
+	return strings.ContainsRune(name, 'V')
 }
 
 func isDockerPlumbing(args []string) bool {

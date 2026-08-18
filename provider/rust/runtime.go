@@ -2,9 +2,11 @@ package rust
 
 import (
 	"bufio"
+	"cmp"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/superplanehq/suss/plan"
@@ -90,14 +92,122 @@ func mergeRuntimePins(ctx provider.Context, pins []runtimePin) ([]plan.Finding, 
 		for _, pin := range exact {
 			evidence = append(evidence, pin.evidence)
 		}
-		findings = append(findings, runtimeFinding(ctx, exact[0].version, plan.ConfidenceHigh, evidence))
+		confidence := plan.ConfidenceHigh
+		if incompatible, _ := pinsIncompatibleWithMSRV(exact, msrv); incompatible {
+			confidence = plan.ConfidenceMedium
+		}
+		findings = append(findings, runtimeFinding(ctx, exact[0].version, confidence, evidence))
 	}
 
 	grouped, order := groupPinEvidence(msrv)
 	for _, version := range order {
 		findings = append(findings, runtimeFinding(ctx, version, plan.ConfidenceHigh, grouped[version]))
 	}
+	conflicts = append(conflicts, msrvConflicts(exact, msrv)...)
 	return findings, conflicts
+}
+
+func pinsIncompatibleWithMSRV(exact, msrv []runtimePin) (incompatible, known bool) {
+	for _, pin := range exact {
+		for _, constraint := range msrv {
+			ok, pinKnown := exactSatisfiesMSRV(pin.version, constraint.version)
+			if !pinKnown {
+				continue
+			}
+			known = true
+			if !ok {
+				return true, true
+			}
+		}
+	}
+	return false, known
+}
+
+func msrvConflicts(exact, msrv []runtimePin) []plan.Conflict {
+	groupedExact, exactOrder := groupPinEvidence(exact)
+	groupedMSRV, msrvOrder := groupPinEvidence(msrv)
+	var conflicts []plan.Conflict
+	for _, pinVersion := range exactOrder {
+		for _, constraint := range msrvOrder {
+			ok, known := exactSatisfiesMSRV(pinVersion, constraint)
+			if !known || ok {
+				continue
+			}
+			conflicts = append(conflicts, plan.Conflict{
+				Subject: "runtime.rust.version",
+				Message: "The pinned Rust toolchain does not satisfy Cargo rust-version.",
+				Assertions: []plan.Candidate{
+					{Value: pinVersion, Evidence: groupedExact[pinVersion]},
+					{Value: constraint, Evidence: groupedMSRV[constraint]},
+				},
+			})
+		}
+	}
+	return conflicts
+}
+
+func exactSatisfiesMSRV(exact, constraint string) (ok, known bool) {
+	exact = strings.TrimPrefix(strings.TrimSpace(exact), "v")
+	constraint = strings.TrimSpace(constraint)
+	if !comparableRustVersion(exact) {
+		return false, false
+	}
+
+	bound := constraint
+	minExclusive := false
+	switch {
+	case strings.HasPrefix(constraint, ">="):
+		bound = strings.TrimSpace(constraint[2:])
+	case strings.HasPrefix(constraint, ">"):
+		bound = strings.TrimSpace(constraint[1:])
+		minExclusive = true
+	case strings.ContainsAny(constraint, "<^~*|"):
+		return false, false
+	}
+	bound = strings.TrimPrefix(bound, "v")
+	if !comparableRustVersion(bound) {
+		return false, false
+	}
+	cmp := compareRustVersions(exact, bound)
+	if minExclusive {
+		return cmp > 0, true
+	}
+	return cmp >= 0, true
+}
+
+func comparableRustVersion(version string) bool {
+	if version == "" {
+		return false
+	}
+	for _, part := range strings.Split(version, ".") {
+		if _, err := strconv.Atoi(part); err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+func compareRustVersions(a, b string) int {
+	as := strings.Split(a, ".")
+	bs := strings.Split(b, ".")
+	n := max(len(as), len(bs))
+	for i := 0; i < n; i++ {
+		if n := cmp.Compare(rustVersionPart(as, i), rustVersionPart(bs, i)); n != 0 {
+			return n
+		}
+	}
+	return 0
+}
+
+func rustVersionPart(parts []string, i int) int {
+	if i >= len(parts) {
+		return 0
+	}
+	n, err := strconv.Atoi(parts[i])
+	if err != nil {
+		return 0
+	}
+	return n
 }
 
 func groupPinEvidence(pins []runtimePin) (map[string][]plan.Evidence, []string) {

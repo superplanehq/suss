@@ -731,6 +731,12 @@ func TestIsRustPlumbing(t *testing.T) {
 	if !IsRustPlumbing(Invocation{Executable: "rustc", Args: []string{"-Vv"}}) {
 		t.Fatal("IsRustPlumbing(rustc -Vv) = false, want true")
 	}
+	if !IsRustPlumbing(Invocation{Executable: "rustc", Args: []string{"-vV"}}) {
+		t.Fatal("IsRustPlumbing(rustc -vV) = false, want true")
+	}
+	if IsRustPlumbing(Invocation{Executable: "rustc", Args: []string{"-v"}}) {
+		t.Fatal("IsRustPlumbing(rustc -v) = true, want false; -v is verbose")
+	}
 	if IsRustPlumbing(Invocation{Executable: "rustup", Args: []string{"run", "nightly", "cargo", "test"}}) {
 		t.Fatal("IsRustPlumbing(rustup run nightly cargo test) = true, want false")
 	}
