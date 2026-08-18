@@ -78,7 +78,7 @@ func mavenSpecs(ctx provider.Context, maven *mavenProject) ([]commandSpec, error
 	build := conventionSpec(source, "build", tool+" package", "/#build", plan.ConfidenceMedium, "Maven projects conventionally produce artifacts with mvn package.")
 	build.evidence = attachCommandEvidence(build.evidence, maven.WrapperSource)
 	specs = append(specs, build)
-	entry, err := firstApplicationEntry(ctx.ProjectDir())
+	entry, err := firstApplicationEntry(ctx.ProjectDir(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +97,9 @@ func gradleSpecs(ctx provider.Context, gradle *gradleProject) ([]commandSpec, er
 		tool = "gradle"
 	}
 	testFile, err := firstJavaTest(ctx.ProjectDir(), testSearch{
-		match:         isGradleTestName,
-		gradleMembers: gradle.Members,
+		match:          isGradleTestName,
+		gradleMembers:  gradle.Members,
+		requireTestDir: true,
 	})
 	if err != nil {
 		return nil, err
@@ -113,7 +114,7 @@ func gradleSpecs(ctx provider.Context, gradle *gradleProject) ([]commandSpec, er
 	build := conventionSpec(source, "build", tool+" build", "/#build", plan.ConfidenceMedium, "Gradle projects conventionally produce artifacts with gradle build.")
 	build.evidence = attachCommandEvidence(build.evidence, gradle.WrapperSource)
 	specs = append(specs, build)
-	entry, err := firstApplicationEntry(ctx.ProjectDir())
+	entry, err := firstApplicationEntry(ctx.ProjectDir(), gradle.Members)
 	if err != nil {
 		return nil, err
 	}
@@ -145,11 +146,11 @@ func competingManagerResult(ctx provider.Context, project javaProject) ([]comman
 	if err != nil {
 		return nil, nil, err
 	}
-	gradleTest, err := firstJavaTest(ctx.ProjectDir(), testSearch{match: isGradleTestName, gradleMembers: members})
+	gradleTest, err := firstJavaTest(ctx.ProjectDir(), testSearch{match: isGradleTestName, gradleMembers: members, requireTestDir: true})
 	if err != nil {
 		return nil, nil, err
 	}
-	entry, err := firstApplicationEntry(ctx.ProjectDir())
+	entry, err := firstApplicationEntry(ctx.ProjectDir(), members)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -242,8 +243,21 @@ func managerAmbiguity(ctx provider.Context, project javaProject, subject, name s
 	}
 }
 
-func firstApplicationEntry(root string) (string, error) {
-	start := filepath.Join(root, "src", "main")
+func firstApplicationEntry(root string, members []string) (string, error) {
+	starts := []string{filepath.Join(root, "src", "main")}
+	for _, member := range members {
+		starts = append(starts, filepath.Join(root, filepath.FromSlash(member), "src", "main"))
+	}
+	for _, start := range starts {
+		found, err := walkApplicationEntry(root, start)
+		if err != nil || found != "" {
+			return found, err
+		}
+	}
+	return "", nil
+}
+
+func walkApplicationEntry(root, start string) (string, error) {
 	var first string
 	err := filepath.WalkDir(start, func(path string, entry fs.DirEntry, err error) error {
 		if os.IsNotExist(err) && path == start {
@@ -309,9 +323,10 @@ func firstJavaTest(root string, search testSearch) (string, error) {
 }
 
 type testSearch struct {
-	match         func(string) bool
-	mavenModules  []string
-	gradleMembers []string
+	match          func(string) bool
+	mavenModules   []string
+	gradleMembers  []string
+	requireTestDir bool
 }
 
 func walkJavaTests(root, start string, search testSearch) (string, error) {
@@ -345,6 +360,9 @@ func walkJavaTests(root, start string, search testSearch) (string, error) {
 			return nil
 		}
 		if search.match == nil || !search.match(entry.Name()) {
+			return nil
+		}
+		if search.requireTestDir && !isUnderSrcTest(path) {
 			return nil
 		}
 		relative, relErr := filepath.Rel(root, path)
@@ -394,17 +412,25 @@ func springBootPluginEvidence(maven *mavenProject) plan.Evidence {
 }
 
 func gradlePluginEvidence(ctx provider.Context, gradle *gradleProject, plugin string) plan.Evidence {
+	source := gradle.pluginSource(plugin)
+	if source == "" {
+		source = ctx.SourcePath(gradle.Source)
+	}
 	return plan.Evidence{
 		Kind:    plan.EvidenceDeclaration,
-		Source:  ctx.SourcePath(gradle.Source),
+		Source:  source,
 		Pointer: "/plugins/" + pointerToken(plugin),
 	}
 }
 
 func gradleMainClassEvidence(ctx provider.Context, gradle *gradleProject) plan.Evidence {
+	source := gradle.MainClassSource
+	if source == "" {
+		source = ctx.SourcePath(gradle.Source)
+	}
 	return plan.Evidence{
 		Kind:    plan.EvidenceDeclaration,
-		Source:  ctx.SourcePath(gradle.Source),
+		Source:  source,
 		Pointer: gradle.MainClassPointer,
 	}
 }
@@ -471,10 +497,17 @@ func isSurefireTestName(name string) bool {
 }
 
 func isGradleTestName(name string) bool {
-	if isSurefireTestName(name) {
-		return true
+	return isJvmSourceName(name)
+}
+
+func isUnderSrcTest(path string) bool {
+	parts := strings.Split(filepath.ToSlash(path), "/")
+	for i := 0; i < len(parts)-1; i++ {
+		if parts[i] == "src" && parts[i+1] == "test" {
+			return true
+		}
 	}
-	return strings.HasSuffix(name, "IT.java") || strings.HasSuffix(name, "IT.kt")
+	return false
 }
 
 func commandFromSpec(ctx provider.Context, spec commandSpec) (plan.Command, error) {

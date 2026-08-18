@@ -11,6 +11,12 @@ import (
 	"github.com/superplanehq/suss/provider"
 )
 
+type gradleJavaPin struct {
+	Version string
+	Pointer string
+	Source  string
+}
+
 type gradleProject struct {
 	Source            string
 	SettingsFile      string
@@ -18,12 +24,16 @@ type gradleProject struct {
 	MultiProject      bool
 	JavaVersion       string
 	JavaVersionPtr    string
+	JavaVersionSource string
+	JavaPins          []gradleJavaPin
 	SpringBoot        bool
 	SpringPointer     string
+	SpringSource      string
 	ApplicationPlugin bool
 	MainClass         string
 	MainClassPointer  string
-	Plugins           map[string]struct{}
+	MainClassSource   string
+	Plugins           map[string]string
 	Wrapper           string
 	WrapperSource     string
 	WrapperVersion    string
@@ -60,20 +70,70 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 	}
 
 	members := SettingsIncludes(settingsContents)
-	stripped := stripGradleComments(buildContents)
 	project := &gradleProject{
 		Source:       source,
 		SettingsFile: settings,
 		Members:      members,
 		MultiProject: hasSettings && len(members) > 0,
-		Plugins:      gradlePlugins(stripped),
+		Plugins:      map[string]string{},
 	}
-	project.JavaVersion, project.JavaVersionPtr = gradleJavaVersion(stripped)
-	project.SpringBoot, project.SpringPointer = gradleSpringBoot(stripped, project.Plugins)
-	_, project.ApplicationPlugin = project.Plugins["application"]
-	project.MainClass, project.MainClassPointer = gradleMainClass(stripped)
+	absorbGradleBuild(project, ctx.SourcePath(source), stripGradleComments(buildContents))
+	if err := absorbMemberBuilds(ctx, project); err != nil {
+		return nil, err
+	}
 	project.Wrapper, project.WrapperSource, project.WrapperVersion, project.WrapperProperties = gradleWrapper(ctx)
 	return project, nil
+}
+
+func absorbMemberBuilds(ctx provider.Context, project *gradleProject) error {
+	for _, member := range project.Members {
+		dir := filepath.Join(ctx.ProjectDir(), filepath.FromSlash(member))
+		name, contents, ok, err := readFirstFile(dir, []string{"build.gradle.kts", "build.gradle"})
+		if err != nil {
+			return err
+		}
+		if !ok {
+			continue
+		}
+		absorbGradleBuild(project, ctx.SourcePath(filepath.ToSlash(filepath.Join(member, name))), stripGradleComments(contents))
+	}
+	return nil
+}
+
+func absorbGradleBuild(project *gradleProject, source, contents string) {
+	plugins := gradlePlugins(contents)
+	for id := range plugins {
+		if project.Plugins[id] == "" {
+			project.Plugins[id] = source
+		}
+	}
+	if version, pointer := gradleJavaVersion(contents); version != "" {
+		project.JavaPins = append(project.JavaPins, gradleJavaPin{Version: version, Pointer: pointer, Source: source})
+		if project.JavaVersion == "" {
+			project.JavaVersion = version
+			project.JavaVersionPtr = pointer
+			project.JavaVersionSource = source
+		}
+	}
+	if ok, pointer := gradleSpringBoot(contents, plugins); ok {
+		if !project.SpringBoot || (pointer == "/plugins/org.springframework.boot" && project.SpringPointer != pointer) {
+			project.SpringBoot = true
+			project.SpringPointer = pointer
+			project.SpringSource = source
+		}
+	}
+	if !project.ApplicationPlugin {
+		if _, ok := plugins["application"]; ok {
+			project.ApplicationPlugin = true
+		}
+	}
+	if project.MainClass == "" {
+		if class, pointer := gradleMainClass(contents); class != "" {
+			project.MainClass = class
+			project.MainClassPointer = pointer
+			project.MainClassSource = source
+		}
+	}
 }
 
 func readFirstFile(dir string, names []string) (string, string, bool, error) {
@@ -242,20 +302,27 @@ func (g *gradleProject) springBootEvidence(ctx provider.Context) []plan.Evidence
 	if g == nil || !g.SpringBoot {
 		return nil
 	}
+	source := g.SpringSource
+	if source == "" {
+		source = ctx.SourcePath(g.Source)
+	}
 	return []plan.Evidence{{
 		Kind:        plan.EvidenceDeclaration,
-		Source:      ctx.SourcePath(g.Source),
+		Source:      source,
 		Pointer:     g.SpringPointer,
 		Description: "The Gradle build declares Spring Boot.",
 	}}
 }
 
 func (g *gradleProject) hasPlugin(id string) bool {
+	return g.pluginSource(id) != ""
+}
+
+func (g *gradleProject) pluginSource(id string) string {
 	if g == nil {
-		return false
+		return ""
 	}
-	_, ok := g.Plugins[id]
-	return ok
+	return g.Plugins[id]
 }
 
 func (g *gradleProject) hasSpringBootPlugin() bool {

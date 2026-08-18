@@ -88,15 +88,17 @@ func manifestJavaVersions(ctx provider.Context, project javaProject) []manifestV
 			},
 		})
 	}
-	if project.Gradle != nil && project.Gradle.JavaVersion != "" {
-		versions = append(versions, manifestVersion{
-			value: project.Gradle.JavaVersion,
-			evidence: plan.Evidence{
-				Kind:    plan.EvidenceDeclaration,
-				Source:  ctx.SourcePath(project.Gradle.Source),
-				Pointer: project.Gradle.JavaVersionPtr,
-			},
-		})
+	if project.Gradle != nil {
+		for _, pin := range project.Gradle.JavaPins {
+			versions = append(versions, manifestVersion{
+				value: pin.Version,
+				evidence: plan.Evidence{
+					Kind:    plan.EvidenceDeclaration,
+					Source:  pin.Source,
+					Pointer: pin.Pointer,
+				},
+			})
+		}
 	}
 	return versions
 }

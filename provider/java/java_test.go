@@ -508,6 +508,54 @@ func TestDetectIgnoresMavenPluginManagementSpringBoot(t *testing.T) {
 	}
 }
 
+func TestDetectAggregatesIncludedGradleMemberMetadata(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"settings.gradle.kts": "rootProject.name = \"demo\"\ninclude(\"app\")\n",
+		"build.gradle.kts":    "plugins { id(\"java\") }\n",
+		"app/build.gradle.kts": `plugins {
+    id("java")
+    id("org.springframework.boot") version "3.4.0"
+    id("checkstyle")
+}
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+`,
+		"app/src/main/java/com/example/DemoApplication.java": "public class DemoApplication { public static void main(String[] args) {} }\n",
+	})
+
+	if !hasProperty(result, plan.PropertyFramework, "spring-boot") {
+		t.Fatalf("missing member Spring Boot in %+v", result.Findings)
+	}
+	if !hasRuntime(result, "21") {
+		t.Fatalf("missing member Java 21 toolchain in %+v", result.Findings)
+	}
+	if !slices.Contains(factValues(result, "tool.configured"), "checkstyle") {
+		t.Fatalf("missing member checkstyle in %+v", result.Findings)
+	}
+	assertCommand(t, commandsByName(result)["server"], "gradle bootRun", plan.CapabilityApplicationRun)
+
+	for _, finding := range result.Findings {
+		switch item := finding.(type) {
+		case plan.PropertyFinding:
+			if item.Property.Kind == plan.PropertyFramework && item.Property.Name == "spring-boot" {
+				assertEvidenceSource(t, item.Property.Evidence, "app/build.gradle.kts")
+			}
+			if item.Property.Kind == plan.PropertyFact && item.Property.Name == "tool.configured" && item.Property.Value == "checkstyle" {
+				assertEvidenceSource(t, item.Property.Evidence, "app/build.gradle.kts")
+			}
+		case plan.RequirementFinding:
+			if item.Requirement.Name == "java" && item.Requirement.Version == "21" {
+				assertEvidenceSource(t, item.Requirement.Evidence, "app/build.gradle.kts")
+			}
+		case plan.CommandFinding:
+			if item.Command.Name == "server" {
+				assertEvidenceSource(t, item.Command.Evidence, "app/build.gradle.kts")
+			}
+		}
+	}
+}
+
 func TestDetectGradleLegacyJavaVersion(t *testing.T) {
 	t.Parallel()
 
@@ -656,6 +704,17 @@ func TestDetectMavenAggregatorUsesDeclaredModuleTests(t *testing.T) {
 	})
 
 	assertCommand(t, commandsByName(result)["test"], "mvn test", plan.CapabilityTestRun)
+}
+
+func TestDetectGradleInfersTestFromNonSurefireName(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"build.gradle": "plugins { id 'java' }\n",
+		"src/test/java/com/example/WidgetSpec.java": "class WidgetSpec {}\n",
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "gradle test", plan.CapabilityTestRun)
 }
 
 func TestDetectGradleDoesNotUseUnlistedNestedGradleTests(t *testing.T) {
@@ -1040,6 +1099,44 @@ func TestDetectReportsConflictingRuntimePins(t *testing.T) {
 	}
 }
 
+func TestDetectMavenLegacyJava18NormalizesTo8(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <properties><maven.compiler.source>1.8</maven.compiler.source></properties>
+</project>
+`,
+		".java-version": "8\n",
+	})
+
+	if hasRuntime(result, "1.8") {
+		t.Fatalf("legacy Maven Java 1.8 was not normalized: %+v", result.Findings)
+	}
+	if !hasRuntime(result, "8") {
+		t.Fatalf("missing normalized Java 8 in %+v", result.Findings)
+	}
+	if len(result.Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none between Maven 1.8 and Java 8", result.Conflicts)
+	}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != "java" || item.Requirement.Version != "8" {
+			continue
+		}
+		sources := make([]string, 0, len(item.Requirement.Evidence))
+		for _, evidence := range item.Requirement.Evidence {
+			sources = append(sources, evidence.Source)
+		}
+		if !slices.Contains(sources, ".java-version") || !slices.Contains(sources, "pom.xml") {
+			t.Fatalf("runtime evidence = %v, want .java-version and pom.xml", sources)
+		}
+		return
+	}
+	t.Fatal("missing merged Java 8 requirement")
+}
+
 func TestDetectMergesMatchingRuntimeEvidence(t *testing.T) {
 	t.Parallel()
 
@@ -1144,6 +1241,16 @@ func hasRuntime(result provider.Result, version string) bool {
 		}
 	}
 	return false
+}
+
+func assertEvidenceSource(t *testing.T, evidence []plan.Evidence, want string) {
+	t.Helper()
+	for _, item := range evidence {
+		if item.Source == want {
+			return
+		}
+	}
+	t.Fatalf("evidence sources = %v, want %q", evidence, want)
 }
 
 func commandsByName(result provider.Result) map[string]plan.Command {

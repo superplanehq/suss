@@ -440,7 +440,7 @@ func literalVersion(value string) string {
 	if value == "" || strings.Contains(value, "${") {
 		return ""
 	}
-	return value
+	return normalizeJavaVersion(value)
 }
 
 func isCompilerPlugin(plugin pomPlugin) bool {

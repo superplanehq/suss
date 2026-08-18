@@ -131,7 +131,7 @@ func isDeclaredGradleMember(path string, files map[string]struct{}, settings map
 		return false
 	}
 	// Mixed directories stay roots so Node/Go/Maven keep their manifests.
-	// The Java provider ignores the included member's Gradle build file.
+	// The included member's Gradle build is aggregated into the settings root.
 	if !onlyGradleBuildManifests(files) {
 		return false
 	}

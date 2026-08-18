@@ -40,35 +40,6 @@
       ],
       "facts": [
         {
-          "name": "ci.matrix.java",
-          "value": "17",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/ci.yml",
-              "pointer": "/jobs/android/steps/1/with/java-version"
-            },
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/ci.yml",
-              "pointer": "/jobs/java/steps/1/with/java-version"
-            }
-          ]
-        },
-        {
-          "name": "ci.matrix.java",
-          "value": "21",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/ci.yml",
-              "pointer": "/jobs/release/steps/1/with/java-version"
-            }
-          ]
-        },
-        {
           "name": "tool.configured",
           "value": "checkstyle",
           "confidence": "high",
@@ -99,8 +70,32 @@
         {
           "kind": "runtime",
           "name": "java",
+          "version": "11",
           "confidence": "high",
           "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mockito-integration-tests/android-tests/build.gradle.kts",
+              "pointer": "/sourceCompatibility"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "17",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mockito-integration-tests/graalvm-tests/build.gradle.kts",
+              "pointer": "/sourceCompatibility"
+            },
+            {
+              "kind": "declaration",
+              "source": "mockito-integration-tests/inline-mocks-tests/build.gradle.kts",
+              "pointer": "/sourceCompatibility"
+            },
             {
               "kind": "invocation",
               "source": ".github/workflows/ci.yml",
@@ -110,6 +105,32 @@
               "kind": "invocation",
               "source": ".github/workflows/ci.yml",
               "pointer": "/jobs/java/steps/1/with/java-version"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "18",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mockito-extensions/mockito-junit-jupiter/build.gradle.kts",
+              "pointer": "/sourceCompatibility"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "21",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mockito-integration-tests/java-21-tests/build.gradle.kts",
+              "pointer": "/java/toolchain"
             },
             {
               "kind": "invocation",

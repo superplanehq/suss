@@ -1,6 +1,8 @@
 package java
 
 import (
+	"path/filepath"
+
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
 )
@@ -63,6 +65,15 @@ func configuredToolEvidence(ctx provider.Context, project javaProject, tool conf
 		if fileExists(ctx.ProjectDir(), name) {
 			evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceConfiguration, Source: ctx.SourcePath(name)})
 		}
+		if project.Gradle == nil {
+			continue
+		}
+		for _, member := range project.Gradle.Members {
+			memberName := filepath.ToSlash(filepath.Join(member, name))
+			if fileExists(ctx.ProjectDir(), memberName) {
+				evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceConfiguration, Source: ctx.SourcePath(memberName)})
+			}
+		}
 	}
 	if project.Maven != nil {
 		for _, plugin := range tool.mavenPlugins {
@@ -77,10 +88,10 @@ func configuredToolEvidence(ctx provider.Context, project javaProject, tool conf
 	}
 	if project.Gradle != nil {
 		for _, plugin := range tool.gradlePlugins {
-			if project.Gradle.hasPlugin(plugin) {
+			if source := project.Gradle.pluginSource(plugin); source != "" {
 				evidence = append(evidence, plan.Evidence{
 					Kind:    plan.EvidenceDeclaration,
-					Source:  ctx.SourcePath(project.Gradle.Source),
+					Source:  source,
 					Pointer: "/plugins/" + pointerToken(plugin),
 				})
 			}
