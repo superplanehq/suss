@@ -856,6 +856,29 @@ func TestApplyDoesNotFoldPythonAboveACommaUpperBound(t *testing.T) {
 	}
 }
 
+func TestApplyFoldsZeroPaddedPythonRelease(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "python",
+		Version:    "==3.12",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "pyproject.toml", Pointer: "/requires-python"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPython("3.12.0")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a conflict for 3.12.0 vs ==3.12", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want CI 3.12.0 attached to ==3.12", got[0].Requirements[0].Evidence)
+	}
+}
+
 func TestApplyFoldsPythonCompatibleRelease(t *testing.T) {
 	t.Parallel()
 

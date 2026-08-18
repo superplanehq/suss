@@ -583,6 +583,79 @@ python = "^3.11"
 	assertCommand(t, commandsByName(result)["install dependencies"], "poetry install", plan.CapabilityDependenciesInstall)
 }
 
+func TestDetectPoetryDoesNotTreatRequirementsPytestAsInstalled(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[tool.poetry]
+name = "widget"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+`,
+		"requirements.txt":     "pytest\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "poetry install", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "poetry run python -m unittest", plan.CapabilityTestRun)
+}
+
+func TestDetectUvDoesNotTreatRequirementsPytestAsInstalled(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+
+[tool.uv]
+`,
+		"uv.lock":              "version = 1\n",
+		"requirements.txt":     "pytest\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "uv sync", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "uv run python -m unittest", plan.CapabilityTestRun)
+}
+
+func TestDetectPipStillRunsRequirementsPytest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml":       "[project]\nname = \"widget\"\n",
+		"requirements.txt":     "pytest\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -r requirements.txt", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+}
+
+func TestDetectPoetryDoesNotTreatRequirementsDjangoAsInstalled(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[tool.poetry]
+name = "widget"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+`,
+		"requirements.txt": "django>=5.0\n",
+		"manage.py":        "#!/usr/bin/env python\n",
+		"tests.py":         "import unittest\n",
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "poetry run python -m unittest", plan.CapabilityTestRun)
+	if _, ok := commandsByName(result)["server"]; ok {
+		t.Fatal("requirements-only Django unexpectedly inferred a Poetry server command")
+	}
+}
+
 func TestDetectDjangoTestsPyEmitsManagePyTest(t *testing.T) {
 	t.Parallel()
 
@@ -919,6 +992,62 @@ testpaths = tests
 	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
 	if !slices.Contains(configuredToolValues(result), "pytest") {
 		t.Fatalf("configured tools = %v, want pytest", configuredToolValues(result))
+	}
+}
+
+func TestDetectSetupCfgSectionsConfigureSupportedTools(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nname = \"widget\"\n",
+		"setup.cfg": `[flake8]
+max-line-length = 88
+[mypy]
+python_version = 3.12
+[isort]
+profile = black
+[pylint]
+max-line-length = 88
+`,
+	})
+
+	tools := configuredToolValues(result)
+	for _, tool := range []string{"flake8", "mypy", "isort", "pylint"} {
+		if !slices.Contains(tools, tool) {
+			t.Fatalf("configured tools = %v, want %s from setup.cfg", tools, tool)
+		}
+		sources := factSources(result, "tool.configured", tool)
+		if !slices.Contains(sources, "setup.cfg") {
+			t.Fatalf("%s evidence sources = %v, want setup.cfg", tool, sources)
+		}
+	}
+}
+
+func TestDetectToxIniSectionsConfigureSupportedTools(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nname = \"widget\"\n",
+		"tox.ini": `[tox]
+envlist = py312
+[flake8]
+max-line-length = 88
+[mypy]
+python_version = 3.12
+[isort]
+profile = black
+`,
+	})
+
+	tools := configuredToolValues(result)
+	for _, tool := range []string{"flake8", "mypy", "isort"} {
+		if !slices.Contains(tools, tool) {
+			t.Fatalf("configured tools = %v, want %s from tox.ini", tools, tool)
+		}
+		sources := factSources(result, "tool.configured", tool)
+		if !slices.Contains(sources, "tox.ini") {
+			t.Fatalf("%s evidence sources = %v, want tox.ini", tool, sources)
+		}
 	}
 }
 

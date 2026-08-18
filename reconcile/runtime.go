@@ -83,7 +83,7 @@ const (
 
 func matchExistingRuntime(project plan.ProjectPlan, indexes []int, version string) (int, runtimeMatchKind) {
 	for _, index := range indexes {
-		if sameVersion(project.Requirements[index].Version, version) {
+		if sameRelease(project.Requirements[index].Version, version) {
 			return index, runtimeEqual
 		}
 	}
@@ -323,6 +323,15 @@ func equalitySatisfies(raw, version string) (ok, known bool) {
 	return sameVersion(bound, version), true
 }
 
+func sameRelease(a, b string) bool {
+	if sameVersion(a, b) {
+		return true
+	}
+	left, okLeft := numericBound(a)
+	right, okRight := numericBound(b)
+	return okLeft && okRight && compareVersions(left, right) == 0
+}
+
 func normalizeVersion(version string) string {
 	version = strings.TrimSpace(version)
 	version, _, _ = strings.Cut(version, "@")
@@ -347,7 +356,7 @@ func versionSatisfies(runtime, declared, version string) (ok, known bool) {
 	if declared == "" || version == "" || !comparableVersion(version) {
 		return false, false
 	}
-	if sameVersion(declared, version) {
+	if sameRelease(declared, version) {
 		return true, true
 	}
 	if !isVersionConstraint(declared) && !comparableVersion(normalizeVersion(declared)) {

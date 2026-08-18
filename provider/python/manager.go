@@ -263,6 +263,9 @@ func depInstalledByDefault(project pythonProject, manager string, dep depDeclara
 		return true
 	}
 	for _, origin := range dep.Origins {
+		if !originAppliesToManager(origin, manager) {
+			continue
+		}
 		if origin.Kind == depKindMain {
 			return true
 		}
@@ -271,6 +274,10 @@ func depInstalledByDefault(project pythonProject, manager string, dep depDeclara
 		}
 	}
 	return false
+}
+
+func originAppliesToManager(origin depOrigin, manager string) bool {
+	return origin.Manager == "" || origin.Manager == manager
 }
 
 func preferredSelector(dep depDeclaration) (kind, name string) {

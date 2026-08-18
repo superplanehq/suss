@@ -1,6 +1,8 @@
 package python
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/superplanehq/suss/plan"
@@ -13,17 +15,21 @@ type configuredTool struct {
 	tables       []string
 	dependencies []string
 	prefix       bool
+	iniFiles     []string
+	iniSections  []string
 }
 
+var defaultINIFiles = []string{"setup.cfg", "tox.ini"}
+
 var configuredTools = []configuredTool{
-	{name: "pytest", files: []string{"pytest.ini", "pytest.toml", ".pytest.ini", "conftest.py"}, tables: []string{"pytest"}, dependencies: []string{"pytest", "pytest-django"}, prefix: true},
+	{name: "pytest", files: []string{"pytest.ini", "pytest.toml", ".pytest.ini", "conftest.py"}, tables: []string{"pytest"}, dependencies: []string{"pytest", "pytest-django"}, prefix: true, iniFiles: defaultINIFiles, iniSections: []string{"tool:pytest", "pytest"}},
 	{name: "ruff", files: []string{"ruff.toml", ".ruff.toml"}, tables: []string{"ruff"}, dependencies: []string{"ruff"}},
 	{name: "black", files: []string{".black"}, tables: []string{"black"}, dependencies: []string{"black"}},
-	{name: "mypy", files: []string{"mypy.ini", ".mypy.ini"}, tables: []string{"mypy"}, dependencies: []string{"mypy"}},
+	{name: "mypy", files: []string{"mypy.ini", ".mypy.ini"}, tables: []string{"mypy"}, dependencies: []string{"mypy"}, iniFiles: defaultINIFiles, iniSections: []string{"mypy"}},
 	{name: "pyright", files: []string{"pyrightconfig.json"}, tables: []string{"pyright"}, dependencies: []string{"pyright"}},
-	{name: "flake8", files: []string{".flake8"}, tables: []string{"flake8"}, dependencies: []string{"flake8"}},
-	{name: "pylint", files: []string{".pylintrc", "pylintrc"}, tables: []string{"pylint"}, dependencies: []string{"pylint"}},
-	{name: "isort", files: []string{".isort.cfg"}, tables: []string{"isort"}, dependencies: []string{"isort"}},
+	{name: "flake8", files: []string{".flake8"}, tables: []string{"flake8"}, dependencies: []string{"flake8"}, iniFiles: defaultINIFiles, iniSections: []string{"flake8"}},
+	{name: "pylint", files: []string{".pylintrc", "pylintrc"}, tables: []string{"pylint"}, dependencies: []string{"pylint"}, iniFiles: defaultINIFiles, iniSections: []string{"pylint"}},
+	{name: "isort", files: []string{".isort.cfg"}, tables: []string{"isort"}, dependencies: []string{"isort"}, iniFiles: defaultINIFiles, iniSections: []string{"isort"}},
 	{name: "tox", files: []string{"tox.ini"}, tables: []string{"tox"}, dependencies: []string{"tox"}},
 	{name: "nox", files: []string{"noxfile.py"}, tables: []string{"nox"}, dependencies: []string{"nox"}},
 }
@@ -47,9 +53,7 @@ func configuredToolEvidence(ctx provider.Context, project pythonProject, tool co
 			evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceConfiguration, Source: ctx.SourcePath(name)})
 		}
 	}
-	if tool.name == "pytest" {
-		evidence = append(evidence, setupCfgPytestEvidence(ctx)...)
-	}
+	evidence = append(evidence, iniSectionEvidence(ctx, tool)...)
 	for _, table := range tool.tables {
 		if _, ok := project.ToolTables[table]; ok {
 			evidence = append(evidence, plan.Evidence{
@@ -90,4 +94,59 @@ func prefixedDependency(project pythonProject, prefix string) (depDeclaration, b
 		}
 	}
 	return best, found
+}
+
+func toolByName(name string) (configuredTool, bool) {
+	for _, tool := range configuredTools {
+		if tool.name == name {
+			return tool, true
+		}
+	}
+	return configuredTool{}, false
+}
+
+func iniSectionEvidence(ctx provider.Context, tool configuredTool) []plan.Evidence {
+	if len(tool.iniSections) == 0 {
+		return nil
+	}
+	var evidence []plan.Evidence
+	for _, name := range tool.iniFiles {
+		contents, err := os.ReadFile(filepath.Join(ctx.ProjectDir(), name))
+		if err != nil {
+			continue
+		}
+		section, ok := iniMatchingSection(string(contents), tool.iniSections...)
+		if !ok {
+			continue
+		}
+		evidence = append(evidence, plan.Evidence{
+			Kind:    plan.EvidenceConfiguration,
+			Source:  ctx.SourcePath(name),
+			Pointer: "/" + section,
+		})
+	}
+	return evidence
+}
+
+func iniMatchingSection(contents string, sections ...string) (string, bool) {
+	wanted := make(map[string]string, len(sections))
+	for _, section := range sections {
+		wanted[strings.ToLower(section)] = section
+	}
+	for _, line := range strings.Split(contents, "\n") {
+		line = strings.TrimSpace(line)
+		if len(line) < 3 || line[0] != '[' || line[len(line)-1] != ']' {
+			continue
+		}
+		name := strings.ToLower(strings.TrimSpace(line[1 : len(line)-1]))
+		if section, ok := wanted[name]; ok {
+			return section, true
+		}
+		for key, section := range wanted {
+			if strings.HasPrefix(name, key+".") {
+				return section, true
+			}
+		}
+	}
+	return "", false
 }

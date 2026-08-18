@@ -2,8 +2,6 @@ package python
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/superplanehq/suss/knowledge"
@@ -108,7 +106,7 @@ func testCommandSpec(ctx provider.Context, project pythonProject, choice manager
 
 	if managePy, err := firstManagePy(ctx.ProjectDir()); err != nil {
 		return commandSpec{}, false, err
-	} else if managePy != "" && hasDependency(project, "django") {
+	} else if managePy != "" && hasInstallableDependency(project, choice.selected, "django") {
 		run := managerRun(choice.selected, "python "+managePy+" test")
 		spec := conventionSpec(source, "test", run, "/#test", plan.ConfidenceHigh, fmt.Sprintf("Django applications with test files conventionally run them with %s.", run))
 		spec.evidence = addEvidenceAfterManifest(spec.evidence, testEvidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(managePy)})
@@ -125,14 +123,14 @@ func serverCommandSpec(ctx provider.Context, project pythonProject, choice manag
 	source := ctx.SourcePath(project.Manifest)
 	if managePy, err := firstManagePy(ctx.ProjectDir()); err != nil {
 		return commandSpec{}, false, err
-	} else if managePy != "" && hasDependency(project, "django") {
+	} else if managePy != "" && hasInstallableDependency(project, choice.selected, "django") {
 		run := managerRun(choice.selected, "python "+managePy+" runserver")
 		spec := conventionSpec(source, "server", run, "/#server", plan.ConfidenceMedium, fmt.Sprintf("Django applications conventionally start the development server with %s.", run))
 		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(managePy)})
 		return spec, true, nil
 	}
 
-	if hasDependency(project, "flask") {
+	if hasInstallableDependency(project, choice.selected, "flask") {
 		if app := flaskApplicationFile(ctx); app != "" {
 			run := managerRun(choice.selected, "flask run")
 			spec := conventionSpec(source, "server", run, "/#server", plan.ConfidenceMedium, fmt.Sprintf("Flask applications conventionally start the development server with %s.", run))
@@ -165,7 +163,9 @@ func pytestEvidence(ctx provider.Context, project pythonProject, manager string)
 			evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceConfiguration, Source: ctx.SourcePath(name)})
 		}
 	}
-	evidence = append(evidence, setupCfgPytestEvidence(ctx)...)
+	if tool, ok := toolByName("pytest"); ok {
+		evidence = append(evidence, iniSectionEvidence(ctx, tool)...)
+	}
 	if _, ok := project.ToolTables["pytest"]; ok {
 		evidence = append(evidence, plan.Evidence{
 			Kind:    plan.EvidenceConfiguration,
@@ -197,39 +197,6 @@ func pytestEvidence(ctx provider.Context, project pythonProject, manager string)
 		}
 	}
 	return evidence
-}
-
-func setupCfgPytestEvidence(ctx provider.Context) []plan.Evidence {
-	contents, err := os.ReadFile(filepath.Join(ctx.ProjectDir(), "setup.cfg"))
-	if err != nil {
-		return nil
-	}
-	if !iniHasSection(string(contents), "tool:pytest", "pytest") {
-		return nil
-	}
-	return []plan.Evidence{{
-		Kind:    plan.EvidenceConfiguration,
-		Source:  ctx.SourcePath("setup.cfg"),
-		Pointer: "/tool:pytest",
-	}}
-}
-
-func iniHasSection(contents string, sections ...string) bool {
-	wanted := make(map[string]struct{}, len(sections))
-	for _, section := range sections {
-		wanted[strings.ToLower(section)] = struct{}{}
-	}
-	for _, line := range strings.Split(contents, "\n") {
-		line = strings.TrimSpace(line)
-		if len(line) < 3 || line[0] != '[' || line[len(line)-1] != ']' {
-			continue
-		}
-		name := strings.ToLower(strings.TrimSpace(line[1 : len(line)-1]))
-		if _, ok := wanted[name]; ok {
-			return true
-		}
-	}
-	return false
 }
 
 func flaskApplicationFile(ctx provider.Context) string {

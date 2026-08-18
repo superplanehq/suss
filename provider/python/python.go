@@ -96,7 +96,7 @@ func readProject(ctx provider.Context) (pythonProject, bool, error) {
 	if err != nil {
 		return pythonProject{}, false, err
 	}
-	addDependencies(&project, "requirements.txt", "", extras, depOrigin{Kind: depKindMain})
+	addDependencies(&project, "requirements.txt", "", extras, depOrigin{Kind: depKindMain, Manager: "pip"})
 	return project, true, nil
 }
 

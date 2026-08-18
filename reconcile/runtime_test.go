@@ -114,6 +114,10 @@ func TestVersionSatisfiesPEP440PythonConstraints(t *testing.T) {
 		{constraint: "~=3.11", version: "4.0", want: false},
 		{constraint: "~=3.11.0", version: "3.11.5", want: true},
 		{constraint: "~=3.11.0", version: "3.12", want: false},
+		{constraint: "==3.12", version: "3.12.0", want: true},
+		{constraint: "==3.12.0", version: "3.12", want: true},
+		{constraint: "3.12", version: "3.12.0", want: true},
+		{constraint: "==3.11", version: "3.12.0", want: false},
 	}
 	for _, tt := range tests {
 		got, known := versionSatisfies(tt.constraint, tt.version)

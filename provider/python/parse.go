@@ -29,8 +29,9 @@ const (
 )
 
 type depOrigin struct {
-	Kind  string
-	Group string
+	Kind    string
+	Group   string
+	Manager string
 }
 
 type depDeclaration struct {
@@ -338,7 +339,7 @@ func appendOrigins(existing []depOrigin, additions ...depOrigin) []depOrigin {
 	for _, addition := range additions {
 		found := false
 		for _, origin := range existing {
-			if origin.Kind == addition.Kind && origin.Group == addition.Group {
+			if origin.Kind == addition.Kind && origin.Group == addition.Group && origin.Manager == addition.Manager {
 				found = true
 				break
 			}
@@ -398,6 +399,16 @@ func isKnownTool(name string) bool {
 func hasDependency(parsed pythonProject, names ...string) bool {
 	for _, name := range names {
 		if _, ok := parsed.Dependencies[normalizeDependency(name)]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func hasInstallableDependency(project pythonProject, manager string, names ...string) bool {
+	for _, name := range names {
+		dep, ok := project.Dependencies[normalizeDependency(name)]
+		if ok && depInstallable(project, manager, dep) {
 			return true
 		}
 	}
