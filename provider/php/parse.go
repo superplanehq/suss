@@ -136,14 +136,26 @@ func scriptBodies(raw json.RawMessage) []string {
 
 func expandComposerAt(body string) string {
 	body = strings.TrimSpace(body)
-	if after, ok := strings.CutPrefix(body, "@php"); ok {
-		after = strings.TrimSpace(after)
-		if after == "" {
-			return "php"
-		}
-		return "php " + after
+	if body == "@php" {
+		return "php"
 	}
-	return body
+	const prefix = "@php"
+	if !strings.HasPrefix(body, prefix) {
+		return body
+	}
+	rest := body[len(prefix):]
+	if rest == "" || !isComposerAtBoundary(rest[0]) {
+		return body
+	}
+	after := strings.TrimSpace(rest)
+	if after == "" {
+		return "php"
+	}
+	return "php " + after
+}
+
+func isComposerAtBoundary(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\n' || b == '\r'
 }
 
 func scriptInvocations(raw json.RawMessage) string {

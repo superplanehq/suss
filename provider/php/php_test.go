@@ -400,6 +400,46 @@ func TestDetectAcceptsDisabledComposerPlatformPackages(t *testing.T) {
 	}
 }
 
+func TestExpandComposerAtRequiresATokenBoundary(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		body string
+		want string
+	}{
+		{body: "@php", want: "php"},
+		{body: "@php artisan test", want: "php artisan test"},
+		{body: "@php vendor/bin/phpunit", want: "php vendor/bin/phpunit"},
+		{body: "@phpartisan test", want: "@phpartisan test"},
+		{body: "@phpunit", want: "@phpunit"},
+	}
+	for _, tt := range tests {
+		if got := expandComposerAt(tt.body); got != tt.want {
+			t.Fatalf("expandComposerAt(%q) = %q, want %q", tt.body, got, tt.want)
+		}
+	}
+}
+
+func TestDetectDoesNotInterpretPHPPlaceholderInsideScriptAlias(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"composer.json": `{
+  "scripts": {
+    "test": "@phpartisan test"
+  }
+}`,
+		"artisan": "#!/usr/bin/env php\n",
+	})
+	command := commandsByName(result)["test"]
+	if command.Run == nil || *command.Run != "composer run-script test" || command.Origin != plan.CommandDeclared {
+		t.Fatalf("command = %+v, want declared composer run-script test", command)
+	}
+	if len(command.Interpretations) != 0 {
+		t.Fatalf("interpretations = %+v, want none for @phpartisan", command.Interpretations)
+	}
+}
+
 func TestDetectInterpretsPHPCLIOptionsInDeclaredTestScript(t *testing.T) {
 	t.Parallel()
 

@@ -515,7 +515,11 @@ func dropWrappers(tokens []string) []string {
 			break
 		}
 		if rest[0] == "exec" {
-			return dropLeadingFlags(rest[1:])
+			unwrapped := skipComposerGlobalOptions(rest[1:])
+			if len(unwrapped) > 0 && unwrapped[0] == "--" {
+				return unwrapped[1:]
+			}
+			return unwrapped
 		}
 		return append([]string{"composer"}, rest...)
 	case "php":
@@ -630,6 +634,8 @@ func phpCLIOption(token string) (name string, hasValue bool) {
 func phpCLIExecutionMode(name string) bool {
 	switch name {
 	case "-r", "--run",
+		"-l", "--syntax-check",
+		"-s", "-w",
 		"-B", "--process-begin",
 		"-R", "--process-code",
 		"-F", "--process-file",

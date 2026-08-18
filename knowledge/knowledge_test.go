@@ -331,6 +331,41 @@ func TestParseScriptNormalizesComposerGlobalOptionsBeforeInstall(t *testing.T) {
 	}
 }
 
+func TestParseScriptDoesNotUnwrapPHPSyntaxCheckAsVendorBin(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("php -l vendor/bin/phpunit && php --syntax-check vendor/bin/pest && php -s vendor/bin/phpunit && php -w vendor/bin/pest")
+	want := []Invocation{
+		{Executable: "php", Args: []string{"-l", "vendor/bin/phpunit"}},
+		{Executable: "php", Args: []string{"--syntax-check", "vendor/bin/pest"}},
+		{Executable: "php", Args: []string{"-s", "vendor/bin/phpunit"}},
+		{Executable: "php", Args: []string{"-w", "vendor/bin/pest"}},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+	for _, inv := range got {
+		if matches := Interpret(inv); len(matches) != 0 {
+			t.Fatalf("Interpret(%+v) = %+v, want no fabricated test.run", inv, matches)
+		}
+	}
+}
+
+func TestParseStatementsKeepsWorkingDirAfterComposerExec(t *testing.T) {
+	t.Parallel()
+
+	got := ParseStatements("composer exec -d tools phpunit && composer exec --working-dir tools pest")
+	if len(got) != 2 {
+		t.Fatalf("ParseStatements() = %+v, want two statements", got)
+	}
+	if got[0].WorkingDir != "tools" || got[0].Invocation.Executable != "phpunit" {
+		t.Fatalf("first statement = %+v, want phpunit in tools", got[0])
+	}
+	if got[1].WorkingDir != "tools" || got[1].Invocation.Executable != "pest" {
+		t.Fatalf("second statement = %+v, want pest in tools", got[1])
+	}
+}
+
 func TestParseScriptDoesNotUnwrapPHPInlineCodeAsVendorBin(t *testing.T) {
 	t.Parallel()
 
@@ -384,7 +419,7 @@ func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
 		t.Fatalf("ClassifyManager(composer update) = %+v, ok=%v", update, ok)
 	}
 
-	for _, alias := range []string{"upgrade", "u", "info", "rm", "uninstall", "r", "cc"} {
+	for _, alias := range []string{"upgrade", "u", "info", "rm", "uninstall", "r", "cc", "completion"} {
 		got, ok := ClassifyManager(Invocation{Executable: "composer", Args: []string{alias}})
 		if !ok || got.Install || got.Script != "" {
 			t.Fatalf("ClassifyManager(composer %s) = %+v, ok=%v, want a builtin", alias, got, ok)

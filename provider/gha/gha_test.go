@@ -538,6 +538,30 @@ jobs:
 	}
 }
 
+func TestDetectAppliesComposerWorkingDirAfterExec(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: composer exec -d tools phpunit
+`,
+	})
+
+	got := commandByName(result)["phpunit"]
+	if deref(got.Run) != "composer exec -d tools phpunit" || got.Directory != "tools" {
+		t.Fatalf("command = %+v, want phpunit in tools", got)
+	}
+	if !commandHasCapability(got, plan.CapabilityTestRun) {
+		t.Fatalf("interpretations = %+v, want test.run", got.Interpretations)
+	}
+	if _, ok := commandByName(result)["tools phpunit"]; ok {
+		t.Fatalf("commands = %v, did not want the working-dir value as the name", keys(commandByName(result)))
+	}
+}
+
 func TestDetectAppliesComposerWorkingDirWhenUnwrappingExec(t *testing.T) {
 	t.Parallel()
 

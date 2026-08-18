@@ -395,7 +395,7 @@ func isComposerBuiltin(name string) bool {
 var composerBuiltins = map[string]struct{}{
 	"about": {}, "archive": {}, "audit": {}, "browse": {}, "bump": {},
 	"cc": {}, "check-platform-reqs": {}, "clear-cache": {}, "clearcache": {},
-	"config": {}, "create-project": {}, "depends": {}, "diagnose": {},
+	"completion": {}, "config": {}, "create-project": {}, "depends": {}, "diagnose": {},
 	"dump-autoload": {}, "dumpautoload": {}, "exec": {}, "fund": {},
 	"global": {}, "help": {}, "home": {}, "i": {}, "info": {}, "init": {},
 	"install": {}, "licenses": {}, "list": {}, "outdated": {}, "prohibits": {},
