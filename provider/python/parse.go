@@ -287,15 +287,6 @@ func poetryScalar(section *tomlSection, key string) string {
 	return section.scalars[key]
 }
 
-func firstNonEmpty(values ...string) string {
-	for _, value := range values {
-		if value != "" {
-			return value
-		}
-	}
-	return ""
-}
-
 func parseTOML(contents string) map[string]*tomlSection {
 	contents = stripTOMLComments(contents)
 	doc := map[string]*tomlSection{}
