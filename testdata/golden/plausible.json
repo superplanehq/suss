@@ -1,0 +1,2731 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [
+        {
+          "name": "provider.make.limitation",
+          "value": "variable-expansion",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile",
+              "description": "Make functions, automatic variables, and predefined variables are not expanded."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "node",
+          "version": "24.17.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/merge-sharded-e2e-test-report/steps/1/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/node.yml",
+              "pointer": "/jobs/build/steps/2/with/node-version",
+              "description": "The setup action takes its version from an expression that was not resolved."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker-script-npm-release.yml",
+              "pointer": "/jobs/tracker-release-npm/steps/1/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker.yml",
+              "pointer": "/jobs/merge-sharded-test-report/steps/1/with/node-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker.yml",
+              "pointer": "/jobs/test/steps/1/with/node-version"
+            }
+          ]
+        },
+        {
+          "kind": "tool",
+          "name": "docker",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile"
+            }
+          ]
+        },
+        {
+          "kind": "tool",
+          "name": "make",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "clickhouse-server",
+          "version": "25.11.5.8-alpine",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/services/clickhouse/image"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/services/clickhouse/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "postgres",
+          "version": "18",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/services/postgres/image"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/services/postgres/image"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CACHE_VERSION",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/env/CACHE_VERSION"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GHCR_REPO",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build-public-images-ghcr.yml",
+              "pointer": "/env/GHCR_REPO"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PERSISTENT_CACHE_DIR",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/env/PERSISTENT_CACHE_DIR"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "TF_CLOUD_ORGANIZATION",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/terraform-e2e.yml",
+              "pointer": "/jobs/terraform/env/TF_CLOUD_ORGANIZATION"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_1f2821a89b5b6f4b390099740e39f8aa",
+          "name": "install",
+          "run": "make install",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/install",
+              "description": "The target recipe invokes mix and npm."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/install",
+                  "description": "The command installs npm dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_a10babae61b7a59ff102068c4c27044e",
+          "name": "install dependencies",
+          "run": "npm install",
+          "directory": "master-branch/tracker",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker-script-update.yml",
+              "pointer": "/jobs/tracker-script-update/steps/5/run#command=1"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tracker-script-update.yml",
+                  "pointer": "/jobs/tracker-script-update/steps/5/run#command=1",
+                  "description": "The command installs npm dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_0019d8fe9388cf45e2446185e82e76fa",
+          "name": "browserless",
+          "run": "make browserless",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/browserless",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_01e37d1a2a292578c80cbfa969edb1b6",
+          "name": "terraform init",
+          "run": "terraform init",
+          "directory": "test/e2e",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/terraform-e2e.yml",
+              "pointer": "/jobs/terraform/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0850bb48ffadbe50e7fc0388bc468f09",
+          "name": "minio",
+          "run": "make minio",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/minio",
+              "description": "The target recipe invokes docker, while, do, and done."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "make minio",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/build/steps/12/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_0aea74621331cf9a3d227c4e81157a98",
+          "name": "clickhouse",
+          "run": "make clickhouse",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/clickhouse",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0aea8116ba19ebbd584e0763bdda4fd0",
+          "name": "terraform plan",
+          "run": "terraform plan -no-color",
+          "directory": "test/e2e",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/terraform-e2e.yml",
+              "pointer": "/jobs/terraform/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0c041754219e83645f946d574db37b94",
+          "name": "mix test",
+          "run": "mix test --include slow --include minio --include migrations --max-failures 1 --warnings-as-errors --partitions 6",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/steps/13/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_0e9291a80b00d098cc32631d5b8f48de",
+          "name": "terraform apply",
+          "run": "terraform apply -auto-approve",
+          "directory": "test/e2e",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/terraform-e2e.yml",
+              "pointer": "/jobs/terraform/steps/8/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_1e0fca5ce722bae586fe86de4b0c3cb6",
+          "name": "mix dialyzer",
+          "run": "mix dialyzer",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/static/steps/10/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_206fccdc7ec6762311b860c3962907c1",
+          "name": "mix run",
+          "run": "mix run -e \"Tzdata.ReleaseUpdater.poll_for_update\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/steps/11/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_250ad66c16feca98e28e69f0a9c62338",
+          "name": "mix generate_countries_meta",
+          "run": "mix generate_countries_meta",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/static/steps/8/run#command=0"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_27845cfe1a4e9c7316db3ea9468b0255",
+          "name": "node compile.js",
+          "run": "node compile.js --suffix master",
+          "directory": "master-branch/tracker",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker-script-update.yml",
+              "pointer": "/jobs/tracker-script-update/steps/5/run#command=2"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_2a01832589b149293d6feb3b05594386",
+          "name": "mix run",
+          "run": "mix run -e \"Tzdata.ReleaseUpdater.poll_for_update\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/14/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3379d379a7935700f390e833864f15db",
+          "name": "sso",
+          "run": "make sso",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/sso",
+              "description": "The target recipe invokes echo and docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_33b0e8a6824714276a031a0701af5208",
+          "name": "mix deps.get",
+          "run": "mix deps.get --only $MIX_ENV",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/steps/8/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_33d9710b698b726a3c29b8cda7915d4a",
+          "name": "mix download_country_database",
+          "run": "mix download_country_database",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/13/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_39a6365c65a533db88acb0c1996cafcb",
+          "name": "terraform fmt",
+          "run": "terraform fmt -check",
+          "directory": "test/e2e",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/terraform-e2e.yml",
+              "pointer": "/jobs/terraform/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3ef03ef4599aaf4e0727cdfebd029b6a",
+          "name": "clickhouse-stop",
+          "run": "make clickhouse-stop",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/clickhouse-stop",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_433b7f6c0d6237bace4fd075b1d4e0d1",
+          "name": "mix compile",
+          "run": "mix compile --warnings-as-errors --all-warnings",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/9/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4b18c2fc119346eb90b9063ad0695d48",
+          "name": "mix deps.get",
+          "run": "mix deps.get --only $MIX_ENV",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/8/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_4dce574ec04ad946281efb0d56dcf1df",
+          "name": "mix deps.get",
+          "run": "mix deps.get",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/static/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_53df8f10ca3992e41e85ef0b24591844",
+          "name": "mix deps.get",
+          "run": "mix deps.get",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish-docs.yml",
+              "pointer": "/jobs/build/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_5696c872477b7853d70dbe7c75b59394",
+          "name": "mock-dns",
+          "run": "make mock-dns",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/mock-dns",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_589fd9bb49131cc7f973d1c77c286d99",
+          "name": "generate-corefile",
+          "run": "make generate-corefile",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/generate-corefile",
+              "description": "The target recipe invokes envsubst."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_5dcaec97e988e46a98c71e91d51d0cdf",
+          "name": "server",
+          "run": "make server",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/server",
+              "description": "The target recipe invokes mix."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_60d607b6f7db6a784687e6b02f9c87de",
+          "name": "sudo apt-get",
+          "run": "sudo apt-get update",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker-script-update.yml",
+              "pointer": "/jobs/tracker-script-update/steps/2/run#command=2"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_636d47623697fecfba90267bdcb52e1a",
+          "name": "postgres",
+          "run": "make postgres",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/postgres",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_897b4f4083af791c4328d980f25a3673",
+          "name": "mix format",
+          "run": "mix format --check-formatted",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/static/steps/6/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_8b8126fd9e63b87277596d4135a8b4b9",
+          "name": "loadtest-server",
+          "run": "make loadtest-server",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/loadtest-server",
+              "description": "The target recipe invokes echo and iex."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_910530d226733c9386cd48b26312ea48",
+          "name": "mix test",
+          "run": "mix test --include slow --include migrations --max-failures 1 --warnings-as-errors --partitions 6",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/steps/14/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_95984f4b7df3971457d6c93d5827c93a",
+          "name": "terraform validate",
+          "run": "terraform validate -no-color",
+          "directory": "test/e2e",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/terraform-e2e.yml",
+              "pointer": "/jobs/terraform/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_965f91b309ce303cfff2c3a3b01c8c41",
+          "name": "help",
+          "run": "make help",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/help",
+              "description": "The target recipe invokes perl, sort, and awk."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_97dd218a35f679d600e366e790f0e5f0",
+          "name": "loadtest-client",
+          "run": "make loadtest-client",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/loadtest-client",
+              "description": "The target recipe invokes echo, sleep, and k6."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_9ddb0372bc61bd1d0c09f4bad75ced19",
+          "name": "sso-stop",
+          "run": "make sso-stop",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/sso-stop",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a5ccbed0cbdbd5b94316d01a7a51ca4f",
+          "name": "mix compile",
+          "run": "mix compile --warnings-as-errors --all-warnings",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/static/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a84ec00440c8806c6aeaf7a3de82bfa9",
+          "name": "mix credo",
+          "run": "mix credo diff --from-git-merge-base origin/master",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/static/steps/9/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a8df34aceca6ebedec77c4d43affdef5",
+          "name": "docker buildx",
+          "run": "docker buildx imagetools inspect ${{ env.GHCR_REPO }}:${{ steps.meta.outputs.version }}",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/build-public-images-ghcr.yml",
+              "pointer": "/jobs/push/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ababfa2bea433ea1f08c6dd2e834a567",
+          "name": "clickhouse-postgres-remote",
+          "run": "make clickhouse-postgres-remote",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/clickhouse-postgres-remote",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b3c3fe7bf4dc92317028ba7ae2c39b46",
+          "name": "mix docs",
+          "run": "mix docs",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish-docs.yml",
+              "pointer": "/jobs/build/steps/5/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b99d1bcad036e81c9f3f8025029f8933",
+          "name": "mix download_ip_registries",
+          "run": "mix download_ip_registries",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/iana-registry-check.yml",
+              "pointer": "/jobs/check-iana-registries/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_bdbea7a118de28fe78ef3dbe908799b0",
+          "name": "mix deps.get",
+          "run": "mix deps.get",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/iana-registry-check.yml",
+              "pointer": "/jobs/check-iana-registries/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_c75cb497a87ab62686653ee706aa4d76",
+          "name": "mix do",
+          "run": "mix do ecto.create, ecto.migrate",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/steps/10/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cb02aa137a47e8e29066801acb14a616",
+          "name": "clickhouse-client",
+          "run": "make clickhouse-client",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/clickhouse-client",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cddee6587dfa7a2b2678f6c0fc114abf",
+          "name": "postgres-prod",
+          "run": "make postgres-prod",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/postgres-prod",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d9ed9478f89067685f00665969026d74",
+          "name": "postgres-stop",
+          "run": "make postgres-stop",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/postgres-stop",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_dcee26347783a57c01402edbe81d8663",
+          "name": "mix deps.unlock",
+          "run": "mix deps.unlock --check-unused",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/static/steps/7/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ddf3f2c6d87c3ba154667d67f6b60860",
+          "name": "postgres-client",
+          "run": "make postgres-client",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/postgres-client",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_df3fe51d631b82f15a751ba90176617c",
+          "name": "minio-stop",
+          "run": "make minio-stop",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/minio-stop",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e4f7c1a0ee94fa8461806417e8047e51",
+          "name": "clickhouse-prod",
+          "run": "make clickhouse-prod",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/clickhouse-prod",
+              "description": "The target recipe invokes docker."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e698190ce4fb046b02d8d51e6b0a36c6",
+          "name": "mix do",
+          "run": "mix do ecto.create, ecto.migrate",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/12/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_edb10f68c94d6598dbece5444f8ca485",
+          "name": "mix compile",
+          "run": "mix compile --warnings-as-errors --all-warnings",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/steps/9/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fb2208cd3b54da0e80cf70740b6bc74c",
+          "name": "sudo apt-get",
+          "run": "sudo apt-get install -y jq clickhouse-server",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker-script-update.yml",
+              "pointer": "/jobs/tracker-script-update/steps/2/run#command=3"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fdcc8b2b6d3b286221b4140c5da657e4",
+          "name": "mix assets.deploy",
+          "run": "mix assets.deploy",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/11/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "assets",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "assets/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "assets/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "assets/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "assets/package-lock.json"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "assets/eslint.config.mjs"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "jest",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "assets/jest.config.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "prettier",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "assets/.prettierrc.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "assets/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_d70d3f80819996f1a9241dc6fdf29425",
+          "name": "install dependencies",
+          "run": "npm ci",
+          "directory": "assets",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/10/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/node.yml",
+              "pointer": "/jobs/build/steps/3/run"
+            },
+            {
+              "kind": "file",
+              "source": "assets/package-lock.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-ci"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-ci"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm install --prefix ./assets",
+              "directory": "assets",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/10/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/node.yml",
+                  "pointer": "/jobs/build/steps/3/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_15e7bfe52b54819dff608c476f6510c8",
+          "name": "lint",
+          "run": "npm run lint",
+          "directory": "assets",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "assets/package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run lint --prefix ./assets",
+              "directory": "assets",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/node.yml",
+                  "pointer": "/jobs/build/steps/7/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_167603f1c111b2e700afdac47d8fd22e",
+          "name": "typecheck",
+          "run": "npm run typecheck",
+          "directory": "assets",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "assets/package.json",
+              "pointer": "/scripts/typecheck"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "assets/package.json",
+                  "pointer": "/scripts/typecheck",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run typecheck --prefix ./assets",
+              "directory": "assets",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/node.yml",
+                  "pointer": "/jobs/build/steps/6/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_3b64a4a3ff9ccb91831580ad7997a53a",
+          "name": "check-format",
+          "run": "npm run check-format",
+          "directory": "assets",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "assets/package.json",
+              "pointer": "/scripts/check-format"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "assets/package.json",
+                  "pointer": "/scripts/check-format",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run check-format --prefix ./assets",
+              "directory": "assets",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/node.yml",
+                  "pointer": "/jobs/build/steps/8/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_c240d21209b3e3d7f66e587848f26173",
+          "name": "generate-types",
+          "run": "npm run generate-types",
+          "directory": "assets",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "assets/package.json",
+              "pointer": "/scripts/generate-types"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run generate-types --prefix ./assets",
+              "directory": "assets",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/node.yml",
+                  "pointer": "/jobs/build/steps/5/run#command=0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_c26fc643810a11ab0c8a4fe2e4f9c920",
+          "name": "stylelint",
+          "run": "npm run stylelint",
+          "directory": "assets",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "assets/package.json",
+              "pointer": "/scripts/stylelint"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_cbbbc57a1284c91252bec03cc7b52e6e",
+          "name": "test",
+          "run": "npm test",
+          "directory": "assets",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "assets/package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "assets/package.json",
+                  "pointer": "/scripts/test",
+                  "description": "The script invokes Jest."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run test --prefix ./assets",
+              "directory": "assets",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/node.yml",
+                  "pointer": "/jobs/build/steps/9/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_d8c4dd247c735b041226b789bfae7c9b",
+          "name": "eslint",
+          "run": "npm run eslint",
+          "directory": "assets",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "assets/package.json",
+              "pointer": "/scripts/eslint"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "assets/package.json",
+                  "pointer": "/scripts/eslint",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_e7a8430dc7fc50a26376157e3cf2d52f",
+          "name": "format",
+          "run": "npm run format",
+          "directory": "assets",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "assets/package.json",
+              "pointer": "/scripts/format"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "assets/package.json",
+                  "pointer": "/scripts/format",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "e2e",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "e2e/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "e2e/package.json",
+              "pointer": "/devDependencies/typescript"
+            },
+            {
+              "kind": "configuration",
+              "source": "e2e/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "e2e/package-lock.json"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "e2e/eslint.config.mjs"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "prettier",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "e2e/.prettierrc.json"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "tsc",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "e2e/tsconfig.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_9debee7b74ef906acf5e8e0938720d33",
+          "name": "install dependencies",
+          "run": "npm ci",
+          "directory": "e2e",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/15/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/merge-sharded-e2e-test-report/steps/2/run"
+            },
+            {
+              "kind": "file",
+              "source": "e2e/package-lock.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-ci"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-ci"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm --prefix ./e2e ci",
+              "directory": "e2e",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/15/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/merge-sharded-e2e-test-report/steps/2/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_1eaae2ecf82a1f91babe736be367d154",
+          "name": "typecheck",
+          "run": "npm run typecheck",
+          "directory": "e2e",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "e2e/package.json",
+              "pointer": "/scripts/typecheck"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.typecheck",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "e2e/package.json",
+                  "pointer": "/scripts/typecheck",
+                  "description": "The script invokes the TypeScript compiler."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm --prefix ./e2e run typecheck",
+              "directory": "e2e",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/17/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_261d9c8b09b4c2d6e6ff6e5c359626b3",
+          "name": "check-format",
+          "run": "npm run check-format",
+          "directory": "e2e",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "e2e/package.json",
+              "pointer": "/scripts/check-format"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "e2e/package.json",
+                  "pointer": "/scripts/check-format",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm --prefix ./e2e run check-format",
+              "directory": "e2e",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/16/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_6458e28d32484f774b0a82cd1bd40f76",
+          "name": "playwright install",
+          "run": "npx playwright install --with-deps chromium",
+          "directory": "e2e",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/18/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_6822537fcdde7df200d0a6b90405ed64",
+          "name": "lint",
+          "run": "npm run lint",
+          "directory": "e2e",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "e2e/package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "e2e/package.json",
+                  "pointer": "/scripts/lint",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_7cb6a13a1ce8c4443168795d95b20e2c",
+          "name": "test",
+          "run": "npm test",
+          "directory": "e2e",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "e2e/package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm --prefix ./e2e test -- --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=blob",
+              "directory": "e2e",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/19/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_8ea667f4a9ebbe655777e561e782e844",
+          "name": "format",
+          "run": "npm run format",
+          "directory": "e2e",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "e2e/package.json",
+              "pointer": "/scripts/format"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "e2e/package.json",
+                  "pointer": "/scripts/format",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_d6640af244928738d99b47ab9f6e6e44",
+          "name": "playwright merge-reports",
+          "run": "npx playwright merge-reports --reporter list ../all-e2e-blob-reports",
+          "directory": "e2e",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/merge-sharded-e2e-test-report/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "tracker",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json"
+            }
+          ]
+        },
+        {
+          "name": "typescript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/devDependencies/typescript"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "tracker/package-lock.json"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "eslint",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "tracker/eslint.config.mjs"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "prettier",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "tracker/.prettierrc.json"
+            }
+          ]
+        }
+      ],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_67babb93ad81ad00ba3dc3b08edd2396",
+          "name": "install dependencies",
+          "run": "npm ci",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/build/steps/6/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/elixir.yml",
+              "pointer": "/jobs/e2e/steps/6/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/node.yml",
+              "pointer": "/jobs/build/steps/4/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker-script-npm-release.yml",
+              "pointer": "/jobs/tracker-release-npm/steps/2/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker-script-update.yml",
+              "pointer": "/jobs/tracker-script-update/steps/5/run#command=5"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker.yml",
+              "pointer": "/jobs/merge-sharded-test-report/steps/2/run"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker.yml",
+              "pointer": "/jobs/test/steps/2/run"
+            },
+            {
+              "kind": "file",
+              "source": "tracker/package-lock.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-ci"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-ci"
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm --prefix ./tracker ci",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tracker.yml",
+                  "pointer": "/jobs/merge-sharded-test-report/steps/2/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tracker.yml",
+                  "pointer": "/jobs/test/steps/2/run"
+                }
+              ]
+            },
+            {
+              "context": "ci",
+              "run": "npm install",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tracker-script-update.yml",
+                  "pointer": "/jobs/tracker-script-update/steps/5/run#command=5"
+                }
+              ]
+            },
+            {
+              "context": "ci",
+              "run": "npm install --prefix ./tracker",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/build/steps/6/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/6/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/node.yml",
+                  "pointer": "/jobs/build/steps/4/run"
+                }
+              ]
+            },
+            {
+              "context": "ci",
+              "run": "npm install --prefix tracker",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tracker-script-npm-release.yml",
+                  "pointer": "/jobs/tracker-release-npm/steps/2/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_2e9deb94cccd09910c5437a34855b7b6",
+          "name": "node compile.js",
+          "run": "node compile.js --suffix pr",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker-script-update.yml",
+              "pointer": "/jobs/tracker-script-update/steps/5/run#command=6"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3350462afc56d0066f5fec4457ece8cd",
+          "name": "test",
+          "run": "npm test",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm --prefix ./tracker test -- --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=blob",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tracker.yml",
+                  "pointer": "/jobs/test/steps/3/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_50c8b7f76c7088193f51687821873312",
+          "name": "test:local",
+          "run": "npm run test:local",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/test:local"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_7f85ed88ea6ea1e28f50ad8b7d1628ff",
+          "name": "playwright merge-reports",
+          "run": "npx playwright merge-reports --reporter list ../all-blob-reports",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker.yml",
+              "pointer": "/jobs/merge-sharded-test-report/steps/4/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_847dc2a8f163a4d1e2bcb7abdd6e2059",
+          "name": "npm:prepare_release:patch",
+          "run": "npm run npm:prepare_release:patch",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/npm:prepare_release:patch"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run npm:prepare_release:patch --prefix tracker",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tracker-script-npm-release.yml",
+                  "pointer": "/jobs/tracker-release-npm/steps/3/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_a16ff2051bca8e8596d7b4a73d0d37c7",
+          "name": "start",
+          "run": "npm start",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/start"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_ac5f133642c8455aa1cb6fcbdedcf33e",
+          "name": "deploy",
+          "run": "npm run deploy",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/deploy"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run deploy --prefix ./tracker",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/build/steps/7/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/elixir.yml",
+                  "pointer": "/jobs/e2e/steps/7/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/node.yml",
+                  "pointer": "/jobs/build/steps/12/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_b235c9cd23f4b078f70c4d4a0c553ced",
+          "name": "npm:bump_version",
+          "run": "npm run npm:bump_version",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/npm:bump_version"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b713135e32e87350158f8c504fcf88b8",
+          "name": "npm:update_code_and_changelog",
+          "run": "npm run npm:update_code_and_changelog",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/npm:update_code_and_changelog"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_b9c101f08a60a93980a8de68b43a8a8f",
+          "name": "lint",
+          "run": "npm run lint",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/lint"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "tracker/package.json",
+                  "pointer": "/scripts/lint",
+                  "description": "The script invokes ESLint."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run lint --prefix ./tracker",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/node.yml",
+                  "pointer": "/jobs/build/steps/10/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_d3ba255f886dbf822b71a07a72bd9c10",
+          "name": "jq .tracker_script_version = $NEW_VERSION",
+          "run": "jq \".tracker_script_version = $NEW_VERSION\" package.json > package.json.tmp",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker-script-update.yml",
+              "pointer": "/jobs/tracker-script-update/steps/3/run#command=14"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_da8298f59bc84d07932f08554c3b016e",
+          "name": "npm:prepare_release:major",
+          "run": "npm run npm:prepare_release:major",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/npm:prepare_release:major"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run npm:prepare_release:major --prefix tracker",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tracker-script-npm-release.yml",
+                  "pointer": "/jobs/tracker-release-npm/steps/5/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_e12a7c810cd4dc4007d8010bef4e7a20",
+          "name": "check-format",
+          "run": "npm run check-format",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/check-format"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "tracker/package.json",
+                  "pointer": "/scripts/check-format",
+                  "description": "The script invokes Prettier."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run check-format --prefix ./tracker",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/node.yml",
+                  "pointer": "/jobs/build/steps/11/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_ed291dcd13d84f411a06cafdee610ad9",
+          "name": "npm:prepare_release:minor",
+          "run": "npm run npm:prepare_release:minor",
+          "directory": "tracker",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/package.json",
+              "pointer": "/scripts/npm:prepare_release:minor"
+            }
+          ],
+          "interpretations": [],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "npm run npm:prepare_release:minor --prefix tracker",
+              "directory": "tracker",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/tracker-script-npm-release.yml",
+                  "pointer": "/jobs/tracker-release-npm/steps/4/run"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "tracker/npm_package",
+      "languages": [
+        {
+          "name": "javascript",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/npm_package/package.json"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "npm",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/npm_package/package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            }
+          ]
+        }
+      ],
+      "facts": [],
+      "requirements": [],
+      "preparation": [
+        {
+          "id": "cmd_c5520b4aee97ae36e677a538eb08f37b",
+          "name": "install dependencies",
+          "run": "npm install",
+          "directory": "tracker/npm_package",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/npm_package/package.json"
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "default-npm",
+              "description": "No lockfile or packageManager field selects another tool; npm is the default Node package manager."
+            },
+            {
+              "kind": "convention",
+              "source": "node-ecosystem",
+              "pointer": "npm-install"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "node-ecosystem",
+                  "pointer": "npm-install"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_db7f40161420fbf35e2d5041b7ff844f",
+          "name": "npm publish",
+          "run": "npm publish",
+          "directory": "tracker/npm_package",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/tracker-script-npm-release.yml",
+              "pointer": "/jobs/tracker-release-npm/steps/7/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_e9300608422d72ce199f2bbe78ef8796",
+          "name": "test",
+          "run": "npm test",
+          "directory": "tracker/npm_package",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "tracker/npm_package/package.json",
+              "pointer": "/scripts/test"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

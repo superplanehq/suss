@@ -163,6 +163,11 @@ func parseStatements(script string, splitPipes bool) []Statement {
 	parts := splitCommandList(script, splitPipes)
 	statements := make([]Statement, 0, len(parts))
 	for _, part := range parts {
+		if HasUnclosedGHAExpression(part) {
+			// An unclosed ${{ ... }} cannot be tokenized without fabricating
+			// text. Leave it uninterpreted.
+			continue
+		}
 		statements = append(statements, parseStatement(part))
 	}
 	return statements
@@ -201,8 +206,25 @@ func splitCommandList(script string, splitPipes bool) []string {
 	}
 
 	runes := []rune(script)
+	inExpr := 0
 	for i := 0; i < len(runes); i++ {
 		r := runes[i]
+		if !inSingle && !inDouble && r == '$' && i+2 < len(runes) && runes[i+1] == '{' && runes[i+2] == '{' {
+			inExpr++
+			current.WriteString("${{")
+			i += 2
+			continue
+		}
+		if !inSingle && !inDouble && inExpr > 0 && r == '}' && i+1 < len(runes) && runes[i+1] == '}' {
+			current.WriteString("}}")
+			i++
+			inExpr--
+			continue
+		}
+		if inExpr > 0 {
+			current.WriteRune(r)
+			continue
+		}
 		switch {
 		case r == '\'' && !inDouble:
 			inSingle = !inSingle
@@ -259,8 +281,25 @@ func splitShell(part string) []string {
 	}
 
 	runes := []rune(part)
+	inExpr := 0
 	for i := 0; i < len(runes); i++ {
 		r := runes[i]
+		if !inSingle && !inDouble && r == '$' && i+2 < len(runes) && runes[i+1] == '{' && runes[i+2] == '{' {
+			inExpr++
+			current.WriteString("${{")
+			i += 2
+			continue
+		}
+		if !inSingle && !inDouble && inExpr > 0 && r == '}' && i+1 < len(runes) && runes[i+1] == '}' {
+			current.WriteString("}}")
+			i++
+			inExpr--
+			continue
+		}
+		if inExpr > 0 {
+			current.WriteRune(r)
+			continue
+		}
 		switch {
 		case r == '\'' && !inDouble:
 			inSingle = !inSingle
@@ -340,10 +379,52 @@ func cutLeadingAssignment(s string) (name, rest string, ok bool) {
 		}
 		return name, s[i:], true
 	}
+	if end := ghaExprClose(s, i); end >= 0 {
+		return name, s[end:], true
+	}
+	if strings.HasPrefix(s[i:], "${{") {
+		return "", s, false
+	}
 	for i < len(s) && s[i] != ' ' && s[i] != '\t' {
+		if end := ghaExprClose(s, i); end >= 0 {
+			i = end
+			continue
+		}
+		if strings.HasPrefix(s[i:], "${{") {
+			return "", s, false
+		}
 		i++
 	}
 	return name, s[i:], true
+}
+
+// HasUnclosedGHAExpression reports whether s contains a `${{` that is not
+// closed by `}}`. Those cannot be tokenized without fabricating text.
+func HasUnclosedGHAExpression(s string) bool {
+	for i := 0; i < len(s); {
+		j := strings.Index(s[i:], "${{")
+		if j < 0 {
+			return false
+		}
+		i += j
+		end := ghaExprClose(s, i)
+		if end < 0 {
+			return true
+		}
+		i = end
+	}
+	return false
+}
+
+func ghaExprClose(s string, i int) int {
+	if i < 0 || i+3 > len(s) || s[i:i+3] != "${{" {
+		return -1
+	}
+	end := strings.Index(s[i+3:], "}}")
+	if end < 0 {
+		return -1
+	}
+	return i + 3 + end + 2
 }
 
 func takeLeadingAssignments(tokens []string) ([]string, []string) {

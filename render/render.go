@@ -38,7 +38,7 @@ func Write(w io.Writer, document plan.Document, opts Options) {
 	fmt.Fprintln(w)
 
 	if len(document.Projects) == 0 {
-		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, and mix.exs.")
+		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, mix.exs, Makefile, and .env.example.")
 		return
 	}
 
@@ -80,8 +80,8 @@ func writeProject(w io.Writer, project plan.ProjectPlan, providers []string) {
 	}
 	writeFacts(w, project.Facts)
 	writeNamedList(w, "Requirements", requirementLines(project.Requirements))
-	writeCommands(w, "Preparation", project.Preparation)
-	writeCommands(w, "Commands", project.Commands)
+	writeCommands(w, "Preparation", project.Path, project.Preparation)
+	writeCommands(w, "Commands", project.Path, project.Commands)
 	writeAmbiguities(w, project.Ambiguities)
 	writeConflicts(w, project.Conflicts)
 	writeConfiguredWithoutCommand(w, project)
@@ -137,16 +137,43 @@ func writeFacts(w io.Writer, facts []plan.ProjectFact) {
 func requirementLines(requirements []plan.Requirement) []string {
 	lines := make([]string, 0, len(requirements))
 	for _, requirement := range requirements {
-		line := "  " + requirement.Name
+		line := "  " + requirementKindLabel(requirement.Kind) + " " + requirement.Name
 		if requirement.Version != "" {
 			line += " " + requirement.Version
+		}
+		if requirement.Kind == plan.RequirementEnvironment {
+			var notes []string
+			if requirement.IsRequired != nil && *requirement.IsRequired {
+				notes = append(notes, "required")
+			}
+			if requirement.HasDefault != nil && *requirement.HasDefault {
+				notes = append(notes, "default present")
+			}
+			if len(notes) > 0 {
+				line += " (" + strings.Join(notes, ", ") + ")"
+			}
 		}
 		lines = append(lines, line)
 	}
 	return lines
 }
 
-func writeCommands(w io.Writer, title string, commands []plan.Command) {
+func requirementKindLabel(kind plan.RequirementKind) string {
+	switch kind {
+	case plan.RequirementRuntime:
+		return "runtime"
+	case plan.RequirementTool:
+		return "tool"
+	case plan.RequirementService:
+		return "service"
+	case plan.RequirementEnvironment:
+		return "environment"
+	default:
+		return string(kind)
+	}
+}
+
+func writeCommands(w io.Writer, title, projectPath string, commands []plan.Command) {
 	if len(commands) == 0 {
 		return
 	}
@@ -158,11 +185,24 @@ func writeCommands(w io.Writer, title string, commands []plan.Command) {
 		if command.Run != nil {
 			run = *command.Run
 		}
-		fmt.Fprintf(w, "  %-*s  %s%s\n", width, oneLine(command.Name), oneLine(run), capabilitySuffix(command))
+		suffix := capabilitySuffix(command)
+		if dir := commandDirectoryNote(projectPath, command.Directory); dir != "" {
+			suffix = "  (" + dir + ")" + suffix
+		}
+		fmt.Fprintf(w, "  %-*s  %s%s\n", width, oneLine(command.Name), oneLine(run), suffix)
 		for _, variant := range command.Variants {
 			fmt.Fprintf(w, "    %s  %s\n", oneLine(variant.Context), oneLine(variant.Run))
 		}
 	}
+}
+
+func commandDirectoryNote(projectPath, directory string) string {
+	projectPath = strings.TrimSpace(projectPath)
+	directory = strings.TrimSpace(directory)
+	if directory == "" || directory == "." || directory == projectPath {
+		return ""
+	}
+	return "in " + directory
 }
 
 func commandsForDisplay(commands []plan.Command) []plan.Command {

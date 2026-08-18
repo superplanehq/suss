@@ -238,6 +238,37 @@
       ],
       "preparation": [
         {
+          "id": "cmd_0bcbc74707d6c107f6f0dc3d0a21d9b7",
+          "name": "go get",
+          "run": "go get -v -t -d ./...",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/4/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/4/run",
+                  "description": "The command fetches Go dependencies with go get."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
           "id": "cmd_3c33ddd10248e94f1b03d746409efbc8",
           "name": "download dependencies",
           "run": "go mod download",
@@ -287,24 +318,6 @@
               "kind": "invocation",
               "source": ".github/workflows/release.yml",
               "pointer": "/jobs/release/steps/14/run#command=10"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_0bcbc74707d6c107f6f0dc3d0a21d9b7",
-          "name": "go get",
-          "run": "go get -v -t -d ./...",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/ci.yml",
-              "pointer": "/jobs/test/steps/4/run"
             }
           ],
           "interpretations": [],

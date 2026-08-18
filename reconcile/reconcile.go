@@ -32,8 +32,9 @@
 //     recorded as a conflicting assertion, not as a second command.
 //
 //  4. Unrelated. Anything else remains origin=observed on the assigned
-//     project. Install-capable observations go to preparation; others to
-//     commands. No interpretation is invented beyond the knowledge base.
+//     project. Install-capable observations and `docker compose up` go to
+//     preparation; others to commands. No interpretation is invented beyond
+//     the knowledge base.
 //
 //  5. Ambiguity. If several existing commands satisfy the variant rule, the
 //     declared command wins over inferred, then the one with identical extra
@@ -63,13 +64,67 @@ import (
 	"path"
 	"strings"
 
+	"github.com/superplanehq/suss/knowledge"
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
 )
 
+// PreferDeclared drops inferred convention commands when a declared command
+// already covers the same capability. idea.md: conventions fill gaps when
+// explicit evidence is absent; `make test` is not replaced by `go test ./...`.
+// This is cross-provider reconciliation, not provider logic.
+func PreferDeclared(project plan.ProjectPlan) plan.ProjectPlan {
+	covered := declaredCapabilities(project)
+	if len(covered) == 0 {
+		return project
+	}
+	project.Preparation = dropCoveredInferred(project.Preparation, covered)
+	project.Commands = dropCoveredInferred(project.Commands, covered)
+	return project
+}
+
+func declaredCapabilities(project plan.ProjectPlan) map[plan.Capability]struct{} {
+	out := make(map[plan.Capability]struct{})
+	for _, command := range append(append([]plan.Command{}, project.Preparation...), project.Commands...) {
+		if command.Origin != plan.CommandDeclared {
+			continue
+		}
+		for _, interpretation := range command.Interpretations {
+			out[interpretation.Capability] = struct{}{}
+		}
+	}
+	return out
+}
+
+func dropCoveredInferred(commands []plan.Command, covered map[plan.Capability]struct{}) []plan.Command {
+	if len(commands) == 0 {
+		return commands
+	}
+	out := commands[:0]
+	for _, command := range commands {
+		if command.Origin == plan.CommandInferred && inferredCovered(command, covered) {
+			continue
+		}
+		out = append(out, command)
+	}
+	return out
+}
+
+func inferredCovered(command plan.Command, covered map[plan.Capability]struct{}) bool {
+	if len(command.Interpretations) == 0 {
+		return false
+	}
+	for _, interpretation := range command.Interpretations {
+		if _, ok := covered[interpretation.Capability]; ok {
+			return true
+		}
+	}
+	return false
+}
+
 // Apply merges repository-scoped observations into already-assembled project
-// plans. projects is the per-project output of assemble; repo is the combined
-// result of repository-scoped providers such as GitHub Actions.
+// plans. projects is the per-project output of assemble after PreferDeclared;
+// repo is the combined result of repository-scoped providers such as GitHub Actions.
 func Apply(projects []plan.ProjectPlan, repo provider.Result) []plan.ProjectPlan {
 	if len(repo.Findings) == 0 && len(repo.Ambiguities) == 0 && len(repo.Conflicts) == 0 {
 		return projects
@@ -110,7 +165,7 @@ func applyCommand(projects []plan.ProjectPlan, observed plan.Command) []plan.Pro
 		project.Conflicts = append(project.Conflicts, packageManagerConflict(outcome.command, observed))
 	default:
 		observed.Scope = projectScope(*project)
-		if isInstall(observed) {
+		if isPreparation(observed) {
 			project.Preparation = append(project.Preparation, observed)
 		} else {
 			project.Commands = append(project.Commands, observed)
@@ -336,9 +391,27 @@ func deref(value *string) string {
 	return *value
 }
 
+// isPreparation uses the same rule as assemble.shouldPrepare: install-capable
+// commands and docker compose up are preparation, regardless of origin.
+func isPreparation(command plan.Command) bool {
+	return isInstall(command) || isComposeUp(command)
+}
+
 func isInstall(command plan.Command) bool {
 	for _, interpretation := range command.Interpretations {
 		if interpretation.Capability == plan.CapabilityDependenciesInstall {
+			return true
+		}
+	}
+	return false
+}
+
+func isComposeUp(command plan.Command) bool {
+	if command.Run == nil {
+		return false
+	}
+	for _, inv := range knowledge.ParseScript(*command.Run) {
+		if knowledge.IsComposeUp(inv) {
 			return true
 		}
 	}

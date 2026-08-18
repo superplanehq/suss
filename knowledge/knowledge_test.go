@@ -194,6 +194,8 @@ func TestRedactAssignmentValuesStripsLiteralValues(t *testing.T) {
 		{raw: "API_TOKEN=hunter2 npm test", want: "API_TOKEN=$API_TOKEN npm test"},
 		{raw: `FOO='bar baz' BAR="qux" npm test`, want: "FOO=$FOO BAR=$BAR npm test"},
 		{raw: "npm test", want: "npm test"},
+		{raw: "platform=${{ matrix.platform }}", want: "platform=$platform"},
+		{raw: "platform=${{ matrix.platform }} docker build .", want: "platform=$platform docker build ."},
 	}
 	for _, tt := range tests {
 		if got := RedactAssignmentValues(tt.raw); got != tt.want {
@@ -228,6 +230,32 @@ func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	}
 }
 
+func TestIsComposeUp(t *testing.T) {
+	t.Parallel()
+
+	if !IsComposeUp(Invocation{Executable: "docker", Args: []string{"compose", "up", "-d", "postgres"}}) {
+		t.Fatal("IsComposeUp(docker compose up -d) = false, want true")
+	}
+	if !IsComposeUp(Invocation{Executable: "docker-compose", Args: []string{"up", "-d"}}) {
+		t.Fatal("IsComposeUp(docker-compose up -d) = false, want true")
+	}
+	if IsComposeUp(Invocation{Executable: "docker", Args: []string{"compose", "ps"}}) {
+		t.Fatal("IsComposeUp(docker compose ps) = true, want false")
+	}
+	if IsComposeUp(Invocation{Executable: "docker", Args: []string{"run", "postgres"}}) {
+		t.Fatal("IsComposeUp(docker run) = true, want false")
+	}
+	if !IsComposeUp(Invocation{Executable: "docker", Args: []string{"compose", "--profile", "tests", "up", "-d"}}) {
+		t.Fatal("IsComposeUp(docker compose --profile tests up -d) = false, want true")
+	}
+	if !IsComposeUp(Invocation{Executable: "docker", Args: []string{"compose", "-f", "ci.yml", "up", "-d"}}) {
+		t.Fatal("IsComposeUp(docker compose -f ci.yml up -d) = false, want true")
+	}
+	if !IsComposeUp(Invocation{Executable: "docker", Args: []string{"compose", "--file=ci.yml", "up"}}) {
+		t.Fatal("IsComposeUp(docker compose --file=ci.yml up) = false, want true")
+	}
+}
+
 func TestInterpretMatchesGoToolchainInvocations(t *testing.T) {
 	t.Parallel()
 
@@ -241,6 +269,8 @@ func TestInterpretMatchesGoToolchainInvocations(t *testing.T) {
 		{inv: Invocation{Executable: "go", Args: []string{"vet", "./..."}}, want: []plan.Capability{plan.CapabilityCodeLint}},
 		{inv: Invocation{Executable: "go", Args: []string{"mod", "download"}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
 		{inv: Invocation{Executable: "golangci-lint", Args: []string{"run", "--verbose"}}, want: []plan.Capability{plan.CapabilityCodeLint}},
+		{inv: Invocation{Executable: "gofmt", Args: []string{"-l", "."}}, want: []plan.Capability{plan.CapabilityCodeFormat}},
+		{inv: Invocation{Executable: "go", Args: []string{"get", "-v", "./..."}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
 	}
 	for _, tt := range tests {
 		got := capabilities(Interpret(tt.inv))
@@ -275,6 +305,56 @@ func TestIsGoPlumbing(t *testing.T) {
 	}
 	if IsGoPlumbing(Invocation{Executable: "go", Args: []string{"test", "./..."}}) {
 		t.Fatal("IsGoPlumbing(go test) = true, want false")
+	}
+}
+
+func TestIsToolPlumbingCoversVersionProbes(t *testing.T) {
+	t.Parallel()
+
+	if !IsToolPlumbing(Invocation{Executable: "docker", Args: []string{"version"}}) {
+		t.Fatal("IsToolPlumbing(docker version) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "docker", Args: []string{"info"}}) {
+		t.Fatal("IsToolPlumbing(docker info) = false, want true")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "docker", Args: []string{"compose", "version"}}) {
+		t.Fatal("IsToolPlumbing(docker compose version) = false, want true")
+	}
+	if IsToolPlumbing(Invocation{Executable: "docker", Args: []string{"compose", "up", "-d"}}) {
+		t.Fatal("IsToolPlumbing(docker compose up) = true, want false")
+	}
+	if IsToolPlumbing(Invocation{Executable: "make", Args: []string{"version"}}) {
+		t.Fatal("IsToolPlumbing(make version) = true, want false")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "npm", Args: []string{"--version"}}) {
+		t.Fatal("IsToolPlumbing(npm --version) = false, want true")
+	}
+	if IsToolPlumbing(Invocation{Executable: "npm", Args: []string{"version", "--no-git-tag-version", "1.2.3"}}) {
+		t.Fatal("IsToolPlumbing(npm version ...) = true, want false; npm version bumps the package")
+	}
+}
+
+func TestParseScriptKeepsGHAExpressionsAtomic(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("platform=${{ matrix.platform }}")
+	if len(got) != 0 {
+		t.Fatalf("ParseScript(assignment only) = %#v, want no invocation", got)
+	}
+
+	got = ParseScript("platform=${{ matrix.platform }} docker build .")
+	if len(got) != 1 || got[0].Executable != "docker" {
+		t.Fatalf("ParseScript() = %#v, want docker build", got)
+	}
+
+	got = ParseScript("echo ${{ steps.build.outputs.digest }}")
+	if len(got) != 1 || got[0].Executable != "echo" {
+		t.Fatalf("ParseScript(echo expr) = %#v, want echo", got)
+	}
+
+	got = ParseScript("broken=${{ matrix.platform")
+	if len(got) != 0 {
+		t.Fatalf("ParseScript(unclosed) = %#v, want no fabricated invocation", got)
 	}
 }
 

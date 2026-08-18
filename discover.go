@@ -12,9 +12,15 @@ import (
 )
 
 var projectManifests = map[string]struct{}{
-	"package.json": {},
-	"go.mod":       {},
-	"mix.exs":      {},
+	"package.json":  {},
+	"go.mod":        {},
+	"mix.exs":       {},
+	"GNUmakefile":   {},
+	"Makefile":      {},
+	"makefile":      {},
+	".env.example":  {},
+	".env.sample":   {},
+	".env.template": {},
 }
 
 var skippedDirectories = map[string]struct{}{

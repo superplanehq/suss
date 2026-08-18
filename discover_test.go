@@ -33,6 +33,52 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	}
 }
 
+func TestFindProjectRootsDiscoversMakefileAndEnvExample(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "Makefile"), "test:\n\tgo test ./...\n")
+	writeFile(t, filepath.Join(root, "deploy", ".env.example"), "DATABASE_URL=\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{".", "deploy"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestDetectRunsMakeAndEnvfileWithoutLanguageManifests(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "Makefile"), "test: ; go test ./...\n")
+	writeFile(t, filepath.Join(root, ".env.example"), "API_TOKEN=\n")
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if len(document.Projects) != 1 {
+		t.Fatalf("len(projects) = %d, want 1", len(document.Projects))
+	}
+	project := document.Projects[0]
+	if !hasEnv(project, "API_TOKEN", true, false) {
+		t.Fatalf("requirements = %+v, want API_TOKEN from .env.example", project.Requirements)
+	}
+	var sawMakeTest bool
+	for _, command := range project.Commands {
+		if command.Name == "test" && derefRun(command.Run) == "make test" {
+			sawMakeTest = true
+		}
+	}
+	if !sawMakeTest {
+		t.Fatalf("commands = %+v, want make test from a Makefile-only root", project.Commands)
+	}
+}
+
 func TestFindProjectRootsCollapsesMultipleManifestsInOneDirectory(t *testing.T) {
 	t.Parallel()
 
@@ -178,6 +224,145 @@ jobs:
 	if !bytes.Equal(got, again) {
 		t.Fatalf("Detect() was not deterministic\n first:\n%s\nsecond:\n%s", got, again)
 	}
+}
+
+func TestDetectAssemblesMakeComposeAndEnvRequirements(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "go.mod"), "module example.com/app\n\ngo 1.26\n")
+	writeFile(t, filepath.Join(root, "main_test.go"), "package main\n")
+	writeFile(t, filepath.Join(root, "Makefile"), ""+
+		".PHONY: test install\n"+
+		"\n"+
+		"install:\n"+
+		"\tgo mod download\n"+
+		"\n"+
+		"test:\n"+
+		"\tgo test ./...\n")
+	writeFile(t, filepath.Join(root, "compose.yaml"), ""+
+		"services:\n"+
+		"  postgres:\n"+
+		"    image: postgres:16\n"+
+		"    environment:\n"+
+		"      DATABASE_URL: postgres://app@postgres/app\n")
+	writeFile(t, filepath.Join(root, ".env.example"), "DATABASE_URL=\nAPI_SECRET=changeme\n")
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if len(document.Projects) != 1 {
+		t.Fatalf("len(projects) = %d, want 1", len(document.Projects))
+	}
+	project := document.Projects[0]
+
+	if !hasRequirement(project, plan.RequirementService, "postgres", "16") {
+		t.Fatalf("requirements = %+v, want postgres 16", project.Requirements)
+	}
+	if !hasEnv(project, "DATABASE_URL", true, true) {
+		t.Fatalf("DATABASE_URL = %+v, want required with a default from compose", project.Requirements)
+	}
+	if !hasEnv(project, "API_SECRET", true, true) {
+		t.Fatalf("API_SECRET = %+v, want required with a default from .env.example", project.Requirements)
+	}
+
+	var sawMakeTest, sawComposeUp, sawMakeInstall bool
+	for _, command := range project.Commands {
+		if command.Name == "test" && derefRun(command.Run) == "make test" {
+			sawMakeTest = true
+		}
+	}
+	for _, command := range project.Preparation {
+		if derefRun(command.Run) == "docker compose up -d" {
+			sawComposeUp = true
+		}
+		if command.Name == "install" && derefRun(command.Run) == "make install" {
+			sawMakeInstall = true
+		}
+	}
+	if !sawMakeTest {
+		t.Fatalf("commands = %+v, want make test", project.Commands)
+	}
+	if !sawComposeUp || !sawMakeInstall {
+		t.Fatalf("preparation = %+v, want make install and docker compose up -d", project.Preparation)
+	}
+	for _, command := range append(append([]plan.Command{}, project.Commands...), project.Preparation...) {
+		if command.Origin == plan.CommandInferred && derefRun(command.Run) == "go test ./..." {
+			t.Fatalf("inferred go test remained beside declared make test: %+v", command)
+		}
+		if command.Origin == plan.CommandInferred && derefRun(command.Run) == "go mod download" {
+			t.Fatalf("inferred go mod download remained beside declared make install: %+v", command)
+		}
+	}
+}
+
+func TestDetectPutsDeclaredInstallScriptsInPreparation(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "package.json"), `{"scripts":{"setup":"npm ci","test":"vitest"}}`)
+	writeFile(t, filepath.Join(root, "package-lock.json"), "{}\n")
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if len(document.Projects) != 1 {
+		t.Fatalf("len(projects) = %d, want 1", len(document.Projects))
+	}
+	project := document.Projects[0]
+
+	var sawSetup bool
+	for _, command := range project.Preparation {
+		if command.Name == "setup" && derefRun(command.Run) == "npm run setup" {
+			sawSetup = true
+		}
+		if command.Origin == plan.CommandInferred && derefRun(command.Run) == "npm install" {
+			t.Fatalf("inferred npm install remained beside declared setup: %+v", command)
+		}
+	}
+	if !sawSetup {
+		t.Fatalf("preparation = %+v, want declared npm run setup (install-capable)", project.Preparation)
+	}
+	for _, command := range project.Commands {
+		if command.Name == "setup" {
+			t.Fatalf("install-capable setup stayed in commands: %+v", command)
+		}
+		for _, interpretation := range command.Interpretations {
+			if interpretation.Capability == plan.CapabilityDependenciesInstall {
+				t.Fatalf("install-capable command stayed in commands: %+v", command)
+			}
+		}
+	}
+}
+
+func hasRequirement(project plan.ProjectPlan, kind plan.RequirementKind, name, version string) bool {
+	for _, requirement := range project.Requirements {
+		if requirement.Kind == kind && requirement.Name == name && requirement.Version == version {
+			return true
+		}
+	}
+	return false
+}
+
+func hasEnv(project plan.ProjectPlan, name string, required, hasDefault bool) bool {
+	for _, requirement := range project.Requirements {
+		if requirement.Kind != plan.RequirementEnvironment || requirement.Name != name {
+			continue
+		}
+		gotRequired := requirement.IsRequired != nil && *requirement.IsRequired
+		gotDefault := requirement.HasDefault != nil && *requirement.HasDefault
+		return gotRequired == required && gotDefault == hasDefault
+	}
+	return false
+}
+
+func derefRun(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
 
 func TestDetectRejectsAFilePath(t *testing.T) {

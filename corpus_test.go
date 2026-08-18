@@ -42,6 +42,8 @@ var corpus = []corpusEntry{
 	{name: "fixture-paths", fixture: "fixture-paths", golden: "fixture-paths.json"},
 	{name: "gha-node", fixture: "gha-node", golden: "gha-node.json"},
 	{name: "gha-workspace", fixture: "gha-workspace", golden: "gha-workspace.json"},
+	{name: "make-simple", fixture: "make-simple", golden: "make-simple.json"},
+	{name: "compose-env", fixture: "compose-env", golden: "compose-env.json"},
 	{
 		name:   "chalk",
 		gitURL: "https://github.com/chalk/chalk.git",
@@ -71,6 +73,18 @@ var corpus = []corpusEntry{
 		gitURL: "https://github.com/caddyserver/caddy.git",
 		commit: "0bbda5c728e7694ba929aa4fa0c549f1387d3a3f",
 		golden: "caddy.json",
+	},
+	{
+		name:   "plausible",
+		gitURL: "https://github.com/plausible/analytics.git",
+		commit: "54d8af8ecfab4943cc29852ce2fc072746799307",
+		golden: "plausible.json",
+	},
+	{
+		name:   "listmonk",
+		gitURL: "https://github.com/knadh/listmonk.git",
+		commit: "670c01717d48647093335cc23a6be6f4b79c3b6b",
+		golden: "listmonk.json",
 	},
 }
 

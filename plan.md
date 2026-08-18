@@ -130,7 +130,7 @@ Status: completed. The Go provider and cobra/caddy goldens are in. Inferred comm
 - Remote `go install`, `go env`/`go version`, and `env`/`ssh`/`rsync` are CI plumbing, not plan commands.
 - Cobra's `make richtest` is reported uninterpreted (Make is milestone 5). Caddy's `go test -short -race ./...` is a CI variant of the inferred test command.
 
-## Milestone 5 — Make, Compose, and requirements
+## Milestone 5 — Make, Compose, and requirements — DONE
 
 Cross-cutting sources and the requirements model.
 
@@ -144,6 +144,14 @@ Scope:
 Acceptance:
 
 - Golden plan for `plausible/analytics` is substantially correct on the Node/Make/Compose/requirements side (Elixir commands arrive in milestone 6).
+- Extra corpus pin: `knadh/listmonk`. Official setup is `docker compose up -d` (app + postgres). Make, Go, a Node frontend, and `.env.sample` are also present. The `dev/` compose file is the local stack (postgres, mailhog, adminer).
+
+Status: completed and approved after one review iteration. `plausible/analytics` at the pinned SHA ships no Compose file and no `.env.example`, so Compose / env-file acceptance is carried by `knadh/listmonk`. Notable decisions from the milestone 5 review:
+
+- Declared wrappers win over inferred convention commands of the same capability (`make test` drops `go test ./...`). This is `reconcile.PreferDeclared`, not provider logic. idea.md: conventions fill gaps when explicit evidence is absent.
+- Any command interpreted as `dependencies.install` is preparation, regardless of detector or origin. The previous `Detector == "make"` special case is gone. `docker compose up` remains preparation.
+- Tool version/info/help probes are CI plumbing, matching the milestone 4 `go version` / `go env` rule: `docker version` / `docker info` / `docker compose version`, and `--version` / `-v` on node/npm/pnpm/yarn/bun/python/ruby/java. `npm version` / `yarn version` bump the package and stay commands. `make version` is a repository target, not plumbing.
+- Renderer polish (command directory when it differs from the project path; requirement kind on each line) is in this milestone, not deferred.
 
 ## Milestone 6 — Elixir provider, Semaphore provider, dogfood
 

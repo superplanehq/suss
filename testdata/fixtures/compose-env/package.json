@@ -1,0 +1,7 @@
+{
+  "name": "compose-env",
+  "scripts": {
+    "test": "vitest run",
+    "dev": "vite"
+  }
+}

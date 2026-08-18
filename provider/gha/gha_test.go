@@ -265,6 +265,8 @@ jobs:
       - run: |
           go version
           go env
+          docker version
+          docker info
           go install github.com/kyoh86/richgo@latest
           go test ./...
 `,
@@ -519,6 +521,89 @@ jobs:
 	versions := requirementVersions(result, plan.RequirementRuntime, "node")
 	if !slices.Equal(versions, []string{"18"}) {
 		t.Fatalf("node versions = %v, want only 18", versions)
+	}
+}
+
+func TestDetectKeepsGHAExpressionsAtomicInRunText(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  build:
+    steps:
+      - run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform}" >> $GITHUB_ENV
+      - run: platform=${{ matrix.platform }} docker build .
+`,
+	})
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok {
+			continue
+		}
+		run := deref(item.Command.Run)
+		if strings.Contains(item.Command.Name, "matrix.platform") || strings.Contains(run, "matrix.platform }}") {
+			t.Fatalf("fabricated command from a split expression: %+v", item.Command)
+		}
+	}
+	commands := commandByName(result)
+	if got := deref(commands["docker build"].Run); got != "platform=$platform docker build ." {
+		t.Fatalf("docker build = %q, want redacted assignment kept with docker build", got)
+	}
+}
+
+func TestDetectFansOutMatrixServiceImages(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        postgres_image: ["postgres:18"]
+    services:
+      postgres:
+        image: ${{ matrix.postgres_image }}
+    steps:
+      - run: echo skip
+`,
+	})
+	if !hasRequirement(result, plan.RequirementService, "postgres", "18") {
+		t.Fatalf("missing resolved postgres 18 in %+v", result.Findings)
+	}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if ok && item.Requirement.Kind == plan.RequirementService && strings.Contains(item.Requirement.Name, "${{") {
+			t.Fatalf("service name leaked an expression: %+v", item.Requirement)
+		}
+	}
+}
+
+func TestDetectRecordsUnevaluableServiceImageAsMatrixFact(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    services:
+      postgres:
+        image: ${{ env.POSTGRES_IMAGE }}
+    steps:
+      - run: echo skip
+`,
+	})
+	if !slices.Contains(factValues(result, "ci.matrix.postgres"), "${{ env.POSTGRES_IMAGE }}") {
+		t.Fatalf("facts = %v, want ci.matrix.postgres for the unresolved image", factValues(result, "ci.matrix.postgres"))
+	}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if ok && item.Requirement.Kind == plan.RequirementService && strings.Contains(item.Requirement.Name, "${{") {
+			t.Fatalf("unevaluable image became a service name: %+v", item.Requirement)
+		}
 	}
 }
 

@@ -32,6 +32,30 @@
           ]
         },
         {
+          "name": "provider.make.limitation",
+          "value": "conditionals",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile",
+              "description": "Make conditionals are detected; targets inside them are still enumerated."
+            }
+          ]
+        },
+        {
+          "name": "provider.make.limitation",
+          "value": "variable-expansion",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile",
+              "description": "Make functions, automatic variables, and predefined variables are not expanded."
+            }
+          ]
+        },
+        {
           "name": "tool.configured",
           "value": "golangci-lint",
           "confidence": "high",
@@ -58,6 +82,17 @@
           ]
         },
         {
+          "kind": "tool",
+          "name": "make",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Makefile"
+            }
+          ]
+        },
+        {
           "kind": "environment",
           "name": "GO111MODULE",
           "isRequired": false,
@@ -74,34 +109,31 @@
       ],
       "preparation": [
         {
-          "id": "cmd_3c33ddd10248e94f1b03d746409efbc8",
-          "name": "download dependencies",
-          "run": "go mod download",
+          "id": "cmd_73e78b236bbdb1935bfe2220f7427b85",
+          "name": "install_deps",
+          "run": "make install_deps",
           "directory": ".",
           "scope": "project",
-          "origin": "inferred",
-          "confidence": "medium",
+          "origin": "declared",
+          "confidence": "high",
           "evidence": [
             {
-              "kind": "file",
-              "source": "go.mod"
-            },
-            {
-              "kind": "convention",
-              "source": "go-ecosystem",
-              "pointer": "dependencies",
-              "description": "Go modules conventionally download dependencies with go mod download."
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/install_deps",
+              "description": "The target recipe invokes go."
             }
           ],
           "interpretations": [
             {
               "capability": "dependencies.install",
-              "confidence": "medium",
+              "confidence": "high",
               "evidence": [
                 {
-                  "kind": "convention",
-                  "source": "go-ecosystem",
-                  "pointer": "dependencies"
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/install_deps",
+                  "description": "The command fetches Go dependencies with go get."
                 }
               ]
             }
@@ -110,45 +142,6 @@
         }
       ],
       "commands": [
-        {
-          "id": "cmd_33a3282f3cadbdc5ea6cc1eee9d174e5",
-          "name": "test",
-          "run": "go test ./...",
-          "directory": ".",
-          "scope": "project",
-          "origin": "inferred",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "file",
-              "source": "active_help_test.go"
-            },
-            {
-              "kind": "file",
-              "source": "go.mod"
-            },
-            {
-              "kind": "convention",
-              "source": "go-ecosystem",
-              "pointer": "test",
-              "description": "Go modules with test files conventionally run all package tests with go test ./...."
-            }
-          ],
-          "interpretations": [
-            {
-              "capability": "test.run",
-              "confidence": "high",
-              "evidence": [
-                {
-                  "kind": "convention",
-                  "source": "go-ecosystem",
-                  "pointer": "test"
-                }
-              ]
-            }
-          ],
-          "variants": []
-        },
         {
           "id": "cmd_394b7afee19c82ee3cecb66f7a6363f6",
           "name": "golangci-lint run",
@@ -181,34 +174,87 @@
           "variants": []
         },
         {
-          "id": "cmd_771e916f311f45ac53eeb33ca2ee8376",
-          "name": "vet",
-          "run": "go vet ./...",
+          "id": "cmd_90ac8d2fd8fb04838cdce52928662173",
+          "name": "richtest",
+          "run": "make richtest",
           "directory": ".",
           "scope": "project",
-          "origin": "inferred",
-          "confidence": "medium",
+          "origin": "declared",
+          "confidence": "high",
           "evidence": [
             {
-              "kind": "file",
-              "source": "go.mod"
-            },
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/richtest",
+              "description": "The target recipe invokes richgo."
+            }
+          ],
+          "interpretations": [],
+          "variants": [
             {
-              "kind": "convention",
-              "source": "go-ecosystem",
-              "pointer": "vet",
-              "description": "Go modules conventionally run go vet ./... to check packages."
+              "context": "ci",
+              "run": "RICHGO_FORCE_COLOR=$RICHGO_FORCE_COLOR PATH=$PATH make richtest",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test.yml",
+                  "pointer": "/jobs/test-unix/steps/3/run"
+                },
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/test.yml",
+                  "pointer": "/jobs/test-win/steps/5/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_90e592cb14837a6fc67199bbf3c38062",
+          "name": "all",
+          "run": "make all",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/all"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_90f4f9c54c5edb83be030acdeb40d8be",
+          "name": "test",
+          "run": "make test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/test",
+              "description": "The target recipe invokes go."
             }
           ],
           "interpretations": [
             {
-              "capability": "code.lint",
-              "confidence": "medium",
+              "capability": "test.run",
+              "confidence": "high",
               "evidence": [
                 {
-                  "kind": "convention",
-                  "source": "go-ecosystem",
-                  "pointer": "vet"
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/test",
+                  "description": "The command runs Go tests."
                 }
               ]
             }
@@ -251,36 +297,88 @@
           "variants": []
         },
         {
-          "id": "cmd_ecc155bdce05cb726c80a0719e005f3d",
-          "name": "make richtest",
-          "run": "RICHGO_FORCE_COLOR=$RICHGO_FORCE_COLOR PATH=$PATH make richtest",
+          "id": "cmd_b9848a28f1d3d17821dff7ee42d403e6",
+          "name": "lint",
+          "run": "make lint",
           "directory": ".",
           "scope": "project",
-          "origin": "observed",
+          "origin": "declared",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "invocation",
-              "source": ".github/workflows/test.yml",
-              "pointer": "/jobs/test-unix/steps/3/run"
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/lint",
+              "description": "The target recipe invokes golangci-lint."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/lint",
+                  "description": "The command runs golangci-lint."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_bfbcd0fd62f9dd437a486d0848fd3266",
+          "name": "default",
+          "run": "make default",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/default"
             }
           ],
           "interpretations": [],
           "variants": []
         },
         {
-          "id": "cmd_ff4a9eb1fb3626cf293f9d4acafe13dc",
-          "name": "make richtest",
-          "run": "RICHGO_FORCE_COLOR=$RICHGO_FORCE_COLOR PATH=$PATH make richtest",
+          "id": "cmd_cc17f2b59237e57058594b2e565db50f",
+          "name": "clean",
+          "run": "make clean",
           "directory": ".",
           "scope": "project",
-          "origin": "observed",
+          "origin": "declared",
           "confidence": "high",
           "evidence": [
             {
-              "kind": "invocation",
-              "source": ".github/workflows/test.yml",
-              "pointer": "/jobs/test-win/steps/5/run"
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/clean",
+              "description": "The target recipe invokes rm."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_d9745cbd7e7c286f0ffd693886feb9b0",
+          "name": "fmt",
+          "run": "make fmt",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/fmt",
+              "description": "The target recipe invokes test and exit."
             }
           ],
           "interpretations": [],

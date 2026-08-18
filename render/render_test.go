@@ -109,6 +109,17 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		}},
 	}}
 
+	required := true
+	hasDefault := true
+	project.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementEnvironment,
+		Name:       "API_TOKEN",
+		IsRequired: &required,
+		HasDefault: &hasDefault,
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: ".env.example", Pointer: "/API_TOKEN"}},
+	}}
+
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
 	for _, want := range []string{
 		"Providers: node",
@@ -117,6 +128,7 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		"npm ci",
 		"npm test",
 		"ci  npm test --coverage",
+		"environment API_TOKEN (required, default present)",
 		"eslint is configured. No command interpreted as code.lint was found.",
 		"package.json",
 		"eslint.config.js",
@@ -226,6 +238,37 @@ func TestWriteKeepsMultilineCommandRunsOnOneLine(t *testing.T) {
 	}
 	if !strings.Contains(got, "# into K buckets # suite leftover") {
 		t.Fatalf("output %q, want collapsed run text", got)
+	}
+}
+
+func TestWriteShowsDirectoryWhenItDiffersFromTheProject(t *testing.T) {
+	t.Parallel()
+
+	run := "docker compose up -d"
+	project := plan.NewProjectPlan(".")
+	project.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementService,
+		Name:       "db",
+		Version:    "13",
+		Confidence: plan.ConfidenceHigh,
+	}}
+	project.Preparation = []plan.Command{{
+		ID:         plan.CommandID("cmd_dddddddddddddddddddddddddddddddd"),
+		Name:       "start services",
+		Run:        &run,
+		Directory:  "dev",
+		Scope:      plan.ScopeProject,
+		Origin:     plan.CommandInferred,
+		Confidence: plan.ConfidenceHigh,
+		Variants:   []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"compose"})
+	if !strings.Contains(got, "service db 13") {
+		t.Fatalf("output %q, want requirement kind", got)
+	}
+	if !strings.Contains(got, "(in dev)") {
+		t.Fatalf("output %q, want the compose directory when it differs from the project", got)
 	}
 }
 
