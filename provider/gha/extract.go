@@ -12,6 +12,7 @@ import (
 	"github.com/superplanehq/suss/knowledge"
 	"github.com/superplanehq/suss/plan"
 	"github.com/superplanehq/suss/provider"
+	"github.com/superplanehq/suss/provider/java"
 )
 
 func extract(ctx provider.Context, source string, workflow workflowFile) (provider.Result, error) {
@@ -147,6 +148,8 @@ func usesFindings(ctx provider.Context, source, dir, stepPointer string, step st
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "ruby", step.With, matrix, []string{"ruby-version"})
 	case "shivammathur/setup-php":
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "php", step.With, matrix, []string{"php-version"})
+	case "actions/setup-java":
+		return setupRuntimeFindings(ctx, source, dir, stepPointer, "java", step.With, matrix, []string{"java-version", "java-version-file"})
 	case "golangci/golangci-lint-action":
 		return golangciActionFindings(source, dir, stepPointer, step)
 	default:
@@ -202,6 +205,7 @@ func setupRuntimeFindings(ctx provider.Context, source, dir, stepPointer, runtim
 
 	findings := make([]plan.Finding, 0, len(versions))
 	for _, version := range versions {
+		version = normalizeSetupVersion(runtime, version)
 		description := ""
 		if len(versions) > 1 {
 			description = fmt.Sprintf("CI tests %s %s as part of a job matrix.", runtime, version)
@@ -232,7 +236,7 @@ func versionFileFindings(ctx provider.Context, source, dir, stepPointer, runtime
 			return []plan.Finding{requirementFinding(dir, plan.Requirement{
 				Kind:       plan.RequirementRuntime,
 				Name:       runtime,
-				Version:    version,
+				Version:    normalizeSetupVersion(runtime, version),
 				Confidence: plan.ConfidenceHigh,
 				Evidence:   evidence,
 			})}
@@ -245,6 +249,13 @@ func versionFileFindings(ctx provider.Context, source, dir, stepPointer, runtime
 		Confidence: plan.ConfidenceMedium,
 		Evidence:   evidence,
 	})}
+}
+
+func normalizeSetupVersion(runtime, version string) string {
+	if runtime == "java" {
+		return java.NormalizeJavaVersion(version)
+	}
+	return version
 }
 
 func firstVersionLine(contents string) string {
@@ -443,6 +454,9 @@ func skipStatement(stmt knowledge.Statement) bool {
 	if knowledge.HasUnclosedGHAExpression(raw) {
 		return true
 	}
+	if knowledge.IsBareUnixTest(stmt) {
+		return true
+	}
 	_, skip := skippedExecutables[name]
 	return skip
 }
@@ -485,6 +499,7 @@ var skippedExecutables = map[string]struct{}{
 	"which": {}, "command": {}, "type": {},
 	"git": {}, "curl": {}, "wget": {},
 	"env": {}, "ssh": {}, "rsync": {},
+	"udevadm": {},
 }
 
 func envFindings(source, pointer, dir string, env stringMap, keepLiterals bool) []plan.Finding {

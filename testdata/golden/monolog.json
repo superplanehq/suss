@@ -325,7 +325,7 @@
         },
         {
           "id": "cmd_2c10a0abed13a2d4115a0cd451ca66a9",
-          "name": "sudo sysctl",
+          "name": "sysctl fs.file-max=262144",
           "run": "sudo sysctl -w fs.file-max=262144",
           "directory": ".",
           "scope": "project",
@@ -343,7 +343,7 @@
         },
         {
           "id": "cmd_3e430b7c938ae8abd08f3b860c49a588",
-          "name": "sudo swapoff",
+          "name": "swapoff",
           "run": "sudo swapoff -a",
           "directory": ".",
           "scope": "project",
@@ -446,7 +446,7 @@
         },
         {
           "id": "cmd_5bc7a324560b9a9d072014299a1a0065",
-          "name": "sudo swapoff",
+          "name": "swapoff",
           "run": "sudo swapoff -a",
           "directory": ".",
           "scope": "project",
@@ -495,7 +495,7 @@
         },
         {
           "id": "cmd_6b0b295064ac3a61bc5ffe61c779e453",
-          "name": "sudo sysctl",
+          "name": "sysctl vm.swappiness=1",
           "run": "sudo sysctl -w vm.swappiness=1",
           "directory": ".",
           "scope": "project",
@@ -549,7 +549,7 @@
         },
         {
           "id": "cmd_7d0593e22e306250f2fc891da2de0aa0",
-          "name": "sudo sysctl",
+          "name": "sysctl fs.file-max=262144",
           "run": "sudo sysctl -w fs.file-max=262144",
           "directory": ".",
           "scope": "project",
@@ -678,7 +678,7 @@
         },
         {
           "id": "cmd_b40646f2435ba4dbf6303fd8a1595c38",
-          "name": "sudo sysctl",
+          "name": "sysctl vm.swappiness=1",
           "run": "sudo sysctl -w vm.swappiness=1",
           "directory": ".",
           "scope": "project",
@@ -750,7 +750,7 @@
         },
         {
           "id": "cmd_dc922563b7c5ae1d34e9e6c282478c3a",
-          "name": "sudo sysctl",
+          "name": "sysctl vm.max_map_count=262144",
           "run": "sudo sysctl -w vm.max_map_count=262144",
           "directory": ".",
           "scope": "project",
@@ -817,7 +817,7 @@
         },
         {
           "id": "cmd_f493f6d69c6ed222da754db34bbabf9d",
-          "name": "sudo sysctl",
+          "name": "sysctl vm.max_map_count=262144",
           "run": "sudo sysctl -w vm.max_map_count=262144",
           "directory": ".",
           "scope": "project",

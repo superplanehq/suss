@@ -1,10 +1,13 @@
 package knowledge
 
-import "strings"
+import (
+	"path"
+	"strings"
+)
 
-// StripDirectoryFlags removes package-manager working-directory flags from an
-// invocation and returns the flag value when present. The original invocation
-// is not modified. Unrecognized executables are returned unchanged.
+// StripDirectoryFlags removes working-directory flags from an invocation and
+// returns the targeted directory when present. The original invocation is not
+// modified. Unrecognized executables are returned unchanged.
 func StripDirectoryFlags(inv Invocation) (dir string, canonical Invocation) {
 	args := append([]string{}, inv.Args...)
 	dir = ""
@@ -19,8 +22,57 @@ func StripDirectoryFlags(inv Invocation) (dir string, canonical Invocation) {
 	case "composer":
 		args, dir = stripFlag(args, "--working-dir", dir)
 		args, dir = stripFlag(args, "-d", dir)
+	default:
+		switch canonicalizeExecutable(inv.Executable) {
+		case "mvn":
+			args, dir = stripMavenDirectoryFlags(args)
+		case "gradle":
+			args, dir = stripGradleDirectoryFlags(args)
+		}
 	}
 	return dir, Invocation{Executable: inv.Executable, Args: args}
+}
+
+func stripMavenDirectoryFlags(args []string) ([]string, string) {
+	file := ""
+	args, file = stripFlag(args, "--file", file)
+	args, file = stripFlag(args, "-f", file)
+	return args, mavenFileDirectory(file)
+}
+
+func mavenFileDirectory(file string) string {
+	file = strings.TrimSpace(file)
+	if file == "" {
+		return ""
+	}
+	cleaned := path.Clean(file)
+	switch strings.ToLower(path.Ext(cleaned)) {
+	case ".xml", ".pom":
+		return path.Dir(cleaned)
+	default:
+		return cleaned
+	}
+}
+
+func stripGradleDirectoryFlags(args []string) ([]string, string) {
+	dir := ""
+	args, dir = stripFlag(args, "--project-dir", dir)
+	args, dir = stripFlag(args, "-p", dir)
+	file := ""
+	args, file = stripFlag(args, "--build-file", file)
+	args, file = stripFlag(args, "-b", file)
+	if dir == "" {
+		dir = fileDirectory(file)
+	}
+	return args, dir
+}
+
+func fileDirectory(file string) string {
+	file = strings.TrimSpace(file)
+	if file == "" {
+		return ""
+	}
+	return path.Dir(path.Clean(file))
 }
 
 func stripFlag(args []string, name, current string) ([]string, string) {

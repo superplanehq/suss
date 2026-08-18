@@ -517,6 +517,110 @@
       "capabilities": ["code.format"],
       "confidence": "high",
       "description": "The command formats PHP with Laravel Pint."
+    },
+    {
+      "id": "mvn-test",
+      "executable": "mvn",
+      "argsPrefix": ["test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Maven tests."
+    },
+    {
+      "id": "mvn-verify",
+      "executable": "mvn",
+      "argsPrefix": ["verify"],
+      "capabilities": ["artifact.build", "test.run"],
+      "confidence": "high",
+      "description": "The command runs the Maven verify lifecycle, which builds artifacts and runs tests."
+    },
+    {
+      "id": "mvn-package",
+      "executable": "mvn",
+      "argsPrefix": ["package"],
+      "capabilities": ["artifact.build", "test.run"],
+      "confidence": "high",
+      "description": "The command packages a Maven artifact, which runs tests by default."
+    },
+    {
+      "id": "mvn-install",
+      "executable": "mvn",
+      "argsPrefix": ["install"],
+      "capabilities": ["artifact.build", "test.run"],
+      "confidence": "high",
+      "description": "The command installs a Maven artifact to the local repository, which runs tests by default."
+    },
+    {
+      "id": "mvn-spring-boot-run",
+      "executable": "mvn",
+      "argsPrefix": ["spring-boot:run"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts the Spring Boot application."
+    },
+    {
+      "id": "gradle-test",
+      "executable": "gradle",
+      "argsPrefix": ["test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Gradle tests."
+    },
+    {
+      "id": "gradle-check",
+      "executable": "gradle",
+      "argsPrefix": ["check"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs Gradle verification tasks, including tests."
+    },
+    {
+      "id": "gradle-build",
+      "executable": "gradle",
+      "argsPrefix": ["build"],
+      "capabilities": ["artifact.build", "test.run"],
+      "confidence": "high",
+      "description": "The command builds a Gradle project, which runs tests by default."
+    },
+    {
+      "id": "gradle-assemble",
+      "executable": "gradle",
+      "argsPrefix": ["assemble"],
+      "capabilities": ["artifact.build"],
+      "confidence": "high",
+      "description": "The command assembles Gradle artifacts."
+    },
+    {
+      "id": "gradle-bootrun",
+      "executable": "gradle",
+      "argsPrefix": ["bootRun"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts the Spring Boot application."
+    },
+    {
+      "id": "gradle-run",
+      "executable": "gradle",
+      "argsPrefix": ["run"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts a Gradle application."
+    },
+    {
+      "id": "gradle-spotless-check",
+      "executable": "gradle",
+      "argsPrefix": ["spotlessCheck"],
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command checks formatting with Spotless."
+    },
+    {
+      "id": "gradle-spotless-apply",
+      "executable": "gradle",
+      "argsPrefix": ["spotlessApply"],
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The command applies formatting with Spotless."
     }
   ]
 }

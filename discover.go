@@ -9,20 +9,31 @@ import (
 	"strings"
 
 	"github.com/superplanehq/suss/plan"
+	"github.com/superplanehq/suss/provider/java"
 )
 
 var projectManifests = map[string]struct{}{
-	"package.json":  {},
-	"go.mod":        {},
-	"mix.exs":       {},
-	"Gemfile":       {},
-	"composer.json": {},
-	"GNUmakefile":   {},
-	"Makefile":      {},
-	"makefile":      {},
-	".env.example":  {},
-	".env.sample":   {},
-	".env.template": {},
+	"package.json":        {},
+	"go.mod":              {},
+	"mix.exs":             {},
+	"Gemfile":             {},
+	"composer.json":       {},
+	"pom.xml":             {},
+	"build.gradle":        {},
+	"build.gradle.kts":    {},
+	"settings.gradle":     {},
+	"settings.gradle.kts": {},
+	"GNUmakefile":         {},
+	"Makefile":            {},
+	"makefile":            {},
+	".env.example":        {},
+	".env.sample":         {},
+	".env.template":       {},
+}
+
+var gradleSettingsFiles = map[string]struct{}{
+	"settings.gradle":     {},
+	"settings.gradle.kts": {},
 }
 
 var skippedDirectories = map[string]struct{}{
@@ -34,10 +45,12 @@ var skippedDirectories = map[string]struct{}{
 	"dist":         {},
 	"target":       {},
 	"tmp":          {},
+	"buildSrc":     {},
 }
 
 func findProjectRoots(root string) ([]string, error) {
-	found := make(map[string]struct{})
+	found := make(map[string]map[string]struct{})
+	settings := make(map[string]struct{})
 
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -60,19 +73,121 @@ func findProjectRoots(root string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		found[relative] = struct{}{}
+		if found[relative] == nil {
+			found[relative] = make(map[string]struct{})
+		}
+		found[relative][entry.Name()] = struct{}{}
+		if _, ok := gradleSettingsFiles[entry.Name()]; ok {
+			settings[relative] = struct{}{}
+		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	includes, err := loadGradleIncludes(root, settings)
+	if err != nil {
+		return nil, err
+	}
+
 	paths := make([]string, 0, len(found))
-	for path := range found {
+	for path, files := range found {
+		if isDeclaredGradleMember(path, files, settings, includes) {
+			continue
+		}
 		paths = append(paths, path)
 	}
 	slices.Sort(paths)
 	return paths, nil
+}
+
+func loadGradleIncludes(root string, settings map[string]struct{}) (map[string][]string, error) {
+	includes := make(map[string][]string, len(settings))
+	for relative := range settings {
+		dir := root
+		if relative != "." {
+			dir = filepath.Join(root, filepath.FromSlash(relative))
+		}
+		var contents strings.Builder
+		for _, name := range []string{"settings.gradle.kts", "settings.gradle"} {
+			data, err := os.ReadFile(filepath.Join(dir, name))
+			if err == nil {
+				contents.Write(data)
+				contents.WriteByte('\n')
+				continue
+			}
+			if !os.IsNotExist(err) {
+				return nil, err
+			}
+		}
+		includes[relative] = java.SettingsIncludes(contents.String())
+	}
+	return includes, nil
+}
+
+func isDeclaredGradleMember(path string, files map[string]struct{}, settings map[string]struct{}, includes map[string][]string) bool {
+	if _, ok := settings[path]; ok {
+		return false
+	}
+	// Mixed directories stay roots so Node/Go/Maven keep their manifests.
+	// The included member's Gradle build is aggregated into the settings root.
+	if !onlyGradleBuildManifests(files) {
+		return false
+	}
+	dir := path
+	for dir != "." && dir != "" {
+		parent := parentProjectPath(dir)
+		if parent == dir {
+			break
+		}
+		if gradleIncludeContains(includes[parent], relativeToParent(parent, path)) {
+			return true
+		}
+		dir = parent
+	}
+	return false
+}
+
+func onlyGradleBuildManifests(files map[string]struct{}) bool {
+	if len(files) == 0 {
+		return false
+	}
+	for name := range files {
+		switch name {
+		case "build.gradle", "build.gradle.kts":
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func gradleIncludeContains(listed []string, relative string) bool {
+	if relative == "" {
+		return false
+	}
+	return slices.Contains(listed, relative)
+}
+
+func relativeToParent(parent, path string) string {
+	if parent == "." {
+		return path
+	}
+	prefix := parent + "/"
+	if strings.HasPrefix(path, prefix) {
+		return path[len(prefix):]
+	}
+	return ""
+}
+
+func parentProjectPath(projectPath string) string {
+	projectPath = strings.Trim(projectPath, "/")
+	index := strings.LastIndex(projectPath, "/")
+	if index <= 0 {
+		return "."
+	}
+	return projectPath[:index]
 }
 
 func shouldSkipDirectory(entry fs.DirEntry) bool {

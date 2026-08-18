@@ -577,13 +577,14 @@ GoProvider
 ElixirProvider
 RubyProvider
 PHPProvider
+JavaProvider
 GitHubActionsProvider
 SemaphoreProvider
 MakeProvider
 DockerComposeProvider
 ```
 
-Post-v0 providers include Python, Rust, JVM, and .NET.
+Post-v0 providers include Python, Rust, and .NET.
 
 Providers emit evidence-backed findings rather than directly producing a final plan.
 
@@ -667,6 +668,7 @@ The initial version should support:
 - Elixir;
 - Ruby and Ruby on Rails;
 - PHP, Composer, Laravel, and Symfony;
+- Java (Maven and Gradle, including Spring Boot);
 - GitHub Actions;
 - Semaphore;
 - Docker Compose;
@@ -675,7 +677,7 @@ The initial version should support:
 - common runtime-version files;
 - common test, lint, type-check, and build tools.
 
-Python and other ecosystems come after v0.
+Python and other remaining ecosystems come after v0.
 
 ### Dogfood repositories and evaluation
 
@@ -696,6 +698,14 @@ To avoid overfitting to our own conventions, the corpus also includes neutral op
 - `Seldaek/monolog` — a Composer PHP library with declared test and PHPStan scripts; the framework-free PHP case.
 - `koel/koel` — a production Laravel application with a Vue frontend, Composer scripts, and GitHub Actions.
 - `grafana/grafana` — a very large Go + TypeScript monorepo with a heavy Makefile and extensive CI; the stress test.
+
+Java is the analog of Ruby's split, except the axis is **build system** rather than framework-or-not. Maven and Gradle are the two dominant JVM toolchains (Ant, Bazel, and Android-first builds are out of scope for this provider). Spring Boot is the Rails analog.
+
+- `java-maven` fixture — Maven + Spring Boot identity, wrapper, Java version, tests, server, Checkstyle, and GitHub Actions `setup-java` reconciliation.
+- `java-gradle` fixture — Gradle Kotlin DSL library with the wrapper, toolchain pin, Checkstyle, and GitHub Actions reconciliation.
+- `google/gson` — a production Maven library; the framework-free Maven case.
+- `mockito/mockito` — a production Gradle multi-project library.
+- `spring-projects/spring-petclinic` — a production Spring Boot application that ships both Maven and Gradle, so competing build systems are reported as ambiguity rather than silently chosen.
 
 Each corpus repository has an expected golden plan checked in, and detection runs against the corpus as snapshot tests. The corpus is the definition of done for v0 and the regression suite as providers evolve.
 

@@ -158,6 +158,41 @@ jobs:
 	}
 }
 
+func TestDetectAppliesJavaTargetFlagsToCommandDirectory(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		run  string
+		dir  string
+		cmd  string
+	}{
+		{name: "gradle-project-dir", run: "./gradlew --project-dir app build", dir: "app", cmd: "gradle build"},
+		{name: "maven-file", run: "mvn -f app/pom.xml test", dir: "app", cmd: "mvn test"},
+		{name: "maven-directory", run: "mvn -f app test", dir: "app", cmd: "mvn test"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			result := detectFiles(t, map[string]string{
+				".github/workflows/ci.yml": `
+jobs:
+  build:
+    steps:
+      - run: ` + tt.run + `
+`,
+			})
+			got := commandByName(result)[tt.cmd]
+			if got.Directory != tt.dir {
+				t.Fatalf("directory = %q, want %s", got.Directory, tt.dir)
+			}
+			if deref(got.Run) != tt.run {
+				t.Fatalf("run = %q, want the original invocation", deref(got.Run))
+			}
+		})
+	}
+}
+
 func TestDetectReadsNodeVersionFile(t *testing.T) {
 	t.Parallel()
 
@@ -317,6 +352,182 @@ jobs:
 
 	if hasRequirement(result, plan.RequirementRuntime, "php", "8.3.6") {
 		t.Fatal("setup-php php-version-file input was treated as a supported version pin")
+	}
+}
+
+func TestDetectReadsSetupJavaMatrixVersions(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        java: ["17", "21"]
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+`,
+	})
+
+	if got := sortedCopy(runtimeRequirementVersions(result, "java")); !slices.Equal(got, []string{"17", "21"}) {
+		t.Fatalf("Java versions = %v, want matrix pins", got)
+	}
+}
+
+func TestDetectReadsSetupJavaVersionFileInput(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".java-version": "21\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version-file: .java-version
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "java", "21") {
+		t.Fatalf("missing Java 21 from .java-version in %+v", result.Findings)
+	}
+}
+
+func TestDetectNormalizesLegacySetupJavaVersion(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 1.8
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "java", "8") {
+		t.Fatalf("setup-java 1.8 was not normalized to 8: %+v", result.Findings)
+	}
+	if hasRequirement(result, plan.RequirementRuntime, "java", "1.8") {
+		t.Fatal("setup-java emitted legacy Java 1.8 without normalization")
+	}
+}
+
+func TestDetectNormalizesLegacySetupJavaVersionFile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".java-version": "1.8\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version-file: .java-version
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "java", "8") {
+		t.Fatalf("java-version-file 1.8 was not normalized to 8: %+v", result.Findings)
+	}
+}
+
+func TestDetectSkipsUdevadmAfterSudo(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: sudo udevadm trigger --name-match=kvm
+`,
+	})
+
+	if commands := commandByName(result); len(commands) != 0 {
+		t.Fatalf("udevadm plumbing was emitted as a repository command: %+v", result.Findings)
+	}
+}
+
+func TestDetectSkipsUnixTestBuiltin(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: test -f README.md
+`,
+	})
+
+	if commands := commandByName(result); len(commands) != 0 {
+		t.Fatalf("unix test builtin was emitted as a repository command: %+v", result.Findings)
+	}
+}
+
+func TestDetectKeepsPathQualifiedTestScripts(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: ./test
+      - run: bin/test
+`,
+	})
+
+	var runs []string
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok {
+			continue
+		}
+		runs = append(runs, deref(item.Command.Run))
+	}
+	slices.Sort(runs)
+	if !slices.Equal(runs, []string{"./test", "bin/test"}) {
+		t.Fatalf("runs = %v, want ./test and bin/test", runs)
+	}
+}
+
+func TestDetectKeepsWindowsTestExecutables(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: test.cmd
+      - run: test.exe
+`,
+	})
+
+	var runs []string
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok {
+			continue
+		}
+		runs = append(runs, deref(item.Command.Run))
+	}
+	slices.Sort(runs)
+	if !slices.Equal(runs, []string{"test.cmd", "test.exe"}) {
+		t.Fatalf("runs = %v, want test.cmd and test.exe", runs)
 	}
 }
 

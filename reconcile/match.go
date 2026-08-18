@@ -71,15 +71,18 @@ func classifyPair(observed, existing plan.Command) matchKind {
 	if observedInv.Executable == "" || observedInv.Executable != existingInv.Executable {
 		return matchNone
 	}
-	if hasArgsPrefix(positionalArgs(existingInv.Args), positionalArgs(observedInv.Args)) {
+	if hasArgsPrefix(positionalArgs(existingInv), positionalArgs(observedInv)) {
 		return matchVariant
 	}
 	return matchNone
 }
 
-func positionalArgs(args []string) []string {
-	out := make([]string, 0, len(args))
-	for _, arg := range args {
+func positionalArgs(inv knowledge.Invocation) []string {
+	if inv.Executable == "mvn" || inv.Executable == "gradle" {
+		return knowledge.MavenGradleArgs(inv.Executable, inv.Args)
+	}
+	out := make([]string, 0, len(inv.Args))
+	for _, arg := range inv.Args {
 		if strings.HasPrefix(arg, "-") {
 			continue
 		}

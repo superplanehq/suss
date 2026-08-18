@@ -357,6 +357,9 @@ func skipSemaphoreStatement(statement knowledge.Statement) bool {
 	if knowledge.IsGlobalInstall(statement.Invocation) || knowledge.IsRemoteGoInstall(statement.Invocation) || knowledge.IsRemoteGemInstall(statement.Invocation) || knowledge.IsSystemPackagePlumbing(statement.Invocation) || knowledge.IsToolPlumbing(statement.Invocation) {
 		return true
 	}
+	if knowledge.IsBareUnixTest(statement) {
+		return true
+	}
 	_, skip := semaphorePlumbing[executable]
 	return skip
 }
@@ -369,5 +372,6 @@ var semaphorePlumbing = map[string]struct{}{
 	"cp": {}, "mv": {}, "rm": {}, "mkdir": {}, "rmdir": {}, "ln": {}, "find": {}, "sed": {}, "awk": {}, "grep": {}, "diff": {},
 	"sort": {}, "uniq": {}, "xargs": {}, "tr": {}, "cut": {}, "head": {}, "tail": {}, "ls": {}, "chmod": {}, "touch": {},
 	"pushd": {}, "popd": {}, "dirname": {}, "basename": {}, "realpath": {}, "pwd": {}, "which": {}, "command": {}, "type": {},
-	"git": {}, "curl": {}, "wget": {}, "env": {}, "ssh": {}, "rsync": {}, "sudo": {},
+	"udevadm": {},
+	"git":     {}, "curl": {}, "wget": {}, "env": {}, "ssh": {}, "rsync": {}, "sudo": {},
 }

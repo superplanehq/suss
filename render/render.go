@@ -43,6 +43,11 @@ var toolCapabilities = map[string][]plan.Capability{
 	"php-cs-fixer":  {plan.CapabilityCodeFormat, plan.CapabilityCodeLint},
 	"phpcs":         {plan.CapabilityCodeLint},
 	"pint":          {plan.CapabilityCodeLint, plan.CapabilityCodeFormat},
+	"checkstyle":    {plan.CapabilityCodeLint},
+	"pmd":           {plan.CapabilityCodeLint},
+	"spotbugs":      {plan.CapabilityCodeLint},
+	"spotless":      {plan.CapabilityCodeLint, plan.CapabilityCodeFormat},
+	"errorprone":    {plan.CapabilityCodeLint},
 }
 
 type classifiedProjects struct {
@@ -57,7 +62,7 @@ func Write(w io.Writer, document plan.Document, opts Options) {
 	writePreface(w, len(classified.primary), classified.omittedFixtures)
 
 	if len(document.Projects) == 0 {
-		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, mix.exs, Gemfile, composer.json, Makefile, and .env.example.")
+		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, mix.exs, Gemfile, composer.json, pom.xml, Gradle build files, Makefile, and .env.example.")
 		return
 	}
 	if len(classified.primary) == 0 && len(classified.examples) == 0 {
@@ -139,7 +144,7 @@ func writeProject(w io.Writer, project plan.ProjectPlan, opts Options) {
 
 	if !claimed(project) {
 		fmt.Fprintln(w)
-		fmt.Fprintf(w, "  No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json; a Go project requires go.mod.\n", joinProviders(opts.Providers))
+		fmt.Fprintf(w, "  No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json; a Go project requires go.mod; a Java project requires pom.xml or a Gradle build file.\n", joinProviders(opts.Providers))
 		writeProjectDetails(w, project)
 		if opts.ShowEvidence {
 			writeEvidence(w, project)

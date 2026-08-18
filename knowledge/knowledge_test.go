@@ -440,6 +440,42 @@ func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
 	}
 }
 
+func TestInterpretMatchesJavaInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		invocation   Invocation
+		capabilities []plan.Capability
+	}{
+		{invocation: Invocation{Executable: "mvn", Args: []string{"test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "mvnw", Args: []string{"-B", "clean", "test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "./mvnw", Args: []string{"spring-boot:run"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"verify"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "gradlew", Args: []string{"-Pfoo=1", "build"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "./gradlew", Args: []string{"bootRun"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
+		{invocation: Invocation{Executable: "./gradlew", Args: []string{":app:bootRun"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
+		{invocation: Invocation{Executable: "gradle", Args: []string{":services:api:run"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
+		{invocation: Invocation{Executable: "gradlew.bat", Args: []string{"test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "gradle", Args: []string{"spotlessCheck"}}, capabilities: []plan.Capability{plan.CapabilityCodeLint}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"verify", "-Dmaven.test.skip"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"-DskipTests", "verify"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"verify", "-DskipTests=false"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "./mvnw", Args: []string{"-pl", "module", "clean", "test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "./gradlew", Args: []string{"--project-dir", "app", "build"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"package"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"install", "-DskipTests"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{invocation: Invocation{Executable: "gradle", Args: []string{"build", "-x", "test"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"clean", "-DskipTests", "package"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{invocation: Invocation{Executable: "gradle", Args: []string{"clean", "--no-daemon", "build"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
+	}
+	for _, tt := range tests {
+		got := capabilities(Interpret(tt.invocation))
+		if !slices.Equal(got, tt.capabilities) {
+			t.Fatalf("Interpret(%+v) = %v, want %v", tt.invocation, got, tt.capabilities)
+		}
+	}
+}
+
 func TestIsRemoteGemInstall(t *testing.T) {
 	t.Parallel()
 
@@ -529,6 +565,78 @@ func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	want := Invocation{Executable: "yarn", Args: []string{"test", "--watch=false"}}
 	if !invocationsEqual(got, want) {
 		t.Fatalf("canonical = %+v, want %+v", got, want)
+	}
+}
+
+func TestStripDirectoryFlagsRemovesJavaTargetDirectories(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		inv  Invocation
+		dir  string
+		want Invocation
+	}{
+		{
+			inv:  Invocation{Executable: "./gradlew", Args: []string{"--project-dir", "app", "build"}},
+			dir:  "app",
+			want: Invocation{Executable: "./gradlew", Args: []string{"build"}},
+		},
+		{
+			inv:  Invocation{Executable: "gradle", Args: []string{"-p", "app", "test"}},
+			dir:  "app",
+			want: Invocation{Executable: "gradle", Args: []string{"test"}},
+		},
+		{
+			inv:  Invocation{Executable: "mvn", Args: []string{"-f", "app/pom.xml", "test"}},
+			dir:  "app",
+			want: Invocation{Executable: "mvn", Args: []string{"test"}},
+		},
+		{
+			inv:  Invocation{Executable: "mvn", Args: []string{"-f", "app", "test"}},
+			dir:  "app",
+			want: Invocation{Executable: "mvn", Args: []string{"test"}},
+		},
+		{
+			inv:  Invocation{Executable: "./mvnw", Args: []string{"--file=services/api/pom.xml", "package"}},
+			dir:  "services/api",
+			want: Invocation{Executable: "./mvnw", Args: []string{"package"}},
+		},
+		{
+			inv:  Invocation{Executable: "gradle", Args: []string{"--build-file", "app/build.gradle", "build"}},
+			dir:  "app",
+			want: Invocation{Executable: "gradle", Args: []string{"build"}},
+		},
+		{
+			inv:  Invocation{Executable: "mvn", Args: []string{"-pl", "app", "test"}},
+			dir:  "",
+			want: Invocation{Executable: "mvn", Args: []string{"-pl", "app", "test"}},
+		},
+	}
+	for _, tt := range tests {
+		dir, got := StripDirectoryFlags(tt.inv)
+		if dir != tt.dir {
+			t.Fatalf("StripDirectoryFlags(%+v) dir = %q, want %q", tt.inv, dir, tt.dir)
+		}
+		if !invocationsEqual(got, tt.want) {
+			t.Fatalf("StripDirectoryFlags(%+v) = %+v, want %+v", tt.inv, got, tt.want)
+		}
+	}
+}
+
+func TestIsBareUnixTestKeepsWindowsExecutables(t *testing.T) {
+	t.Parallel()
+
+	if !IsBareUnixTest(Statement{Raw: "test -f README.md"}) {
+		t.Fatal("IsBareUnixTest(test -f) = false, want true")
+	}
+	if IsBareUnixTest(Statement{Raw: "./test"}) {
+		t.Fatal("IsBareUnixTest(./test) = true, want false")
+	}
+	if IsBareUnixTest(Statement{Raw: "test.cmd"}) {
+		t.Fatal("IsBareUnixTest(test.cmd) = true, want false")
+	}
+	if IsBareUnixTest(Statement{Raw: "test.exe"}) {
+		t.Fatal("IsBareUnixTest(test.exe) = true, want false")
 	}
 }
 

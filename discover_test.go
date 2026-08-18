@@ -21,17 +21,19 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	writeFile(t, filepath.Join(root, "admin", "Gemfile"), "source \"https://rubygems.org\"\n")
 	writeFile(t, filepath.Join(root, "api", "composer.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "vendor-bin", "phpstan", "composer.json"), "{}\n")
+	writeFile(t, filepath.Join(root, "services", "api", "pom.xml"), "<project></project>\n")
 	writeFile(t, filepath.Join(root, "node_modules", "left-pad", "package.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "vendor", "module", "go.mod"), "module example.com/vendored\n\ngo 1.26\n")
 	writeFile(t, filepath.Join(root, "deps", "plug", "mix.exs"), "defmodule Plug.MixProject do\nend\n")
 	writeFile(t, filepath.Join(root, "tmp", "go", "pkg", "mod", "modernc.org", "sqlite@v1.20.3", "vfs", "Makefile"), "build:\n")
+	writeFile(t, filepath.Join(root, "buildSrc", "build.gradle.kts"), "plugins { id(\"java\") }\n")
 	writeFile(t, filepath.Join(root, ".hidden", "go.mod"), "module example.com/hidden\n\ngo 1.26\n")
 
 	got, err := findProjectRoots(root)
 	if err != nil {
 		t.Fatalf("findProjectRoots() error = %v", err)
 	}
-	want := []string{".", "admin", "api", "apps/web", "backend", "frontend"}
+	want := []string{".", "admin", "api", "apps/web", "backend", "frontend", "services/api"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
 	}
@@ -97,6 +99,168 @@ func TestFindProjectRootsCollapsesMultipleManifestsInOneDirectory(t *testing.T) 
 	want := []string{"."}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestFindProjectRootsSkipsNestedGradleMembers(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "settings.gradle.kts"), "rootProject.name = \"demo\"\ninclude(\"lib\")\n")
+	writeFile(t, filepath.Join(root, "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "lib", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "services", "api", "pom.xml"), "<project></project>\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{".", "services/api"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestFindProjectRootsKeepsUnrelatedManifestsUnderGradleSettings(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "settings.gradle.kts"), "rootProject.name = \"demo\"\ninclude(\"lib\")\n")
+	writeFile(t, filepath.Join(root, "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "lib", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "frontend", "package.json"), "{}\n")
+	writeFile(t, filepath.Join(root, "backend", "go.mod"), "module example.com/backend\n\ngo 1.26\n")
+	writeFile(t, filepath.Join(root, "orphan", "build.gradle"), "plugins { id 'java' }\n")
+	writeFile(t, filepath.Join(root, "lib", "package.json"), "{}\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{".", "backend", "frontend", "lib", "orphan"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestFindProjectRootsSkipsRemappedGradleMembers(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "settings.gradle.kts"), "rootProject.name = \"demo\"\ninclude(\"app\")\nproject(\":app\").projectDir = file(\"modules/app\")\n")
+	writeFile(t, filepath.Join(root, "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "modules", "app", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "app", "README.md"), "logical name only\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{"."}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestFindProjectRootsIgnoresCommentedGradleIncludes(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "settings.gradle.kts"), "rootProject.name = \"demo\"\n// include(\"legacy\")\ninclude(\"lib\")\n")
+	writeFile(t, filepath.Join(root, "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "lib", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "legacy", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{".", "legacy"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
+	}
+}
+
+func TestDetectMergesLegacySetupJavaWithManifestPin(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "pom.xml"), `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <properties><maven.compiler.release>8</maven.compiler.release></properties>
+</project>
+`)
+	writeFile(t, filepath.Join(root, ".github", "workflows", "ci.yml"), `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 1.8
+`)
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if len(document.Projects) != 1 {
+		t.Fatalf("len(projects) = %d, want 1", len(document.Projects))
+	}
+	project := document.Projects[0]
+	if !hasRequirement(project, plan.RequirementRuntime, "java", "8") {
+		t.Fatalf("requirements = %+v, want java 8", project.Requirements)
+	}
+	if len(project.Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none between setup-java 1.8 and Maven 8", project.Conflicts)
+	}
+}
+
+func TestDetectDoesNotTreatIncludedGradleMemberBuildAsStandalone(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "settings.gradle.kts"), "rootProject.name = \"demo\"\ninclude(\"lib\")\n")
+	writeFile(t, filepath.Join(root, "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "gradlew"), "#!/bin/sh\n")
+	writeFile(t, filepath.Join(root, "lib", "build.gradle.kts"), "plugins { id(\"java\") }\n")
+	writeFile(t, filepath.Join(root, "lib", "package.json"), `{"name":"lib","scripts":{"test":"vitest"}}`)
+
+	document, err := Detect(root)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+
+	projects := map[string]plan.ProjectPlan{}
+	for _, project := range document.Projects {
+		projects[project.Path] = project
+	}
+	lib, ok := projects["lib"]
+	if !ok {
+		t.Fatal("missing lib project root for package.json")
+	}
+	for _, manager := range lib.PackageManagers {
+		if manager.Name == "gradle" {
+			t.Fatalf("included Gradle member re-enabled a standalone Gradle project: %+v", lib.PackageManagers)
+		}
+	}
+	for _, command := range lib.Commands {
+		if command.Run != nil && (derefRun(command.Run) == "gradle build" || derefRun(command.Run) == "gradle test") {
+			t.Fatalf("included member emitted a bare Gradle command: %+v", command)
+		}
+	}
+	rootProject, ok := projects["."]
+	if !ok {
+		t.Fatal("missing settings-root Gradle project")
+	}
+	foundGradle := false
+	for _, manager := range rootProject.PackageManagers {
+		if manager.Name == "gradle" {
+			foundGradle = true
+		}
+	}
+	if !foundGradle {
+		t.Fatalf("settings root missing Gradle: %+v", rootProject.PackageManagers)
 	}
 }
 

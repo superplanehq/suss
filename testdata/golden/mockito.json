@@ -1,0 +1,407 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "java",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mockito-integration-tests/inline-mocks-tests/build.gradle.kts",
+              "pointer": "/plugins/java"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "gradle",
+          "version": "8.14.2",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "build.gradle.kts"
+            },
+            {
+              "kind": "declaration",
+              "source": "gradle/wrapper/gradle-wrapper.properties",
+              "pointer": "/distributionUrl"
+            },
+            {
+              "kind": "file",
+              "source": "gradlew"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "ci.matrix.java",
+          "value": "17",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/android/steps/1/with/java-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/java/steps/1/with/java-version"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "checkstyle",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": ".checkstyle"
+            },
+            {
+              "kind": "configuration",
+              "source": "config/checkstyle/checkstyle.xml"
+            }
+          ]
+        },
+        {
+          "name": "workspace.orchestrator",
+          "value": "gradle",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "settings.gradle.kts"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "java",
+          "version": "21",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "mockito-integration-tests/java-21-tests/build.gradle.kts",
+              "pointer": "/java/toolchain"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/release/steps/1/with/java-version"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "CODECOV_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/android/steps/5/env/CODECOV_TOKEN"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/java/steps/7/env/CODECOV_TOKEN"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "NEXUS_TOKEN_PWD",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/release/steps/2/env/NEXUS_TOKEN_PWD"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "NEXUS_TOKEN_USER",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/release/steps/2/env/NEXUS_TOKEN_USER"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PGP_KEY",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/release/steps/2/env/PGP_KEY"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PGP_PWD",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/release/steps/2/env/PGP_PWD"
+            }
+          ]
+        }
+      ],
+      "preparation": [],
+      "commands": [
+        {
+          "id": "cmd_5f2864c044738639e5902e16ac41b8f6",
+          "name": "check_reproducibility.sh",
+          "run": "./check_reproducibility.sh",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/java/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_63dac854e503a7f63296ff73a1d243f5",
+          "name": "test",
+          "run": "./gradlew test",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "build.gradle.kts"
+            },
+            {
+              "kind": "file",
+              "source": "gradlew"
+            },
+            {
+              "kind": "file",
+              "source": "mockito-core/src/test/java/org/concurrentmockito/ThreadVerifiesContinuouslyInteractingMockTest.java"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "test",
+              "description": "Gradle projects conventionally run tests with gradle test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Gradle tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_70e3b1aa5f3a46fe90eebac6d38c2112",
+          "name": "gradle :mockito-integration-tests:graalvm-tests:nativeTest",
+          "run": "./gradlew :mockito-integration-tests:graalvm-tests:nativeTest -PenableGraalTracingAgent --scan",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/graalvm/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a152344fc9369ac3a1447563f25f3b19",
+          "name": "gradle githubRelease",
+          "run": "./gradlew githubRelease publishToSonatype closeAndReleaseStagingRepositories releaseSummary --info --stacktrace",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/release/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_a3d6b7ffe0ed9598bf9abb65f180814c",
+          "name": "gradle spotlessCheck",
+          "run": "./gradlew spotlessCheck --stacktrace --scan",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/java/steps/4/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/java/steps/4/run",
+                  "description": "The command checks formatting with Spotless."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_c86385d3201259432ce62f1b6a8bb4bd",
+          "name": "build",
+          "run": "./gradlew build",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/java/steps/5/run"
+            },
+            {
+              "kind": "file",
+              "source": "build.gradle.kts"
+            },
+            {
+              "kind": "file",
+              "source": "gradlew"
+            },
+            {
+              "kind": "convention",
+              "source": "java-ecosystem",
+              "pointer": "build",
+              "description": "Gradle projects conventionally produce artifacts with gradle build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command builds a Gradle project, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command builds a Gradle project, which runs tests by default."
+                }
+              ]
+            }
+          ],
+          "variants": [
+            {
+              "context": "ci",
+              "run": "./gradlew -Pmockito.test.java=${{ matrix.java }} build --stacktrace --scan",
+              "directory": ".",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/java/steps/5/run"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cmd_df77f5a55e4fe716674432ed3217cb65",
+          "name": "gradle coverageReport",
+          "run": "./gradlew -Pmockito.test.java=${{ matrix.java }} coverageReport --stacktrace --scan",
+          "directory": ".",
+          "scope": "repository",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/java/steps/6/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

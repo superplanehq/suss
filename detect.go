@@ -15,6 +15,7 @@ import (
 	"github.com/superplanehq/suss/provider/envfile"
 	"github.com/superplanehq/suss/provider/gha"
 	"github.com/superplanehq/suss/provider/golang"
+	"github.com/superplanehq/suss/provider/java"
 	"github.com/superplanehq/suss/provider/makefile"
 	"github.com/superplanehq/suss/provider/node"
 	"github.com/superplanehq/suss/provider/php"
@@ -29,6 +30,7 @@ var projectProviders = []provider.Provider{
 	elixir.Provider{},
 	ruby.Provider{},
 	php.Provider{},
+	java.Provider{},
 	makefile.Provider{},
 	envfile.Provider{},
 }

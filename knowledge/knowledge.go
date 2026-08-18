@@ -87,6 +87,13 @@ func Interpret(inv Invocation) []Match {
 	if executable == "" {
 		return nil
 	}
+	args := inv.Args
+	if executable == "mvn" || executable == "gradle" {
+		args = MavenGradleArgs(executable, args)
+	}
+	if executable == "gradle" {
+		args = gradleQualifiedTaskArgs(args)
+	}
 
 	bestLen := -1
 	var matches []Match
@@ -94,7 +101,7 @@ func Interpret(inv Invocation) []Match {
 		if rule.Executable != executable {
 			continue
 		}
-		if !hasArgsPrefix(inv.Args, rule.ArgsPrefix) {
+		if !hasArgsPrefix(args, rule.ArgsPrefix) {
 			continue
 		}
 		if !hasArgsContains(inv.Args, rule.ArgsContains) {
@@ -117,7 +124,11 @@ func Interpret(inv Invocation) []Match {
 			})
 		}
 	}
-	return uniqueCapabilities(matches)
+	matches = uniqueCapabilities(matches)
+	if mavenSkipsTests(inv) || gradleExcludesTests(inv) {
+		matches = dropCapability(matches, plan.CapabilityTestRun)
+	}
+	return matches
 }
 
 // CommandName is the stable display name for an observed invocation.
@@ -472,6 +483,24 @@ func HasUnclosedGHAExpression(s string) bool {
 	return false
 }
 
+// IsBareUnixTest reports whether the statement invokes the shell `test`
+// builtin rather than a path-qualified or Windows repository executable
+// such as ./test or test.cmd.
+func IsBareUnixTest(stmt Statement) bool {
+	tokens := splitShell(stmt.Raw)
+	_, tokens = takeLeadingAssignments(tokens)
+	tokens = dropWrappers(tokens)
+	if len(tokens) == 0 {
+		return false
+	}
+	original := strings.Trim(tokens[0], `"'`)
+	original = strings.ReplaceAll(original, "\\", "/")
+	if strings.Contains(original, "/") {
+		return false
+	}
+	return original == "test"
+}
+
 func ghaExprClose(s string, i int) int {
 	if i < 0 || i+3 > len(s) || s[i:i+3] != "${{" {
 		return -1
@@ -505,6 +534,10 @@ func dropWrappers(tokens []string) []string {
 	switch tokens[0] {
 	case "npx", "pnpx", "bunx", "c8", "nyc":
 		return dropLeadingFlags(tokens[1:])
+	case "sudo":
+		if len(tokens) >= 2 && !strings.HasPrefix(tokens[1], "-") {
+			return tokens[1:]
+		}
 	case "bundle":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
 			return dropLeadingFlags(tokens[2:])
@@ -684,7 +717,100 @@ func canonicalizeExecutable(executable string) string {
 	base := path.Base(executable)
 	base = strings.TrimSuffix(base, ".cmd")
 	base = strings.TrimSuffix(base, ".exe")
-	return base
+	base = strings.TrimSuffix(base, ".bat")
+	switch base {
+	case "mvnw":
+		return "mvn"
+	case "gradlew":
+		return "gradle"
+	default:
+		return base
+	}
+}
+
+// MavenGradleArgs drops leading options and a leading `clean` lifecycle
+// phase so `mvn -B clean test` matches the `mvn test` rule. Options that
+// take a following value, such as `-pl module` or `--project-dir app`,
+// are skipped as a pair. Options after `clean` are dropped the same way
+// so `mvn clean -DskipTests package` matches `mvn package`.
+func MavenGradleArgs(executable string, args []string) []string {
+	flags := mavenGradleValueFlags(executable)
+	args = dropLeadingToolFlags(args, flags)
+	if len(args) > 0 && args[0] == "clean" {
+		args = dropLeadingToolFlags(args[1:], flags)
+	}
+	return args
+}
+
+func gradleQualifiedTaskArgs(args []string) []string {
+	if len(args) == 0 {
+		return args
+	}
+	out := append([]string{}, args...)
+	for i, arg := range out {
+		if !strings.HasPrefix(arg, ":") {
+			continue
+		}
+		if idx := strings.LastIndex(arg, ":"); idx >= 0 && idx < len(arg)-1 {
+			out[i] = arg[idx+1:]
+		}
+	}
+	return out
+}
+
+func mavenGradleValueFlags(executable string) map[string]bool {
+	if executable == "gradle" {
+		return gradleValueFlags
+	}
+	return mavenValueFlags
+}
+
+var mavenValueFlags = map[string]bool{
+	"-f": true, "--file": true,
+	"-pl": true, "--projects": true,
+	"-P": true, "--activate-profiles": true,
+	"-s": true, "--settings": true,
+	"-gs": true, "--global-settings": true,
+	"-t": true, "--toolchains": true,
+	"-gt": true, "--global-toolchains": true,
+	"-l": true, "--log-file": true,
+	"-rf": true, "--resume-from": true,
+	"-T": true, "--threads": true,
+	"-b": true, "--builder": true,
+	"--color": true,
+}
+
+var gradleValueFlags = map[string]bool{
+	"-p": true, "--project-dir": true,
+	"-c": true, "--settings-file": true,
+	"-b": true, "--build-file": true,
+	"-g": true, "--gradle-user-home": true,
+	"-P": true,
+	"-D": true, "--system-prop": true,
+	"--project-cache-dir": true,
+	"--max-workers":       true,
+	"--include-build":     true,
+	"-I":                  true, "--init-script": true,
+	"-x": true, "--exclude-task": true,
+	"--tests":        true,
+	"--console":      true,
+	"--warning-mode": true,
+}
+
+func dropLeadingToolFlags(args []string, valueFlags map[string]bool) []string {
+	i := 0
+	for i < len(args) && strings.HasPrefix(args[i], "-") {
+		arg := args[i]
+		i++
+		key, _, attached := strings.Cut(arg, "=")
+		if attached {
+			continue
+		}
+		if valueFlags[key] && i < len(args) && !strings.HasPrefix(args[i], "-") {
+			i++
+		}
+	}
+	return args[i:]
 }
 
 func hasArgsPrefix(args, prefix []string) bool {
@@ -713,6 +839,67 @@ func hasArgsContains(args, required []string) bool {
 		}
 	}
 	return true
+}
+
+func mavenSkipsTests(inv Invocation) bool {
+	if canonicalizeExecutable(inv.Executable) != "mvn" {
+		return false
+	}
+	for _, arg := range inv.Args {
+		key, value, ok := mavenPropertyFlag(arg)
+		if !ok {
+			continue
+		}
+		switch key {
+		case "skipTests", "maven.test.skip":
+			if value == "" || strings.EqualFold(value, "true") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func gradleExcludesTests(inv Invocation) bool {
+	if canonicalizeExecutable(inv.Executable) != "gradle" {
+		return false
+	}
+	for i, arg := range inv.Args {
+		key, value, attached := strings.Cut(arg, "=")
+		if key != "-x" && key != "--exclude-task" {
+			continue
+		}
+		task := value
+		if !attached && i+1 < len(inv.Args) {
+			task = inv.Args[i+1]
+		}
+		if task == "test" || task == "check" {
+			return true
+		}
+	}
+	return false
+}
+
+func mavenPropertyFlag(arg string) (key, value string, ok bool) {
+	if !strings.HasPrefix(arg, "-D") {
+		return "", "", false
+	}
+	rest := strings.TrimPrefix(arg, "-D")
+	if rest == "" {
+		return "", "", false
+	}
+	key, value, _ = strings.Cut(rest, "=")
+	return key, value, key != ""
+}
+
+func dropCapability(matches []Match, capability plan.Capability) []Match {
+	filtered := make([]Match, 0, len(matches))
+	for _, match := range matches {
+		if match.Capability != capability {
+			filtered = append(filtered, match)
+		}
+	}
+	return filtered
 }
 
 func uniqueCapabilities(matches []Match) []Match {
