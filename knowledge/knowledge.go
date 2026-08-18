@@ -612,6 +612,14 @@ func unwrapOnce(tokens []string) ([]string, string) {
 var uvGlobalValueFlags = map[string]struct{}{
 	"--directory": {}, "-C": {}, "--project": {},
 	"--config-file": {}, "--cache-dir": {},
+	"--python": {}, "-p": {},
+}
+
+var pythonManagerValueFlags = map[string]struct{}{
+	"--index-url": {}, "-i": {}, "--extra-index-url": {},
+	"--trusted-host": {}, "--find-links": {}, "-f": {},
+	"--directory": {}, "-C": {}, "--project": {},
+	"--python": {}, "--config-file": {},
 }
 
 func skipUVGlobals(tokens []string) ([]string, string) {

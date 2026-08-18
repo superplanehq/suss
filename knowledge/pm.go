@@ -11,13 +11,17 @@ type ManagerInvocation struct {
 	Install bool
 }
 
-// ClassifyManager reports whether inv is an npm, pnpm, yarn, bun, or composer command.
+// ClassifyManager reports whether inv is a Node, Composer, or Python
+// package-manager command. Install classification is used by reconciliation
+// to variant or conflict dependency-install invocations across managers.
 func ClassifyManager(inv Invocation) (ManagerInvocation, bool) {
 	switch inv.Executable {
 	case "npm", "pnpm", "yarn", "bun":
 		return classifyManager(inv.Executable, inv.Args), true
 	case "composer":
 		return classifyComposer(inv.Args), true
+	case "uv", "poetry", "pipenv", "pdm", "pip", "pip3":
+		return classifyPythonManager(inv), true
 	default:
 		return ManagerInvocation{}, false
 	}
@@ -45,6 +49,40 @@ func classifyComposer(args []string) ManagerInvocation {
 		return ManagerInvocation{Manager: "composer"}
 	}
 	return ManagerInvocation{Manager: "composer", Script: rest[0], Args: rest[1:]}
+}
+
+func classifyPythonManager(inv Invocation) ManagerInvocation {
+	manager := inv.Executable
+	if manager == "pip3" {
+		manager = "pip"
+	}
+	args := inv.Args
+	if manager == "uv" {
+		rest, _ := skipUVGlobals(args)
+		if len(rest) >= 1 && rest[0] == "sync" {
+			return ManagerInvocation{Manager: "uv", Install: true}
+		}
+		if len(rest) >= 2 && rest[0] == "pip" && rest[1] == "install" {
+			return ManagerInvocation{Manager: "uv", Install: true}
+		}
+		return ManagerInvocation{Manager: "uv"}
+	}
+
+	rest := dropLeadingFlagsWithValues(args, pythonManagerValueFlags)
+	if len(rest) == 0 {
+		return ManagerInvocation{Manager: manager}
+	}
+	switch manager {
+	case "poetry", "pipenv", "pip":
+		if rest[0] == "install" {
+			return ManagerInvocation{Manager: manager, Install: true}
+		}
+	case "pdm":
+		if rest[0] == "install" || rest[0] == "sync" {
+			return ManagerInvocation{Manager: manager, Install: true}
+		}
+	}
+	return ManagerInvocation{Manager: manager}
 }
 
 func classifyManager(manager string, args []string) ManagerInvocation {
@@ -206,14 +244,18 @@ func IsRemoteCargoInstall(inv Invocation) bool {
 func IsRemotePipInstall(inv Invocation) bool {
 	executable := inv.Executable
 	args := inv.Args
-	if executable == "uv" && len(args) >= 1 && args[0] == "pip" {
-		args = args[1:]
+	if executable == "uv" {
+		rest, _ := skipUVGlobals(args)
+		if len(rest) == 0 || rest[0] != "pip" {
+			return false
+		}
+		args = rest[1:]
 		executable = "pip"
 	}
 	if executable != "pip" && executable != "pip3" {
 		return false
 	}
-	args = dropLeadingFlags(args)
+	args = dropLeadingFlagsWithValues(args, pythonManagerValueFlags)
 	if len(args) == 0 || args[0] != "install" {
 		return false
 	}

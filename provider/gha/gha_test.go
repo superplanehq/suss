@@ -815,6 +815,8 @@ jobs:
       - run: pip install ruff pytest
       - run: python -m pip install coveralls
       - run: pip install -c constraints.txt tox
+      - run: uv --directory . pip install ruff
+      - run: pip --index-url https://pypi.org/simple install tox
 `,
 	})
 

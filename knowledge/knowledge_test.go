@@ -524,6 +524,12 @@ func TestIsRemotePipInstall(t *testing.T) {
 	if !IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "-c", "constraints.txt", "tox"}}) {
 		t.Fatal("IsRemotePipInstall(constraint plus named package) = false, want true")
 	}
+	if !IsRemotePipInstall(Invocation{Executable: "uv", Args: []string{"--directory", ".", "pip", "install", "ruff"}}) {
+		t.Fatal("IsRemotePipInstall(uv --directory . pip install ruff) = false, want true")
+	}
+	if !IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"--index-url", "https://pypi.org/simple", "install", "tox"}}) {
+		t.Fatal("IsRemotePipInstall(pip --index-url … install tox) = false, want true")
+	}
 }
 
 
@@ -1122,6 +1128,31 @@ func TestClassifyManagerReadsPnpmFilterAndSkipsGlobalInstall(t *testing.T) {
 	}
 	if !IsGlobalInstall(Invocation{Executable: "npm", Args: []string{"install", "-g", "npm@11"}}) {
 		t.Fatal("IsGlobalInstall(npm install -g) = false, want true")
+	}
+}
+
+func TestClassifyManagerTreatsPythonInstalls(t *testing.T) {
+	t.Parallel()
+
+	uvSync, ok := ClassifyManager(Invocation{Executable: "uv", Args: []string{"sync"}})
+	if !ok || uvSync.Manager != "uv" || !uvSync.Install {
+		t.Fatalf("ClassifyManager(uv sync) = %+v, ok=%v", uvSync, ok)
+	}
+	poetry, ok := ClassifyManager(Invocation{Executable: "poetry", Args: []string{"install"}})
+	if !ok || poetry.Manager != "poetry" || !poetry.Install {
+		t.Fatalf("ClassifyManager(poetry install) = %+v, ok=%v", poetry, ok)
+	}
+	pip, ok := ClassifyManager(Invocation{Executable: "pip", Args: []string{"install", "-r", "requirements.txt"}})
+	if !ok || pip.Manager != "pip" || !pip.Install {
+		t.Fatalf("ClassifyManager(pip install) = %+v, ok=%v", pip, ok)
+	}
+	pdm, ok := ClassifyManager(Invocation{Executable: "pdm", Args: []string{"sync"}})
+	if !ok || pdm.Manager != "pdm" || !pdm.Install {
+		t.Fatalf("ClassifyManager(pdm sync) = %+v, ok=%v", pdm, ok)
+	}
+	run, ok := ClassifyManager(Invocation{Executable: "uv", Args: []string{"run", "pytest"}})
+	if !ok || run.Install {
+		t.Fatalf("ClassifyManager(uv run pytest) = %+v, ok=%v, did not want install", run, ok)
 	}
 }
 

@@ -192,6 +192,26 @@ func TestApplyRecordsPackageManagerMismatchAsConflict(t *testing.T) {
 	}
 }
 
+func TestApplyRecordsPythonInstallManagerMismatchAsConflict(t *testing.T) {
+	t.Parallel()
+
+	inferred := command(t, "python", ".", "/#dependencies", "install dependencies", "uv sync", plan.CommandInferred, plan.CapabilityDependenciesInstall)
+	observed := command(t, "github-actions", ".", "/jobs/test/steps/1/run", "install dependencies", "poetry install", plan.CommandObserved, plan.CapabilityDependenciesInstall)
+
+	root := plan.NewProjectPlan(".")
+	root.Preparation = []plan.Command{inferred}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{plan.CommandFinding{Command: observed}},
+	})
+
+	if len(got[0].Preparation) != 1 || deref(got[0].Preparation[0].Run) != "uv sync" {
+		t.Fatalf("preparation = %+v, want inferred uv sync only", got[0].Preparation)
+	}
+	if len(got[0].Conflicts) != 1 || got[0].Conflicts[0].Subject != "dependencies.install" {
+		t.Fatalf("conflicts = %+v, want dependencies.install", got[0].Conflicts)
+	}
+}
+
 func TestApplyAssignsNestedWorkingDirectoryToTheNestedProject(t *testing.T) {
 	t.Parallel()
 
