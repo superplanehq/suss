@@ -391,7 +391,7 @@ func versionFileFindings(ctx provider.Context, source, dir, stepPointer, runtime
 	abs := filepath.Join(ctx.RepositoryRoot, filepath.FromSlash(rel))
 	contents, err := os.ReadFile(abs)
 	if err == nil {
-		if version := firstVersionLine(string(contents)); looksLikeRuntimeVersion(version) {
+		if version := firstVersionLine(string(contents)); looksLikeRuntimeVersion(runtime, version) {
 			evidence = append(evidence, plan.Evidence{
 				Kind:   plan.EvidenceDeclaration,
 				Source: rel,
@@ -426,9 +426,12 @@ func firstVersionLine(contents string) string {
 	return ""
 }
 
-func looksLikeRuntimeVersion(version string) bool {
+func looksLikeRuntimeVersion(runtime, version string) bool {
 	if version == "" || strings.ContainsAny(version, " \t") {
 		return false
+	}
+	if runtime != "python" {
+		return true
 	}
 	switch version[0] {
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '>', '<', '~', '^', 'v', 'V':

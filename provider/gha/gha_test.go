@@ -259,6 +259,35 @@ jobs:
 	}
 }
 
+func TestDetectAppliesUvDirectoryToCommandDirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: uv run --directory packages/api pytest
+      - run: uv run -C packages/web pytest
+`,
+	})
+
+	found := map[string]string{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = item.Command.Directory
+	}
+	if got := found["uv run --directory packages/api pytest"]; got != "packages/api" {
+		t.Fatalf("uv --directory directory = %q, want packages/api in %+v", got, found)
+	}
+	if got := found["uv run -C packages/web pytest"]; got != "packages/web" {
+		t.Fatalf("uv -C directory = %q, want packages/web in %+v", got, found)
+	}
+}
+
 func TestDetectAppliesYarnCwdToCommandDirectory(t *testing.T) {
 	t.Parallel()
 
@@ -370,6 +399,27 @@ jobs:
 
 	if !hasRequirement(result, plan.RequirementRuntime, "ruby", "3.4.5") {
 		t.Fatalf("missing Ruby 3.4.5 from .ruby-version in %+v", result.Findings)
+	}
+}
+
+func TestDetectReadsSetupRubyVersionFileEngineAliases(t *testing.T) {
+	t.Parallel()
+
+	for _, version := range []string{"ruby-3.3.0", "jruby-9.4.8.0", "truffleruby-24.1.0", "ruby-head"} {
+		result := detectFiles(t, map[string]string{
+			".ruby-version": version + "\n",
+			".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+`,
+		})
+		if !hasRequirement(result, plan.RequirementRuntime, "ruby", version) {
+			t.Fatalf("missing Ruby %q from .ruby-version in %+v", version, result.Findings)
+		}
 	}
 }
 

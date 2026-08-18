@@ -50,9 +50,11 @@ func choosePackageManager(ctx provider.Context, project pythonProject) managerCh
 	names := uniqueManagerNames(signals)
 	switch len(names) {
 	case 0:
-		choice.selected = "pip"
-		choice.install = pipInstallRun(ctx)
-		choice.findings = append(choice.findings, inferredPipFinding(ctx, project))
+		if isInstallable(ctx, project) {
+			choice.selected = "pip"
+			choice.install = pipInstallRun(ctx)
+			choice.findings = append(choice.findings, inferredPipFinding(ctx, project))
+		}
 	case 1:
 		choice.selected = names[0]
 		choice.install = installRun(ctx, names[0])
@@ -157,6 +159,16 @@ func pipInstallRun(ctx provider.Context) string {
 		return "pip install -r requirements.txt"
 	}
 	return "pip install -e ."
+}
+
+func isInstallable(ctx provider.Context, project pythonProject) bool {
+	if project.HasProjectTable || project.HasPackageTable {
+		return true
+	}
+	if project.Manifest == "Pipfile" {
+		return true
+	}
+	return fileExists(ctx.ProjectDir(), "requirements.txt")
 }
 
 func hasManager(signals []managerSignal, name string) bool {

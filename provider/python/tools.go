@@ -12,10 +12,11 @@ type configuredTool struct {
 	files        []string
 	tables       []string
 	dependencies []string
+	prefix       bool
 }
 
 var configuredTools = []configuredTool{
-	{name: "pytest", files: []string{"pytest.ini", "pytest.toml", ".pytest.ini", "conftest.py"}, tables: []string{"pytest"}, dependencies: []string{"pytest", "pytest-django"}},
+	{name: "pytest", files: []string{"pytest.ini", "pytest.toml", ".pytest.ini", "conftest.py"}, tables: []string{"pytest"}, dependencies: []string{"pytest", "pytest-django"}, prefix: true},
 	{name: "ruff", files: []string{"ruff.toml", ".ruff.toml"}, tables: []string{"ruff"}, dependencies: []string{"ruff"}},
 	{name: "black", files: []string{".black"}, tables: []string{"black"}, dependencies: []string{"black"}},
 	{name: "mypy", files: []string{"mypy.ini", ".mypy.ini"}, tables: []string{"mypy"}, dependencies: []string{"mypy"}},
@@ -57,7 +58,7 @@ func configuredToolEvidence(ctx provider.Context, project pythonProject, tool co
 	}
 	for _, name := range tool.dependencies {
 		dep, ok := project.Dependencies[normalizeDependency(name)]
-		if !ok {
+		if !ok && tool.prefix {
 			dep, ok = prefixedDependency(project, name)
 		}
 		if !ok {

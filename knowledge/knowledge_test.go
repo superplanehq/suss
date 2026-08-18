@@ -457,6 +457,19 @@ func TestParseScriptStripsPythonWrappers(t *testing.T) {
 	}
 }
 
+func TestParseScriptCapturesUvRunDirectory(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript(`uv run --directory packages/api pytest && uv run -C packages/web python -m pytest && uv run --directory=packages/cli --locked pytest`)
+	want := []Invocation{
+		{Executable: "pytest", Directory: "packages/api"},
+		{Executable: "pytest", Directory: "packages/web"},
+		{Executable: "pytest", Directory: "packages/cli"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
 
 func TestInterpretMatchesPythonInvocations(t *testing.T) {
 	t.Parallel()
@@ -738,7 +751,20 @@ func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	if dir != "./packages/app" {
 		t.Fatalf("dir = %q, want ./packages/app", dir)
 	}
-	want := Invocation{Executable: "yarn", Args: []string{"test", "--watch=false"}}
+	want := Invocation{Executable: "yarn", Args: []string{"test", "--watch=false"}, Directory: "./packages/app"}
+	if !invocationsEqual(got, want) {
+		t.Fatalf("canonical = %+v, want %+v", got, want)
+	}
+}
+
+func TestStripDirectoryFlagsPreservesUvRunDirectory(t *testing.T) {
+	t.Parallel()
+
+	dir, got := StripDirectoryFlags(Invocation{Executable: "pytest", Directory: "packages/api"})
+	if dir != "packages/api" {
+		t.Fatalf("dir = %q, want packages/api", dir)
+	}
+	want := Invocation{Executable: "pytest", Directory: "packages/api"}
 	if !invocationsEqual(got, want) {
 		t.Fatalf("canonical = %+v, want %+v", got, want)
 	}
@@ -1090,5 +1116,5 @@ func statementRaws(statements []Statement) []string {
 }
 
 func invocationsEqual(a, b Invocation) bool {
-	return a.Executable == b.Executable && slices.Equal(a.Args, b.Args)
+	return a.Executable == b.Executable && slices.Equal(a.Args, b.Args) && a.Directory == b.Directory
 }

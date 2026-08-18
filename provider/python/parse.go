@@ -69,6 +69,11 @@ func parsePyproject(contents string) pythonProject {
 			for _, values := range section.arrays {
 				addDependencies(&parsed, "pyproject.toml", "/dependency-groups", values)
 			}
+		case name == "tool.pdm.dev-dependencies" || strings.HasPrefix(name, "tool.pdm.dev-dependencies."):
+			for _, values := range section.arrays {
+				addDependencies(&parsed, "pyproject.toml", "/tool/pdm/dev-dependencies", values)
+			}
+			recordToolTable(&parsed, strings.TrimPrefix(name, "tool."))
 		case strings.HasPrefix(name, "tool."):
 			recordToolTable(&parsed, strings.TrimPrefix(name, "tool."))
 		}

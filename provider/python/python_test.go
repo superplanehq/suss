@@ -375,6 +375,63 @@ func TestDetectDoesNotTreatTestingModuleAsTests(t *testing.T) {
 	}
 }
 
+func TestDetectToolOnlyPyprojectDoesNotInferInstall(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[tool.ruff]\nline-length = 88\n",
+	})
+
+	if _, ok := commandsByName(result)["install dependencies"]; ok {
+		t.Fatal("configuration-only pyproject unexpectedly inferred pip install -e .")
+	}
+	if hasPackageManager(result, "pip") {
+		t.Fatalf("configuration-only pyproject unexpectedly selected pip in %+v", result.Findings)
+	}
+	if !slices.Contains(factValues(result, "tool.configured"), "ruff") {
+		t.Fatalf("configured tools = %v, want ruff", factValues(result, "tool.configured"))
+	}
+}
+
+func TestDetectPDMDevDependenciesSelectPytest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+
+[tool.pdm.dev-dependencies]
+test = ["pytest", "ruff"]
+`,
+		"pdm.lock":             "[[package]]\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	if !hasPackageManager(result, "pdm") {
+		t.Fatalf("missing pdm in %+v", result.Findings)
+	}
+	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+	tools := factValues(result, "tool.configured")
+	for _, tool := range []string{"pytest", "ruff"} {
+		if !slices.Contains(tools, tool) {
+			t.Fatalf("configured tools = %v, want %s", tools, tool)
+		}
+	}
+}
+
+func TestDetectMypyExtensionsIsNotConfiguredMypy(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nname = \"widget\"\ndependencies = [\"mypy-extensions\"]\n",
+	})
+
+	if slices.Contains(factValues(result, "tool.configured"), "mypy") {
+		t.Fatalf("mypy-extensions unexpectedly configured mypy in %+v", result.Findings)
+	}
+}
+
 func TestDetectPrefixedPytestCovCitesRequirements(t *testing.T) {
 	t.Parallel()
 

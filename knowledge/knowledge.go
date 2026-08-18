@@ -26,6 +26,7 @@ var invocationsJSON []byte
 type Invocation struct {
 	Executable string
 	Args       []string
+	Directory  string
 }
 
 // Match is one knowledge-base hit for an invocation.
@@ -314,7 +315,7 @@ func splitCommandList(script string, splitPipes bool) []string {
 func parseInvocation(part string) (Invocation, bool) {
 	tokens := splitShell(part)
 	tokens = dropLeadingAssignments(tokens)
-	tokens = dropWrappers(tokens)
+	tokens, dir := dropWrappers(tokens)
 	tokens = stripCargoToolchain(tokens)
 	if len(tokens) == 0 {
 		return Invocation{}, false
@@ -324,7 +325,7 @@ func parseInvocation(part string) (Invocation, bool) {
 	if executable == "" {
 		return Invocation{}, false
 	}
-	return Invocation{Executable: executable, Args: tokens[1:]}, true
+	return Invocation{Executable: executable, Args: tokens[1:], Directory: dir}, true
 }
 
 func splitShell(part string) []string {
@@ -515,28 +516,32 @@ func takeLeadingAssignments(tokens []string) ([]string, []string) {
 	return names, tokens[i:]
 }
 
-func dropWrappers(tokens []string) []string {
+func dropWrappers(tokens []string) ([]string, string) {
+	dir := ""
 	for range 8 {
-		next := unwrapOnce(tokens)
+		next, nextDir := unwrapOnce(tokens)
+		if nextDir != "" {
+			dir = nextDir
+		}
 		if sameTokens(next, tokens) {
-			return next
+			return next, dir
 		}
 		tokens = next
 	}
-	return tokens
+	return tokens, dir
 }
 
-func unwrapOnce(tokens []string) []string {
+func unwrapOnce(tokens []string) ([]string, string) {
 	if len(tokens) == 0 {
-		return tokens
+		return tokens, ""
 	}
 
 	switch tokens[0] {
 	case "npx", "pnpx", "bunx", "c8", "nyc":
-		return dropLeadingFlags(tokens[1:])
+		return dropLeadingFlags(tokens[1:]), ""
 	case "bundle":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
-			return dropLeadingFlags(tokens[2:])
+			return dropLeadingFlags(tokens[2:]), ""
 		}
 	case "composer":
 		rest := skipComposerGlobalOptions(tokens[1:])
@@ -562,36 +567,72 @@ func unwrapOnce(tokens []string) []string {
 		return append([]string{"php"}, rest...)
 	case "poetry", "pipenv":
 		if len(tokens) >= 2 && tokens[1] == "run" {
-			return dropLeadingFlags(tokens[2:])
+			return dropLeadingFlags(tokens[2:]), ""
 		}
 	case "uv":
 		if len(tokens) >= 2 && tokens[1] == "run" {
-			return dropLeadingFlagsWithValues(tokens[2:], uvRunValueFlags)
+			rest, dir := takeUVDirectory(tokens[2:])
+			return dropLeadingFlagsWithValues(rest, uvRunValueFlags), dir
 		}
 		if len(tokens) >= 3 && tokens[1] == "tool" && tokens[2] == "run" {
-			return dropLeadingFlagsWithValues(tokens[3:], uvRunValueFlags)
+			rest, dir := takeUVDirectory(tokens[3:])
+			return dropLeadingFlagsWithValues(rest, uvRunValueFlags), dir
 		}
 	case "python", "python3":
 		if len(tokens) >= 3 && tokens[1] == "-m" {
-			return dropLeadingFlags(tokens[2:])
+			return dropLeadingFlags(tokens[2:]), ""
 		}
 		if len(tokens) >= 2 && path.Base(tokens[1]) == "manage.py" {
-			return append([]string{tokens[0], "manage.py"}, tokens[2:]...)
+			return append([]string{tokens[0], "manage.py"}, tokens[2:]...), ""
 		}
 	case "npm", "pnpm", "yarn":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
-			return dropLeadingFlags(tokens[2:])
+			return dropLeadingFlags(tokens[2:]), ""
 		}
 	case "bun":
 		if len(tokens) >= 2 && tokens[1] == "x" {
-			return dropLeadingFlags(tokens[2:])
+			return dropLeadingFlags(tokens[2:]), ""
 		}
 	case "rustup":
 		if unwrapped := unwrapRustupRun(tokens); len(unwrapped) > 0 {
 			return dropWrappers(unwrapped)
 		}
 	}
-	return tokens
+	return tokens, ""
+}
+
+func takeUVDirectory(tokens []string) ([]string, string) {
+	dir := ""
+	out := make([]string, 0, len(tokens))
+	i := 0
+	for i < len(tokens) && strings.HasPrefix(tokens[i], "-") {
+		name, value, hasValue := strings.Cut(tokens[i], "=")
+		if name == "--" {
+			return append(out, tokens[i:]...), dir
+		}
+		if name == "--directory" || name == "-C" {
+			if hasValue {
+				dir = value
+				i++
+				continue
+			}
+			if i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
+				dir = tokens[i+1]
+				i += 2
+				continue
+			}
+			i++
+			continue
+		}
+		out = append(out, tokens[i])
+		if _, ok := uvRunValueFlags[name]; ok && !hasValue && i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "-") {
+			out = append(out, tokens[i+1])
+			i += 2
+			continue
+		}
+		i++
+	}
+	return append(out, tokens[i:]...), dir
 }
 
 func isVendorBinPath(value string) bool {
