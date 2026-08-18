@@ -451,6 +451,46 @@ jobs:
 	}
 }
 
+func TestDetectFansOutMatrixCdBeforeComposerTest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        dir: [packages/app, packages/lib]
+    steps:
+      - run: cd ${{ matrix.dir }} && composer test
+`,
+	})
+	dirs := commandDirectories(result, "test")
+	if !slices.Equal(sortedCopy(dirs), []string{"packages/app", "packages/lib"}) {
+		t.Fatalf("directories = %v, want packages/app and packages/lib", dirs)
+	}
+}
+
+func TestDetectNamesUnwrappedPHPUnitWithoutFilterValues(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: composer exec phpunit -- --group Elasticsearch
+`,
+	})
+	got := commandByName(result)["phpunit"]
+	if got.Name != "phpunit" || deref(got.Run) != "composer exec phpunit -- --group Elasticsearch" {
+		t.Fatalf("command = %+v, want name phpunit", got)
+	}
+	if _, ok := commandByName(result)["phpunit Elasticsearch"]; ok {
+		t.Fatalf("commands = %v, did not want a filter value in the name", keys(commandByName(result)))
+	}
+}
+
 func TestDetectExpandsMatrixComposerWorkingDir(t *testing.T) {
 	t.Parallel()
 

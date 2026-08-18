@@ -236,7 +236,7 @@ func observedCommand(source, directory, pointer string, statement knowledge.Stat
 	_, canonical := knowledge.StripDirectoryFlags(statement.Invocation)
 	return plan.Command{
 		ID:              id,
-		Name:            observedName(canonical),
+		Name:            knowledge.CommandName(canonical),
 		Run:             stringPtr(knowledge.RedactAssignmentValues(statement.Raw)),
 		Directory:       directory,
 		Scope:           plan.ScopeProject,
@@ -246,28 +246,6 @@ func observedCommand(source, directory, pointer string, statement knowledge.Stat
 		Interpretations: observedInterpretations(source, pointer, canonical),
 		Variants:        []plan.CommandVariant{},
 	}, nil
-}
-
-func observedName(invocation knowledge.Invocation) string {
-	classified, ok := knowledge.ClassifyManager(invocation)
-	if ok && classified.Install {
-		return "install dependencies"
-	}
-	if ok && classified.Script != "" {
-		return classified.Script
-	}
-	if invocation.Executable == "mix" && len(invocation.Args) > 0 {
-		return "mix " + invocation.Args[0]
-	}
-	if invocation.Executable == "" {
-		return "command"
-	}
-	for _, argument := range invocation.Args {
-		if !strings.HasPrefix(argument, "-") {
-			return invocation.Executable + " " + argument
-		}
-	}
-	return invocation.Executable
 }
 
 func observedInterpretations(source, pointer string, invocation knowledge.Invocation) []plan.Interpretation {

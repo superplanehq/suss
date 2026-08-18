@@ -241,6 +241,24 @@ func inequalitySatisfies(raw, version string) (ok, known bool) {
 	return compareVersions(version, bound) != 0, true
 }
 
+func equalitySatisfies(raw, version string) (ok, known bool) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return false, false
+	}
+	if strings.ContainsAny(raw, "xX*") {
+		return wildcardSatisfies(raw, version)
+	}
+	bound := normalizeVersion(raw)
+	if bound == "" {
+		return false, false
+	}
+	if comparableVersion(bound) && comparableVersion(version) {
+		return compareVersions(version, bound) == 0, true
+	}
+	return sameVersion(bound, version), true
+}
+
 func normalizeVersion(version string) string {
 	version = strings.TrimSpace(version)
 	version = strings.TrimPrefix(version, "v")
@@ -345,7 +363,7 @@ func splitConstraints(group string) []string {
 	fields := strings.Fields(strings.ReplaceAll(group, ",", " "))
 	for i := 0; i < len(fields); i++ {
 		field := fields[i]
-		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "!=" || field == "<>" || field == "^" || field == "~" || field == "~>" {
+		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "!=" || field == "<>" || field == "==" || field == "=" || field == "^" || field == "~" || field == "~>" {
 			if i+1 < len(fields) {
 				tokens = append(tokens, field+fields[i+1])
 				i++
@@ -373,6 +391,8 @@ func constraintSatisfies(runtime, token, version string) (ok, known bool) {
 		return compareVersions(version, bound) <= 0, true
 	case strings.HasPrefix(token, "!="), strings.HasPrefix(token, "<>"):
 		return inequalitySatisfies(strings.TrimSpace(token[2:]), version)
+	case strings.HasPrefix(token, "="):
+		return equalitySatisfies(strings.TrimLeft(strings.TrimSpace(token), "="), version)
 	case strings.HasPrefix(token, ">"):
 		bound := normalizeVersion(strings.TrimSpace(token[1:]))
 		if bound == "" {

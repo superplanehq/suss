@@ -423,6 +423,29 @@ func TestApplyFoldsSetupPHPInsideAComposerSinglePipeUnion(t *testing.T) {
 	}
 }
 
+func TestApplyFoldsSetupPHPMatchingAComposerExactConstraint(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "php",
+		Version:    "=8.3.0",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "composer.json", Pointer: "/require/php"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPHP("8.3.0")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, want none for =8.3.0 vs 8.3.0", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want declaration plus CI 8.3.0", got[0].Requirements[0].Evidence)
+	}
+}
+
 func TestApplyFoldsSetupPHPInsideAComposerTildeRange(t *testing.T) {
 	t.Parallel()
 

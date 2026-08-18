@@ -120,6 +120,45 @@ func Interpret(inv Invocation) []Match {
 	return uniqueCapabilities(matches)
 }
 
+// CommandName is the stable display name for an observed invocation.
+// Package-manager installs and scripts keep their existing names. Tools
+// that do not take subcommands keep the executable so filter values are
+// not treated as commands.
+func CommandName(inv Invocation) string {
+	classified, ok := ClassifyManager(inv)
+	if ok && classified.Install {
+		return "install dependencies"
+	}
+	if ok && classified.Script != "" {
+		return classified.Script
+	}
+	if inv.Executable == "" {
+		return "command"
+	}
+	if !takesSubcommand(inv.Executable) {
+		return inv.Executable
+	}
+	for _, arg := range inv.Args {
+		if arg == "--" {
+			break
+		}
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		return inv.Executable + " " + arg
+	}
+	return inv.Executable
+}
+
+func takesSubcommand(executable string) bool {
+	switch canonicalizeExecutable(executable) {
+	case "phpunit", "pest", "phpstan", "psalm", "phpcs", "pint", "php-cs-fixer":
+		return false
+	default:
+		return true
+	}
+}
+
 // InterpretScript parses a shell-ish script and interprets each command.
 func InterpretScript(script string) []Match {
 	var matches []Match

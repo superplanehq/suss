@@ -278,13 +278,13 @@ func runtimeFinding(source, dir, pointer, name, version, description string) pla
 func runFindings(ctx provider.Context, source, dir, pointer, script string, matrix map[string][]string) ([]plan.Finding, error) {
 	statements := knowledge.ParseStatementsKeepPipelines(normalizeRunScript(script))
 	suffix := len(statements) > 1
-	current := dir
+	currents := []string{dir}
 	var findings []plan.Finding
 	for i, stmt := range statements {
-		dirs := statementDirectories(ctx.RepositoryRoot, current, stmt, matrix)
+		dirs := expandStatementDirectories(ctx.RepositoryRoot, currents, stmt, matrix)
 		if stmt.Chdir != "" {
 			if len(dirs) > 0 {
-				current = dirs[0]
+				currents = dirs
 			}
 			continue
 		}
@@ -312,6 +312,21 @@ func runFindings(ctx provider.Context, source, dir, pointer, script string, matr
 		}
 	}
 	return findings, nil
+}
+
+func expandStatementDirectories(repo string, currents []string, stmt knowledge.Statement, matrix map[string][]string) []string {
+	var dirs []string
+	seen := make(map[string]struct{}, len(currents))
+	for _, current := range currents {
+		for _, dir := range statementDirectories(repo, current, stmt, matrix) {
+			if _, ok := seen[dir]; ok {
+				continue
+			}
+			seen[dir] = struct{}{}
+			dirs = append(dirs, dir)
+		}
+	}
+	return dirs
 }
 
 func statementDirectories(repo, current string, stmt knowledge.Statement, matrix map[string][]string) []string {
@@ -343,7 +358,7 @@ func observedCommand(source, dir, pointer string, stmt knowledge.Statement) (pla
 	run := knowledge.RedactAssignmentValues(stmt.Raw)
 	return plan.Command{
 		ID:              id,
-		Name:            observedName(canonical),
+		Name:            knowledge.CommandName(canonical),
 		Run:             stringPtr(run),
 		Directory:       dir,
 		Scope:           plan.ScopeProject,
@@ -353,26 +368,6 @@ func observedCommand(source, dir, pointer string, stmt knowledge.Statement) (pla
 		Interpretations: observedInterpretations(source, pointer, canonical),
 		Variants:        []plan.CommandVariant{},
 	}, nil
-}
-
-func observedName(inv knowledge.Invocation) string {
-	classified, ok := knowledge.ClassifyManager(inv)
-	if ok && classified.Install {
-		return "install dependencies"
-	}
-	if ok && classified.Script != "" {
-		return classified.Script
-	}
-	if inv.Executable == "" {
-		return "command"
-	}
-	for _, arg := range inv.Args {
-		if strings.HasPrefix(arg, "-") {
-			continue
-		}
-		return inv.Executable + " " + arg
-	}
-	return inv.Executable
 }
 
 func observedInterpretations(source, pointer string, inv knowledge.Invocation) []plan.Interpretation {

@@ -233,6 +233,26 @@ func TestInterpretMatchesPHPInvocations(t *testing.T) {
 	}
 }
 
+func TestCommandNameKeepsPHPUnitFilterValuesOutOfTheName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		inv  Invocation
+		want string
+	}{
+		{inv: Invocation{Executable: "phpunit", Args: []string{"--", "--group", "Elasticsearch"}}, want: "phpunit"},
+		{inv: Invocation{Executable: "phpunit", Args: []string{"--exclude-group", "Elasticsearch,Elastica"}}, want: "phpunit"},
+		{inv: Invocation{Executable: "pest", Args: []string{"--filter", "Login"}}, want: "pest"},
+		{inv: Invocation{Executable: "php", Args: []string{"artisan", "test"}}, want: "php artisan"},
+		{inv: Invocation{Executable: "go", Args: []string{"test", "./..."}}, want: "go test"},
+	}
+	for _, tt := range tests {
+		if got := CommandName(tt.inv); got != tt.want {
+			t.Fatalf("CommandName(%+v) = %q, want %q", tt.inv, got, tt.want)
+		}
+	}
+}
+
 func TestParseScriptStripsComposerExecAndPHPVendorBin(t *testing.T) {
 	t.Parallel()
 
