@@ -238,7 +238,7 @@
                   "kind": "invocation",
                   "source": ".github/workflows/check-api-compatibility.yml",
                   "pointer": "/jobs/check-api-compatibility/steps/2/run#command=2",
-                  "description": "The command installs a Maven artifact to the local repository."
+                  "description": "The command installs a Maven artifact to the local repository, which runs tests by default."
                 }
               ]
             }
@@ -315,7 +315,19 @@
                   "kind": "convention",
                   "source": "java-ecosystem",
                   "pointer": "build",
-                  "description": "The command packages a Maven artifact."
+                  "description": "The command packages a Maven artifact, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact, which runs tests by default."
                 }
               ]
             }
@@ -498,7 +510,7 @@
                   "kind": "invocation",
                   "source": ".github/workflows/build.yml",
                   "pointer": "/jobs/verify-reproducible-build/steps/3/run#command=0",
-                  "description": "The command installs a Maven artifact to the local repository."
+                  "description": "The command installs a Maven artifact to the local repository, which runs tests by default."
                 }
               ]
             }
@@ -623,7 +635,19 @@
                   "kind": "convention",
                   "source": "java-ecosystem",
                   "pointer": "build",
-                  "description": "The command packages a Maven artifact."
+                  "description": "The command packages a Maven artifact, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact, which runs tests by default."
                 }
               ]
             }
@@ -748,7 +772,19 @@
                   "kind": "convention",
                   "source": "java-ecosystem",
                   "pointer": "build",
-                  "description": "The command packages a Maven artifact."
+                  "description": "The command packages a Maven artifact, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact, which runs tests by default."
                 }
               ]
             }
@@ -833,7 +869,19 @@
                   "kind": "convention",
                   "source": "java-ecosystem",
                   "pointer": "build",
-                  "description": "The command packages a Maven artifact."
+                  "description": "The command packages a Maven artifact, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact, which runs tests by default."
                 }
               ]
             }
@@ -958,7 +1006,19 @@
                   "kind": "convention",
                   "source": "java-ecosystem",
                   "pointer": "build",
-                  "description": "The command packages a Maven artifact."
+                  "description": "The command packages a Maven artifact, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact, which runs tests by default."
                 }
               ]
             }
@@ -1083,7 +1143,19 @@
                   "kind": "convention",
                   "source": "java-ecosystem",
                   "pointer": "build",
-                  "description": "The command packages a Maven artifact."
+                  "description": "The command packages a Maven artifact, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact, which runs tests by default."
                 }
               ]
             }
@@ -1168,7 +1240,19 @@
                   "kind": "convention",
                   "source": "java-ecosystem",
                   "pointer": "build",
-                  "description": "The command packages a Maven artifact."
+                  "description": "The command packages a Maven artifact, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact, which runs tests by default."
                 }
               ]
             }
@@ -1293,7 +1377,19 @@
                   "kind": "convention",
                   "source": "java-ecosystem",
                   "pointer": "build",
-                  "description": "The command packages a Maven artifact."
+                  "description": "The command packages a Maven artifact, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact, which runs tests by default."
                 }
               ]
             }

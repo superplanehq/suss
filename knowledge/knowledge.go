@@ -89,7 +89,7 @@ func Interpret(inv Invocation) []Match {
 	}
 	args := inv.Args
 	if executable == "mvn" || executable == "gradle" {
-		args = mavenGradleArgs(args)
+		args = MavenGradleArgs(executable, args)
 	}
 
 	bestLen := -1
@@ -122,7 +122,7 @@ func Interpret(inv Invocation) []Match {
 		}
 	}
 	matches = uniqueCapabilities(matches)
-	if mavenSkipsTests(inv) {
+	if mavenSkipsTests(inv) || gradleExcludesTests(inv) {
 		matches = dropCapability(matches, plan.CapabilityTestRun)
 	}
 	return matches
@@ -726,16 +726,71 @@ func canonicalizeExecutable(executable string) string {
 	}
 }
 
-// mavenGradleArgs drops leading flags and a leading `clean` lifecycle
-// phase so `mvn -B clean test` matches the `mvn test` rule. Maven and
-// Gradle put options before tasks; other tools in this knowledge base
-// put the subcommand first.
-func mavenGradleArgs(args []string) []string {
-	args = dropLeadingFlags(args)
+// MavenGradleArgs drops leading options and a leading `clean` lifecycle
+// phase so `mvn -B clean test` matches the `mvn test` rule. Options that
+// take a following value, such as `-pl module` or `--project-dir app`,
+// are skipped as a pair.
+func MavenGradleArgs(executable string, args []string) []string {
+	args = dropLeadingToolFlags(args, mavenGradleValueFlags(executable))
 	if len(args) > 1 && args[0] == "clean" {
 		return args[1:]
 	}
 	return args
+}
+
+func mavenGradleValueFlags(executable string) map[string]bool {
+	if executable == "gradle" {
+		return gradleValueFlags
+	}
+	return mavenValueFlags
+}
+
+var mavenValueFlags = map[string]bool{
+	"-f": true, "--file": true,
+	"-pl": true, "--projects": true,
+	"-P": true, "--activate-profiles": true,
+	"-s": true, "--settings": true,
+	"-gs": true, "--global-settings": true,
+	"-t": true, "--toolchains": true,
+	"-gt": true, "--global-toolchains": true,
+	"-l": true, "--log-file": true,
+	"-rf": true, "--resume-from": true,
+	"-T": true, "--threads": true,
+	"-b": true, "--builder": true,
+	"--color": true,
+}
+
+var gradleValueFlags = map[string]bool{
+	"-p": true, "--project-dir": true,
+	"-c": true, "--settings-file": true,
+	"-b": true, "--build-file": true,
+	"-g": true, "--gradle-user-home": true,
+	"-P": true,
+	"-D": true, "--system-prop": true,
+	"--project-cache-dir": true,
+	"--max-workers":       true,
+	"--include-build":     true,
+	"-I":                  true, "--init-script": true,
+	"-x": true, "--exclude-task": true,
+	"--tests":        true,
+	"--console":      true,
+	"--warning-mode": true,
+}
+
+func dropLeadingToolFlags(args []string, valueFlags map[string]bool) []string {
+	i := 0
+	for i < len(args) && strings.HasPrefix(args[i], "-") {
+		arg := args[i]
+		i++
+		key, _, attached := strings.Cut(arg, "=")
+		if attached {
+			continue
+		}
+		if valueFlags[key] && i < len(args) && !strings.HasPrefix(args[i], "-") {
+			i++
+		}
+	}
+	return args[i:]
 }
 
 func hasArgsPrefix(args, prefix []string) bool {
@@ -780,6 +835,26 @@ func mavenSkipsTests(inv Invocation) bool {
 			if value == "" || strings.EqualFold(value, "true") {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func gradleExcludesTests(inv Invocation) bool {
+	if canonicalizeExecutable(inv.Executable) != "gradle" {
+		return false
+	}
+	for i, arg := range inv.Args {
+		key, value, attached := strings.Cut(arg, "=")
+		if key != "-x" && key != "--exclude-task" {
+			continue
+		}
+		task := value
+		if !attached && i+1 < len(inv.Args) {
+			task = inv.Args[i+1]
+		}
+		if task == "test" || task == "check" {
+			return true
 		}
 	}
 	return false

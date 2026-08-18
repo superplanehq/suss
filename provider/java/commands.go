@@ -23,12 +23,14 @@ type commandSpec struct {
 }
 
 func commandFindings(ctx provider.Context, project javaProject) ([]plan.Finding, []plan.Ambiguity, error) {
+	var specs []commandSpec
+	var ambiguities []plan.Ambiguity
+	var err error
 	if project.competingManagers() {
-		ambiguities, err := competingManagerAmbiguities(ctx, project)
-		return nil, ambiguities, err
+		specs, ambiguities, err = competingManagerResult(ctx, project)
+	} else {
+		specs, err = inferredSpecs(ctx, project)
 	}
-
-	specs, err := inferredSpecs(ctx, project)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -40,7 +42,7 @@ func commandFindings(ctx provider.Context, project javaProject) ([]plan.Finding,
 		}
 		findings = append(findings, plan.CommandFinding{ProjectPath: ctx.ProjectPath, Detector: providerName, Command: command})
 	}
-	return findings, nil, nil
+	return findings, ambiguities, nil
 }
 
 func inferredSpecs(ctx provider.Context, project javaProject) ([]commandSpec, error) {
@@ -60,8 +62,8 @@ func mavenSpecs(ctx provider.Context, maven *mavenProject) ([]commandSpec, error
 		tool = "mvn"
 	}
 	testFile, err := firstJavaTest(ctx.ProjectDir(), testSearch{
-		match:              isSurefireTestName,
-		includeNestedMaven: maven.Aggregator,
+		match:        isSurefireTestName,
+		mavenModules: maven.Modules,
 	})
 	if err != nil {
 		return nil, err
@@ -70,17 +72,19 @@ func mavenSpecs(ctx provider.Context, maven *mavenProject) ([]commandSpec, error
 	var specs []commandSpec
 	if testFile != "" {
 		spec := conventionSpec(source, "test", tool+" test", "/#test", plan.ConfidenceHigh, "Maven projects conventionally run tests with mvn test.")
-		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
+		spec.evidence = attachCommandEvidence(spec.evidence, maven.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
 		specs = append(specs, spec)
 	}
-	specs = append(specs, conventionSpec(source, "build", tool+" package", "/#build", plan.ConfidenceMedium, "Maven projects conventionally produce artifacts with mvn package."))
+	build := conventionSpec(source, "build", tool+" package", "/#build", plan.ConfidenceMedium, "Maven projects conventionally produce artifacts with mvn package.")
+	build.evidence = attachCommandEvidence(build.evidence, maven.WrapperSource)
+	specs = append(specs, build)
 	entry, err := firstApplicationEntry(ctx.ProjectDir())
 	if err != nil {
 		return nil, err
 	}
 	if maven.SpringBoot && entry != "" {
 		spec := conventionSpec(source, "server", tool+" spring-boot:run", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with mvn spring-boot:run.")
-		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		spec.evidence = attachCommandEvidence(spec.evidence, maven.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
 	}
 	return specs, nil
@@ -103,44 +107,48 @@ func gradleSpecs(ctx provider.Context, gradle *gradleProject) ([]commandSpec, er
 	var specs []commandSpec
 	if testFile != "" {
 		spec := conventionSpec(source, "test", tool+" test", "/#test", plan.ConfidenceHigh, "Gradle projects conventionally run tests with gradle test.")
-		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
+		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(testFile)})
 		specs = append(specs, spec)
 	}
-	specs = append(specs, conventionSpec(source, "build", tool+" build", "/#build", plan.ConfidenceMedium, "Gradle projects conventionally produce artifacts with gradle build."))
+	build := conventionSpec(source, "build", tool+" build", "/#build", plan.ConfidenceMedium, "Gradle projects conventionally produce artifacts with gradle build.")
+	build.evidence = attachCommandEvidence(build.evidence, gradle.WrapperSource)
+	specs = append(specs, build)
 	entry, err := firstApplicationEntry(ctx.ProjectDir())
 	if err != nil {
 		return nil, err
 	}
 	if gradle.SpringBoot && entry != "" {
 		spec := conventionSpec(source, "server", tool+" bootRun", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with gradle bootRun.")
-		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
 	} else if gradle.ApplicationPlugin && entry != "" {
 		spec := conventionSpec(source, "server", tool+" run", "/#server", plan.ConfidenceMedium, "Gradle application projects conventionally start with gradle run.")
-		spec.evidence = addEvidenceAfterManifest(spec.evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		spec.evidence = attachCommandEvidence(spec.evidence, gradle.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
 		specs = append(specs, spec)
 	}
 	return specs, nil
 }
 
-func competingManagerAmbiguities(ctx provider.Context, project javaProject) ([]plan.Ambiguity, error) {
-	members := []string(nil)
+func competingManagerResult(ctx provider.Context, project javaProject) ([]commandSpec, []plan.Ambiguity, error) {
+	var modules, members []string
+	if project.Maven != nil {
+		modules = project.Maven.Modules
+	}
 	if project.Gradle != nil {
 		members = project.Gradle.Members
 	}
-	mavenTest, err := firstJavaTest(ctx.ProjectDir(), testSearch{match: isSurefireTestName, includeNestedMaven: true})
+	mavenTest, err := firstJavaTest(ctx.ProjectDir(), testSearch{match: isSurefireTestName, mavenModules: modules})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	gradleTest, err := firstJavaTest(ctx.ProjectDir(), testSearch{match: isGradleTestName, gradleMembers: members})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	entry, err := firstApplicationEntry(ctx.ProjectDir())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	spring := len(springBootEvidence(ctx, project)) > 0 && entry != ""
 
 	var ambiguities []plan.Ambiguity
 	if mavenTest != "" || gradleTest != "" {
@@ -154,15 +162,51 @@ func competingManagerAmbiguities(ctx provider.Context, project javaProject) ([]p
 		}
 		return tool + " build"
 	}))
-	if spring {
-		ambiguities = append(ambiguities, managerAmbiguity(ctx, project, "application.run", "server", func(tool, kind string) string {
+
+	var specs []commandSpec
+	serverSpecs, serverAmbiguity := competingServerResult(ctx, project, entry)
+	specs = append(specs, serverSpecs...)
+	if serverAmbiguity != nil {
+		ambiguities = append(ambiguities, *serverAmbiguity)
+	}
+	return specs, ambiguities, nil
+}
+
+func competingServerResult(ctx provider.Context, project javaProject, entry string) ([]commandSpec, *plan.Ambiguity) {
+	if entry == "" {
+		return nil, nil
+	}
+	var specs []commandSpec
+	if project.Maven != nil && project.Maven.SpringBoot {
+		source := ctx.SourcePath(project.Maven.Source)
+		tool := project.Maven.Wrapper
+		if tool == "" {
+			tool = "mvn"
+		}
+		spec := conventionSpec(source, "server", tool+" spring-boot:run", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with mvn spring-boot:run.")
+		spec.evidence = attachCommandEvidence(spec.evidence, project.Maven.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		specs = append(specs, spec)
+	}
+	if project.Gradle != nil && project.Gradle.SpringBoot {
+		source := ctx.SourcePath(project.Gradle.Source)
+		tool := project.Gradle.Wrapper
+		if tool == "" {
+			tool = "gradle"
+		}
+		spec := conventionSpec(source, "server", tool+" bootRun", "/#server", plan.ConfidenceMedium, "Spring Boot applications conventionally start with gradle bootRun.")
+		spec.evidence = attachCommandEvidence(spec.evidence, project.Gradle.WrapperSource, plan.Evidence{Kind: plan.EvidenceFile, Source: ctx.SourcePath(entry)})
+		specs = append(specs, spec)
+	}
+	if len(specs) >= 2 {
+		ambiguity := managerAmbiguity(ctx, project, "application.run", "server", func(tool, kind string) string {
 			if kind == "maven" {
 				return tool + " spring-boot:run"
 			}
 			return tool + " bootRun"
-		}))
+		})
+		return nil, &ambiguity
 	}
-	return ambiguities, nil
+	return specs, nil
 }
 
 func managerAmbiguity(ctx provider.Context, project javaProject, subject, name string, run func(tool, kind string) string) plan.Ambiguity {
@@ -261,9 +305,9 @@ func firstJavaTest(root string, search testSearch) (string, error) {
 }
 
 type testSearch struct {
-	match              func(string) bool
-	includeNestedMaven bool
-	gradleMembers      []string
+	match         func(string) bool
+	mavenModules  []string
+	gradleMembers []string
 }
 
 func walkJavaTests(root, start string, search testSearch) (string, error) {
@@ -318,20 +362,34 @@ func skipNestedTestTree(root, path string, search testSearch) bool {
 		return true
 	}
 	relative := filepath.ToSlash(rel)
-	member := underGradleMember(relative, search.gradleMembers)
-	if fileExists(path, "pom.xml") && !search.includeNestedMaven && !member {
+	declared := underDeclaredMember(relative, search.mavenModules) || underDeclaredMember(relative, search.gradleMembers)
+	if fileExists(path, "pom.xml") && !declared {
+		return true
+	}
+	if (fileExists(path, "build.gradle") || fileExists(path, "build.gradle.kts")) && !declared {
 		return true
 	}
 	return false
 }
 
-func underGradleMember(relative string, members []string) bool {
+func underDeclaredMember(relative string, members []string) bool {
 	for _, member := range members {
 		if relative == member || strings.HasPrefix(relative, member+"/") {
 			return true
 		}
 	}
 	return false
+}
+
+func attachCommandEvidence(evidence []plan.Evidence, wrapperSource string, extras ...plan.Evidence) []plan.Evidence {
+	additions := extras
+	if wrapperSource != "" {
+		additions = append([]plan.Evidence{{Kind: plan.EvidenceFile, Source: wrapperSource}}, extras...)
+	}
+	if len(additions) == 0 {
+		return evidence
+	}
+	return addEvidenceAfterManifest(evidence, additions...)
 }
 
 func conventionSpec(source, name, run, pointer string, confidence plan.Confidence, description string) commandSpec {

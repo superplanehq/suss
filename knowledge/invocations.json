@@ -538,17 +538,17 @@
       "id": "mvn-package",
       "executable": "mvn",
       "argsPrefix": ["package"],
-      "capabilities": ["artifact.build"],
+      "capabilities": ["artifact.build", "test.run"],
       "confidence": "high",
-      "description": "The command packages a Maven artifact."
+      "description": "The command packages a Maven artifact, which runs tests by default."
     },
     {
       "id": "mvn-install",
       "executable": "mvn",
       "argsPrefix": ["install"],
-      "capabilities": ["artifact.build"],
+      "capabilities": ["artifact.build", "test.run"],
       "confidence": "high",
-      "description": "The command installs a Maven artifact to the local repository."
+      "description": "The command installs a Maven artifact to the local repository, which runs tests by default."
     },
     {
       "id": "mvn-spring-boot-run",
@@ -578,9 +578,9 @@
       "id": "gradle-build",
       "executable": "gradle",
       "argsPrefix": ["build"],
-      "capabilities": ["artifact.build"],
+      "capabilities": ["artifact.build", "test.run"],
       "confidence": "high",
-      "description": "The command builds a Gradle project."
+      "description": "The command builds a Gradle project, which runs tests by default."
     },
     {
       "id": "gradle-assemble",

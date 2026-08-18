@@ -477,6 +477,244 @@ func TestDetectGradleDoesNotUseNestedMavenTests(t *testing.T) {
 	}
 }
 
+func TestDetectMavenAggregatorDoesNotUseUnrelatedNestedTests(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <packaging>pom</packaging>
+  <modules><module>lib</module></modules>
+</project>
+`,
+		"lib/pom.xml":                        `<project><modelVersion>4.0.0</modelVersion><artifactId>lib</artifactId></project>`,
+		"other/pom.xml":                      `<project><modelVersion>4.0.0</modelVersion><artifactId>other</artifactId></project>`,
+		"other/src/test/java/OtherTest.java": "class OtherTest {}\n",
+	})
+
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("inferred mvn test from an unrelated nested Maven project")
+	}
+}
+
+func TestDetectMavenAggregatorUsesDeclaredModuleTests(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <packaging>pom</packaging>
+  <modules><module>lib</module></modules>
+</project>
+`,
+		"lib/pom.xml":                        `<project><modelVersion>4.0.0</modelVersion><artifactId>lib</artifactId></project>`,
+		"lib/build.gradle":                   "plugins { id 'java' }\n",
+		"lib/src/test/java/LibTest.java":     "class LibTest {}\n",
+		"other/pom.xml":                      `<project><modelVersion>4.0.0</modelVersion><artifactId>other</artifactId></project>`,
+		"other/src/test/java/OtherTest.java": "class OtherTest {}\n",
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "mvn test", plan.CapabilityTestRun)
+}
+
+func TestDetectGradleDoesNotUseUnlistedNestedGradleTests(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"settings.gradle.kts":                  "rootProject.name = \"demo\"\ninclude(\"lib\")\n",
+		"build.gradle.kts":                     "plugins { id(\"java\") }\n",
+		"lib/build.gradle.kts":                 "plugins { id(\"java\") }\n",
+		"orphan/build.gradle":                  "plugins { id 'java' }\n",
+		"orphan/src/test/java/OrphanTest.java": "class OrphanTest {}\n",
+	})
+
+	if _, ok := commandsByName(result)["test"]; ok {
+		t.Fatal("inferred gradle test from an unlisted nested Gradle build")
+	}
+}
+
+func TestDetectDoesNotInheritUnrelatedNeighborPOM(t *testing.T) {
+	t.Parallel()
+
+	root := writeFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>unrelated</artifactId>
+  <version>1.0</version>
+  <properties><maven.compiler.release>8</maven.compiler.release></properties>
+</project>
+`,
+		"app/pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.4.0</version>
+  </parent>
+  <artifactId>app</artifactId>
+</project>
+`,
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "app"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if hasRuntime(result, "8") {
+		t.Fatalf("unrelated neighbor POM supplied Java 8: %+v", result.Findings)
+	}
+}
+
+func TestDetectDoesNotInheritNeighborWithMismatchedParentGroup(t *testing.T) {
+	t.Parallel()
+
+	root := writeFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>parent</artifactId>
+  <version>1.0</version>
+  <properties><maven.compiler.release>8</maven.compiler.release></properties>
+</project>
+`,
+		"app/pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.example</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0</version>
+  </parent>
+  <artifactId>app</artifactId>
+</project>
+`,
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "app"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if hasRuntime(result, "8") {
+		t.Fatalf("neighbor POM with a different groupId supplied Java 8: %+v", result.Findings)
+	}
+}
+
+func TestDetectInheritedSpringBootAndPluginKeepParentEvidence(t *testing.T) {
+	t.Parallel()
+
+	root := writeFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>parent</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+  <modules><module>lib</module></modules>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin><artifactId>maven-checkstyle-plugin</artifactId></plugin>
+    </plugins>
+  </build>
+</project>
+`,
+		"lib/pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.example</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>lib</artifactId>
+</project>
+`,
+	})
+
+	result, err := Provider{}.Detect(provider.Context{RepositoryRoot: root, ProjectPath: "lib"})
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+	if !hasProperty(result, plan.PropertyFramework, "spring-boot") {
+		t.Fatalf("missing inherited Spring Boot in %+v", result.Findings)
+	}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.PropertyFinding)
+		if !ok || item.Property.Kind != plan.PropertyFramework || item.Property.Name != "spring-boot" {
+			continue
+		}
+		for _, evidence := range item.Property.Evidence {
+			if evidence.Source != "pom.xml" {
+				t.Fatalf("inherited Spring Boot evidence source = %q, want parent pom.xml", evidence.Source)
+			}
+		}
+	}
+	if !slices.Contains(factValues(result, "tool.configured"), "checkstyle") {
+		t.Fatalf("missing inherited checkstyle in %+v", result.Findings)
+	}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.PropertyFinding)
+		if !ok || item.Property.Kind != plan.PropertyFact || item.Property.Name != "tool.configured" || item.Property.Value != "checkstyle" {
+			continue
+		}
+		for _, evidence := range item.Property.Evidence {
+			if evidence.Source != "pom.xml" {
+				t.Fatalf("inherited checkstyle evidence source = %q, want parent pom.xml", evidence.Source)
+			}
+		}
+	}
+}
+
+func TestDetectCompetingManagersOnlyAmbiguatesSupportedServer(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml": `<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.4.0</version>
+    <relativePath/>
+  </parent>
+  <artifactId>demo</artifactId>
+</project>
+`,
+		"build.gradle": `plugins { id 'java' }`,
+		"mvnw":         "#!/bin/sh\n",
+		"gradlew":      "#!/bin/sh\n",
+		"src/main/java/com/example/DemoApplication.java": "public class DemoApplication { public static void main(String[] args) {} }\n",
+	})
+
+	if slices.Contains(ambiguitySubjects(result), "application.run") {
+		t.Fatalf("application.run ambiguity cited an unsupported gradle bootRun: %+v", result.Ambiguities)
+	}
+	assertCommand(t, commandsByName(result)["server"], "./mvnw spring-boot:run", plan.CapabilityApplicationRun)
+}
+
+func TestDetectWrapperEvidenceOnInferredCommands(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pom.xml":                    `<project><modelVersion>4.0.0</modelVersion><artifactId>lib</artifactId></project>`,
+		"mvnw":                       "#!/bin/sh\n",
+		"src/test/java/LibTest.java": "class LibTest {}\n",
+	})
+
+	command := commandsByName(result)["test"]
+	var sources []string
+	for _, evidence := range command.Evidence {
+		sources = append(sources, evidence.Source)
+	}
+	if !slices.Contains(sources, "mvnw") {
+		t.Fatalf("test evidence = %v, want wrapper file mvnw", sources)
+	}
+}
+
 func TestDetectSpringBootLibraryDoesNotInferServer(t *testing.T) {
 	t.Parallel()
 

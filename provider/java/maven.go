@@ -19,10 +19,13 @@ type mavenProject struct {
 	JavaVersionPtr    string
 	JavaVersionSource string
 	Aggregator        bool
+	Modules           []string
 	SpringBoot        bool
 	SpringPointer     string
-	Plugins           map[string]struct{}
+	SpringSource      string
+	Plugins           map[string]string
 	Wrapper           string
+	WrapperSource     string
 	WrapperVersion    string
 	WrapperProperties string
 }
@@ -30,6 +33,9 @@ type mavenProject struct {
 type pomDocument struct {
 	XMLName          xml.Name      `xml:"project"`
 	Source           string        `xml:"-"`
+	GroupID          string        `xml:"groupId"`
+	ArtifactID       string        `xml:"artifactId"`
+	Version          string        `xml:"version"`
 	Packaging        string        `xml:"packaging"`
 	Parent           pomParent     `xml:"parent"`
 	Properties       pomProperties `xml:"properties"`
@@ -42,12 +48,14 @@ type pomDocument struct {
 type pomParent struct {
 	GroupID      string  `xml:"groupId"`
 	ArtifactID   string  `xml:"artifactId"`
+	Version      string  `xml:"version"`
 	RelativePath *string `xml:"relativePath"`
 }
 
 type pomArtifact struct {
 	GroupID    string `xml:"groupId"`
 	ArtifactID string `xml:"artifactId"`
+	Source     string `xml:"-"`
 }
 
 type pomPlugin struct {
@@ -81,11 +89,12 @@ func readMaven(ctx provider.Context) (*mavenProject, error) {
 	project := &mavenProject{
 		Source:     "pom.xml",
 		Aggregator: strings.TrimSpace(parsed.Packaging) == "pom" && len(parsed.Modules) > 0,
+		Modules:    normalizeMemberPaths(parsed.Modules),
 		Plugins:    pluginSet(parsed),
 	}
 	project.JavaVersion, project.JavaVersionPtr, project.JavaVersionSource = pomJavaVersion(parsed)
-	project.SpringBoot, project.SpringPointer = pomSpringBoot(parsed)
-	project.Wrapper, project.WrapperVersion, project.WrapperProperties = mavenWrapper(ctx)
+	project.SpringBoot, project.SpringPointer, project.SpringSource = pomSpringBoot(parsed)
+	project.Wrapper, project.WrapperSource, project.WrapperVersion, project.WrapperProperties = mavenWrapper(ctx)
 	return project, nil
 }
 
@@ -153,7 +162,27 @@ func loadParentPOM(dir, repoRoot string, parent pomParent, seen map[string]struc
 	if info.IsDir() {
 		abs = filepath.Join(abs, "pom.xml")
 	}
-	return loadPOMFile(abs, repoRoot, seen)
+	candidate, ok, err := loadPOMFile(abs, repoRoot, seen)
+	if err != nil || !ok {
+		return pomDocument{}, false, err
+	}
+	if !parentCoordinatesMatch(parent, candidate) {
+		return pomDocument{}, false, nil
+	}
+	return candidate, true, nil
+}
+
+func parentCoordinatesMatch(want pomParent, have pomDocument) bool {
+	if strings.TrimSpace(want.ArtifactID) != strings.TrimSpace(have.ArtifactID) {
+		return false
+	}
+	if want.GroupID != "" && strings.TrimSpace(want.GroupID) != strings.TrimSpace(have.GroupID) {
+		return false
+	}
+	if want.Version != "" && strings.TrimSpace(want.Version) != strings.TrimSpace(have.Version) {
+		return false
+	}
+	return true
 }
 
 func parsePOM(contents string) (pomDocument, error) {
@@ -212,10 +241,19 @@ func stampPOM(parsed *pomDocument, source string) {
 	for i := range parsed.PluginManagement {
 		parsed.PluginManagement[i].Source = source
 	}
+	for i := range parsed.Dependencies {
+		parsed.Dependencies[i].Source = source
+	}
 }
 
 func mergePOM(parent, child pomDocument) pomDocument {
 	merged := child
+	if merged.GroupID == "" {
+		merged.GroupID = parent.GroupID
+	}
+	if merged.Version == "" {
+		merged.Version = parent.Version
+	}
 	if merged.Packaging == "" {
 		merged.Packaging = parent.Packaging
 	}
@@ -358,21 +396,29 @@ func isCompilerPlugin(plugin pomPlugin) bool {
 	return plugin.ArtifactID == "maven-compiler-plugin"
 }
 
-func pomSpringBoot(parsed pomDocument) (bool, string) {
+func pomSpringBoot(parsed pomDocument) (bool, string, string) {
 	if parsed.Parent.ArtifactID == "spring-boot-starter-parent" {
-		return true, "/parent/artifactId"
+		return true, "/parent/artifactId", parsed.Source
 	}
 	for _, dep := range parsed.Dependencies {
 		if isSpringBootArtifact(dep.GroupID, dep.ArtifactID) {
-			return true, "/dependencies/" + pointerToken(dep.ArtifactID)
+			source := dep.Source
+			if source == "" {
+				source = parsed.Source
+			}
+			return true, "/dependencies/" + pointerToken(dep.ArtifactID), source
 		}
 	}
 	for _, plugin := range parsed.Plugins {
 		if plugin.ArtifactID == "spring-boot-maven-plugin" {
-			return true, "/build/plugins/" + pointerToken(plugin.ArtifactID)
+			source := plugin.Source
+			if source == "" {
+				source = parsed.Source
+			}
+			return true, "/build/plugins/" + pointerToken(plugin.ArtifactID), source
 		}
 	}
-	return false, ""
+	return false, "", ""
 }
 
 func isSpringBootArtifact(groupID, artifactID string) bool {
@@ -382,13 +428,18 @@ func isSpringBootArtifact(groupID, artifactID string) bool {
 	return artifactID == "spring-boot-starter-parent" || strings.HasPrefix(artifactID, "spring-boot-starter")
 }
 
-func pluginSet(parsed pomDocument) map[string]struct{} {
-	out := make(map[string]struct{})
+func pluginSet(parsed pomDocument) map[string]string {
+	out := make(map[string]string)
 	for _, plugin := range parsed.Plugins {
 		name := strings.TrimSpace(plugin.ArtifactID)
-		if name != "" {
-			out[name] = struct{}{}
+		if name == "" {
+			continue
 		}
+		source := plugin.Source
+		if source == "" {
+			source = parsed.Source
+		}
+		out[name] = source
 	}
 	return out
 }
@@ -397,23 +448,26 @@ func (m *mavenProject) springBootEvidence(ctx provider.Context) []plan.Evidence 
 	if m == nil || !m.SpringBoot {
 		return nil
 	}
+	source := m.SpringSource
+	if source == "" {
+		source = ctx.SourcePath(m.Source)
+	}
 	return []plan.Evidence{{
 		Kind:        plan.EvidenceDeclaration,
-		Source:      ctx.SourcePath(m.Source),
+		Source:      source,
 		Pointer:     m.SpringPointer,
 		Description: "The Maven project declares Spring Boot.",
 	}}
 }
 
-func (m *mavenProject) hasPlugin(artifactID string) bool {
+func (m *mavenProject) pluginSource(artifactID string) string {
 	if m == nil {
-		return false
+		return ""
 	}
-	_, ok := m.Plugins[artifactID]
-	return ok
+	return m.Plugins[artifactID]
 }
 
-func mavenWrapper(ctx provider.Context) (script, version, properties string) {
+func mavenWrapper(ctx provider.Context) (script, source, version, properties string) {
 	dir := ctx.ProjectDir()
 	for {
 		name := ""
@@ -425,6 +479,9 @@ func mavenWrapper(ctx provider.Context) (script, version, properties string) {
 		}
 		if name != "" {
 			script = wrapperRun(ctx.ProjectDir(), filepath.Join(dir, name))
+			if rel, err := filepath.Rel(ctx.RepositoryRoot, filepath.Join(dir, name)); err == nil {
+				source = filepath.ToSlash(rel)
+			}
 			propName := ".mvn/wrapper/maven-wrapper.properties"
 			if fileExists(dir, propName) {
 				if rel, err := filepath.Rel(ctx.RepositoryRoot, filepath.Join(dir, filepath.FromSlash(propName))); err == nil {
@@ -432,14 +489,14 @@ func mavenWrapper(ctx provider.Context) (script, version, properties string) {
 				}
 				version = wrapperVersionFromURL(readFileIfPresent(dir, propName), "apache-maven-")
 			}
-			return script, version, properties
+			return script, source, version, properties
 		}
 		if dir == ctx.RepositoryRoot {
-			return "", "", ""
+			return "", "", "", ""
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir || !insideRepository(ctx.RepositoryRoot, parent) {
-			return "", "", ""
+			return "", "", "", ""
 		}
 		dir = parent
 	}

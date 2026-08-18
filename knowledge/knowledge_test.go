@@ -451,13 +451,18 @@ func TestInterpretMatchesJavaInvocations(t *testing.T) {
 		{invocation: Invocation{Executable: "mvnw", Args: []string{"-B", "clean", "test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
 		{invocation: Invocation{Executable: "./mvnw", Args: []string{"spring-boot:run"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
 		{invocation: Invocation{Executable: "mvn", Args: []string{"verify"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
-		{invocation: Invocation{Executable: "gradlew", Args: []string{"-Pfoo=1", "build"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{invocation: Invocation{Executable: "gradlew", Args: []string{"-Pfoo=1", "build"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
 		{invocation: Invocation{Executable: "./gradlew", Args: []string{"bootRun"}}, capabilities: []plan.Capability{plan.CapabilityApplicationRun}},
 		{invocation: Invocation{Executable: "gradlew.bat", Args: []string{"test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
 		{invocation: Invocation{Executable: "gradle", Args: []string{"spotlessCheck"}}, capabilities: []plan.Capability{plan.CapabilityCodeLint}},
 		{invocation: Invocation{Executable: "mvn", Args: []string{"verify", "-Dmaven.test.skip"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
 		{invocation: Invocation{Executable: "mvn", Args: []string{"-DskipTests", "verify"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
 		{invocation: Invocation{Executable: "mvn", Args: []string{"verify", "-DskipTests=false"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "./mvnw", Args: []string{"-pl", "module", "clean", "test"}}, capabilities: []plan.Capability{plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "./gradlew", Args: []string{"--project-dir", "app", "build"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"package"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild, plan.CapabilityTestRun}},
+		{invocation: Invocation{Executable: "mvn", Args: []string{"install", "-DskipTests"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{invocation: Invocation{Executable: "gradle", Args: []string{"build", "-x", "test"}}, capabilities: []plan.Capability{plan.CapabilityArtifactBuild}},
 	}
 	for _, tt := range tests {
 		got := capabilities(Interpret(tt.invocation))

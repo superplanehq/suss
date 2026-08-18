@@ -43,6 +43,10 @@
             {
               "kind": "declaration",
               "source": "pom.xml"
+            },
+            {
+              "kind": "file",
+              "source": "mvnw"
             }
           ]
         }
@@ -102,6 +106,10 @@
           "evidence": [
             {
               "kind": "file",
+              "source": "mvnw"
+            },
+            {
+              "kind": "file",
               "source": "pom.xml"
             },
             {
@@ -142,6 +150,10 @@
           "evidence": [
             {
               "kind": "file",
+              "source": "mvnw"
+            },
+            {
+              "kind": "file",
               "source": "pom.xml"
             },
             {
@@ -160,7 +172,19 @@
                   "kind": "convention",
                   "source": "java-ecosystem",
                   "pointer": "build",
-                  "description": "The command packages a Maven artifact."
+                  "description": "The command packages a Maven artifact, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command packages a Maven artifact, which runs tests by default."
                 }
               ]
             }
@@ -180,6 +204,10 @@
               "kind": "invocation",
               "source": ".github/workflows/ci.yml",
               "pointer": "/jobs/test/steps/2/run"
+            },
+            {
+              "kind": "file",
+              "source": "mvnw"
             },
             {
               "kind": "file",

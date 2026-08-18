@@ -23,6 +23,7 @@ type gradleProject struct {
 	ApplicationPlugin bool
 	Plugins           map[string]struct{}
 	Wrapper           string
+	WrapperSource     string
 	WrapperVersion    string
 	WrapperProperties string
 }
@@ -68,7 +69,7 @@ func readGradle(ctx provider.Context) (*gradleProject, error) {
 	project.JavaVersion, project.JavaVersionPtr = gradleJavaVersion(stripped)
 	project.SpringBoot, project.SpringPointer = gradleSpringBoot(stripped, project.Plugins)
 	_, project.ApplicationPlugin = project.Plugins["application"]
-	project.Wrapper, project.WrapperVersion, project.WrapperProperties = gradleWrapper(ctx.ProjectDir())
+	project.Wrapper, project.WrapperSource, project.WrapperVersion, project.WrapperProperties = gradleWrapper(ctx)
 	return project, nil
 }
 
@@ -254,18 +255,28 @@ func (g *gradleProject) hasPlugin(id string) bool {
 	return ok
 }
 
-func gradleWrapper(dir string) (script, version, properties string) {
-	if fileExists(dir, "gradlew") {
+func gradleWrapper(ctx provider.Context) (script, source, version, properties string) {
+	dir := ctx.ProjectDir()
+	name := ""
+	switch {
+	case fileExists(dir, "gradlew"):
+		name = "gradlew"
 		script = "./gradlew"
-	} else if fileExists(dir, "gradlew.bat") {
+	case fileExists(dir, "gradlew.bat"):
+		name = "gradlew.bat"
 		script = "gradlew.bat"
 	}
-	name := "gradle/wrapper/gradle-wrapper.properties"
-	if fileExists(dir, name) {
-		properties = name
-		version = wrapperVersionFromURL(readFileIfPresent(dir, name), "gradle-")
+	if name != "" {
+		if rel, err := filepath.Rel(ctx.RepositoryRoot, filepath.Join(dir, name)); err == nil {
+			source = filepath.ToSlash(rel)
+		}
 	}
-	return script, version, properties
+	propName := "gradle/wrapper/gradle-wrapper.properties"
+	if fileExists(dir, propName) {
+		properties = propName
+		version = wrapperVersionFromURL(readFileIfPresent(dir, propName), "gradle-")
+	}
+	return script, source, version, properties
 }
 
 func stripGradleComments(contents string) string {

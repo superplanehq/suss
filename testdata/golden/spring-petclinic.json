@@ -53,6 +53,10 @@
               "kind": "declaration",
               "source": "gradle/wrapper/gradle-wrapper.properties",
               "pointer": "/distributionUrl"
+            },
+            {
+              "kind": "file",
+              "source": "gradlew"
             }
           ]
         },
@@ -69,6 +73,10 @@
             {
               "kind": "declaration",
               "source": "pom.xml"
+            },
+            {
+              "kind": "file",
+              "source": "mvnw"
             }
           ]
         }
@@ -339,7 +347,19 @@
                   "kind": "invocation",
                   "source": ".github/workflows/gradle-build.yml",
                   "pointer": "/jobs/build/steps/3/run",
-                  "description": "The command builds a Gradle project."
+                  "description": "The command builds a Gradle project, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/gradle-build.yml",
+                  "pointer": "/jobs/build/steps/3/run",
+                  "description": "The command builds a Gradle project, which runs tests by default."
                 }
               ]
             }
@@ -442,6 +462,10 @@
                   "kind": "declaration",
                   "source": "gradle/wrapper/gradle-wrapper.properties",
                   "pointer": "/distributionUrl"
+                },
+                {
+                  "kind": "file",
+                  "source": "gradlew"
                 }
               ]
             },
@@ -456,6 +480,10 @@
                 {
                   "kind": "declaration",
                   "source": "pom.xml"
+                },
+                {
+                  "kind": "file",
+                  "source": "mvnw"
                 }
               ]
             }
@@ -476,6 +504,10 @@
                   "kind": "declaration",
                   "source": "gradle/wrapper/gradle-wrapper.properties",
                   "pointer": "/distributionUrl"
+                },
+                {
+                  "kind": "file",
+                  "source": "gradlew"
                 }
               ]
             },
@@ -490,6 +522,10 @@
                 {
                   "kind": "declaration",
                   "source": "pom.xml"
+                },
+                {
+                  "kind": "file",
+                  "source": "mvnw"
                 }
               ]
             }
@@ -510,6 +546,10 @@
                   "kind": "declaration",
                   "source": "gradle/wrapper/gradle-wrapper.properties",
                   "pointer": "/distributionUrl"
+                },
+                {
+                  "kind": "file",
+                  "source": "gradlew"
                 }
               ]
             },
@@ -524,6 +564,10 @@
                 {
                   "kind": "declaration",
                   "source": "pom.xml"
+                },
+                {
+                  "kind": "file",
+                  "source": "mvnw"
                 }
               ]
             }

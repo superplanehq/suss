@@ -30,6 +30,10 @@
               "kind": "declaration",
               "source": "gradle/wrapper/gradle-wrapper.properties",
               "pointer": "/distributionUrl"
+            },
+            {
+              "kind": "file",
+              "source": "gradlew"
             }
           ]
         }
@@ -225,6 +229,10 @@
             },
             {
               "kind": "file",
+              "source": "gradlew"
+            },
+            {
+              "kind": "file",
               "source": "mockito-core/src/test/java/org/concurrentmockito/ThreadVerifiesContinuouslyInteractingMockTest.java"
             },
             {
@@ -336,6 +344,10 @@
               "source": "build.gradle.kts"
             },
             {
+              "kind": "file",
+              "source": "gradlew"
+            },
+            {
               "kind": "convention",
               "source": "java-ecosystem",
               "pointer": "build",
@@ -351,7 +363,19 @@
                   "kind": "convention",
                   "source": "java-ecosystem",
                   "pointer": "build",
-                  "description": "The command builds a Gradle project."
+                  "description": "The command builds a Gradle project, which runs tests by default."
+                }
+              ]
+            },
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "java-ecosystem",
+                  "pointer": "build",
+                  "description": "The command builds a Gradle project, which runs tests by default."
                 }
               ]
             }

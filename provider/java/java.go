@@ -114,6 +114,9 @@ func languageEvidence(ctx provider.Context, project javaProject) []plan.Evidence
 
 func mavenManagerEvidence(ctx provider.Context, maven *mavenProject) []plan.Evidence {
 	evidence := []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: ctx.SourcePath(maven.Source)}}
+	if maven.WrapperSource != "" {
+		evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: maven.WrapperSource})
+	}
 	if maven.WrapperProperties != "" {
 		evidence = append(evidence, plan.Evidence{
 			Kind:    plan.EvidenceDeclaration,
@@ -126,6 +129,9 @@ func mavenManagerEvidence(ctx provider.Context, maven *mavenProject) []plan.Evid
 
 func gradleManagerEvidence(ctx provider.Context, gradle *gradleProject) []plan.Evidence {
 	evidence := []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: ctx.SourcePath(gradle.Source)}}
+	if gradle.WrapperSource != "" {
+		evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceFile, Source: gradle.WrapperSource})
+	}
 	if gradle.WrapperProperties != "" {
 		evidence = append(evidence, plan.Evidence{
 			Kind:    plan.EvidenceDeclaration,
@@ -177,6 +183,18 @@ func fileExists(dir, name string) bool {
 
 func stringPtr(value string) *string {
 	return &value
+}
+
+func normalizeMemberPaths(values []string) []string {
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		value = filepath.ToSlash(strings.TrimSpace(value))
+		value = strings.Trim(value, "/")
+		if value != "" {
+			out = append(out, value)
+		}
+	}
+	return out
 }
 
 func pointerToken(value string) string {

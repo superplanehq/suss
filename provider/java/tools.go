@@ -65,10 +65,10 @@ func configuredToolEvidence(ctx provider.Context, project javaProject, tool conf
 	}
 	if project.Maven != nil {
 		for _, plugin := range tool.mavenPlugins {
-			if project.Maven.hasPlugin(plugin) {
+			if source := project.Maven.pluginSource(plugin); source != "" {
 				evidence = append(evidence, plan.Evidence{
 					Kind:    plan.EvidenceDeclaration,
-					Source:  ctx.SourcePath(project.Maven.Source),
+					Source:  source,
 					Pointer: "/build/plugins/" + pointerToken(plugin),
 				})
 			}

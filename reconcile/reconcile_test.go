@@ -101,6 +101,27 @@ func TestApplyLinksMavenCleanTestAsAVariantOfMvnTest(t *testing.T) {
 	}
 }
 
+func TestApplyLinksMavenPlCleanTestAsAVariantOfMvnTest(t *testing.T) {
+	t.Parallel()
+
+	inferred := command(t, "java", ".", "/#test", "test", "./mvnw test", plan.CommandInferred, plan.CapabilityTestRun)
+	observed := command(t, "github-actions", ".", "/jobs/test/steps/2/run", "mvn test", "./mvnw -pl module clean test", plan.CommandObserved, plan.CapabilityTestRun)
+	observed.Evidence = []plan.Evidence{{Kind: plan.EvidenceInvocation, Source: ".github/workflows/ci.yml", Pointer: "/jobs/test/steps/2/run"}}
+
+	root := plan.NewProjectPlan(".")
+	root.Commands = []plan.Command{inferred}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{plan.CommandFinding{Command: observed}},
+	})
+
+	if len(got[0].Commands) != 1 {
+		t.Fatalf("commands = %+v, want the inferred Maven test only", got[0].Commands)
+	}
+	if len(got[0].Commands[0].Variants) != 1 || got[0].Commands[0].Variants[0].Run != "./mvnw -pl module clean test" {
+		t.Fatalf("variants = %+v, want ./mvnw -pl module clean test", got[0].Commands[0].Variants)
+	}
+}
+
 func TestPreferDeclaredDropsInferredConventionCommands(t *testing.T) {
 	t.Parallel()
 
