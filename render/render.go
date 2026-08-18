@@ -32,6 +32,10 @@ var toolCapabilities = map[string][]plan.Capability{
 	"jest":          {plan.CapabilityTestRun},
 	"vite":          {plan.CapabilityArtifactBuild, plan.CapabilityApplicationRun},
 	"golangci-lint": {plan.CapabilityCodeLint},
+	"rspec":         {plan.CapabilityTestRun},
+	"rubocop":       {plan.CapabilityCodeLint},
+	"standard":      {plan.CapabilityCodeLint, plan.CapabilityCodeFormat},
+	"sorbet":        {plan.CapabilityCodeTypecheck},
 }
 
 type classifiedProjects struct {
@@ -46,7 +50,7 @@ func Write(w io.Writer, document plan.Document, opts Options) {
 	writePreface(w, len(classified.primary), classified.omittedFixtures)
 
 	if len(document.Projects) == 0 {
-		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, mix.exs, Makefile, and .env.example.")
+		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, mix.exs, Gemfile, Makefile, and .env.example.")
 		return
 	}
 	if len(classified.primary) == 0 && len(classified.examples) == 0 {

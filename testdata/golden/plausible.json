@@ -1120,24 +1120,6 @@
           ]
         },
         {
-          "id": "cmd_60d607b6f7db6a784687e6b02f9c87de",
-          "name": "sudo apt-get",
-          "run": "sudo apt-get update",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/tracker-script-update.yml",
-              "pointer": "/jobs/tracker-script-update/steps/2/run#command=2"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
           "id": "cmd_636d47623697fecfba90267bdcb52e1a",
           "name": "postgres",
           "run": "make postgres",
@@ -1836,24 +1818,6 @@
               ]
             }
           ]
-        },
-        {
-          "id": "cmd_fb2208cd3b54da0e80cf70740b6bc74c",
-          "name": "sudo apt-get",
-          "run": "sudo apt-get install -y jq clickhouse-server",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/tracker-script-update.yml",
-              "pointer": "/jobs/tracker-script-update/steps/2/run#command=3"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
         }
       ],
       "ambiguities": [],

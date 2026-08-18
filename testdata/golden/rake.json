@@ -1,0 +1,413 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "ruby",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "bundler",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "ci.matrix.ruby",
+          "value": "${{ fromJson(needs.ruby-versions.outputs.versions) }}",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/test/steps/1/with/ruby-version"
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.ruby",
+          "value": "3.0",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/coverage.yml",
+              "pointer": "/jobs/build/steps/1/with/ruby-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/lint/steps/1/with/ruby-version"
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.ruby",
+          "value": "3.2",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/gh-pages.yml",
+              "pointer": "/jobs/build/steps/1/with/ruby-version"
+            }
+          ]
+        },
+        {
+          "name": "ci.matrix.ruby",
+          "value": "ruby",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/push_gem.yml",
+              "pointer": "/jobs/push/steps/2/with/ruby-version"
+            }
+          ]
+        },
+        {
+          "name": "provider.github-actions.limitation",
+          "value": "reusable-workflows",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/ruby-versions/uses",
+              "description": "Reusable workflows are detected but not expanded."
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "rubocop",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile",
+              "pointer": "/gems/rubocop"
+            },
+            {
+              "kind": "configuration",
+              "source": ".rubocop.yml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "ruby",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/coverage.yml",
+              "pointer": "/jobs/build/steps/1/with/ruby-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/gh-pages.yml",
+              "pointer": "/jobs/build/steps/1/with/ruby-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/lint/steps/1/with/ruby-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/push_gem.yml",
+              "pointer": "/jobs/push/steps/2/with/ruby-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/test/steps/1/with/ruby-version"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GH_TOKEN",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/dependabot_automerge.yml",
+              "pointer": "/jobs/automerge/steps/2/env/GH_TOKEN"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_77b1b2eca82e5c1c1edf88be53cd14be",
+          "name": "install dependencies",
+          "run": "bundle install",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "convention",
+              "source": "ruby-ecosystem",
+              "pointer": "dependencies",
+              "description": "Bundler-managed Ruby projects conventionally install dependencies with bundle install."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "ruby-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Bundler dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_16bb2a5494df3a6ea69741c95102d05d",
+          "name": "ruby exe/rake",
+          "run": "ruby -Ilib exe/rake",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/coverage.yml",
+              "pointer": "/jobs/build/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_368337a1e31f836b906634d9a2ed794d",
+          "name": "gh release",
+          "run": "gh release create \"${tag_name}\" --verify-tag --generate-notes",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/push_gem.yml",
+              "pointer": "/jobs/push/steps/4/run#command=1"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_39d129211af22ff930a9d0bc83b5cfcd",
+          "name": "rake rdoc",
+          "run": "bundle exec rake rdoc",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/gh-pages.yml",
+              "pointer": "/jobs/build/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_68c21fa4f6167d8f349bf46c03e35051",
+          "name": "test",
+          "run": "bundle exec rake test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "file",
+              "source": "Rakefile"
+            },
+            {
+              "kind": "file",
+              "source": "test/test_private_reader.rb"
+            },
+            {
+              "kind": "convention",
+              "source": "ruby-ecosystem",
+              "pointer": "test",
+              "description": "Ruby projects declaring Rake::TestTask conventionally run the test task with rake test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "ruby-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs a Rake test task."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_6a65c699a18a0dd541520253f19d9a83",
+          "name": "build",
+          "run": "bundle exec rake build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Rakefile",
+              "pointer": "/bundler/gem_tasks"
+            },
+            {
+              "kind": "file",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "convention",
+              "source": "ruby-ecosystem",
+              "pointer": "build",
+              "description": "A Rakefile loading Bundler gem tasks defines the conventional rake build task."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "ruby-ecosystem",
+                  "pointer": "build",
+                  "description": "The command builds a Ruby gem through Rake."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_7ae4a74780a0bdb1a1a2d18895585100",
+          "name": "rubocop",
+          "run": "bundle exec rubocop",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/lint.yml",
+              "pointer": "/jobs/lint/steps/2/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/lint.yml",
+                  "pointer": "/jobs/lint/steps/2/run",
+                  "description": "The command runs RuboCop."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_dc748ba512521ad15533d3cb47f4915f",
+          "name": "ruby exe/rake",
+          "run": "ruby -Ilib exe/rake",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/test.yml",
+              "pointer": "/jobs/test/steps/3/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_fa94ebaa743b1fc5681abf18c5d92449",
+          "name": "gh pr",
+          "run": "gh pr merge --auto --merge \"$PR_URL\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/dependabot_automerge.yml",
+              "pointer": "/jobs/automerge/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

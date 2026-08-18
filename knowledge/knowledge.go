@@ -449,6 +449,10 @@ func dropWrappers(tokens []string) []string {
 	switch tokens[0] {
 	case "npx", "pnpx", "bunx", "c8", "nyc":
 		return dropLeadingFlags(tokens[1:])
+	case "bundle":
+		if len(tokens) >= 2 && tokens[1] == "exec" {
+			return dropLeadingFlags(tokens[2:])
+		}
 	case "npm", "pnpm", "yarn":
 		if len(tokens) >= 2 && tokens[1] == "exec" {
 			return dropLeadingFlags(tokens[2:])

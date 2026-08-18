@@ -127,6 +127,51 @@ func IsRemoteGoInstall(inv Invocation) bool {
 	return false
 }
 
+// IsRemoteGemInstall reports whether inv installs named gems rather than a
+// local gem archive. Named gem installs in CI provision tools; they do not
+// install the repository's Bundler dependency set.
+func IsRemoteGemInstall(inv Invocation) bool {
+	if inv.Executable != "gem" || len(inv.Args) < 2 || inv.Args[0] != "install" {
+		return false
+	}
+	for _, arg := range inv.Args[1:] {
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		return !strings.HasPrefix(arg, ".") && !strings.HasPrefix(arg, "/") && !strings.HasSuffix(arg, ".gem")
+	}
+	return false
+}
+
+// IsSystemPackagePlumbing reports whether inv provisions operating-system
+// packages in CI. These commands prepare the runner rather than invoke a
+// repository task or install its language dependency set.
+func IsSystemPackagePlumbing(inv Invocation) bool {
+	executable := inv.Executable
+	args := inv.Args
+	if executable == "sudo" {
+		args = dropLeadingFlags(args)
+		if len(args) == 0 {
+			return false
+		}
+		executable = canonicalizeExecutable(args[0])
+		args = args[1:]
+	}
+	if executable != "apt-get" && executable != "apt" {
+		return false
+	}
+	args = dropLeadingFlags(args)
+	if len(args) == 0 {
+		return false
+	}
+	switch args[0] {
+	case "install", "update", "upgrade", "dist-upgrade":
+		return true
+	default:
+		return false
+	}
+}
+
 // IsGoPlumbing reports whether inv is a Go diagnostic (`go env`, `go version`,
 // `go help`) rather than a repository build or test command.
 func IsGoPlumbing(inv Invocation) bool {

@@ -178,19 +178,24 @@ Acceptance:
 
 Status: implementation revised after review exposed fixture projects receiving misleading first-class prominence and a repository-local Go module cache leaking into project and Compose discovery; awaiting follow-up review.
 
-## Milestone 7 — Elixir provider, Semaphore provider, dogfood
+## Milestone 7 — Elixir, Ruby, Semaphore, and dogfood
 
 Close the loop on our own repositories.
 
 Scope:
 
 - Elixir provider: `mix.exs`, Mix tasks and aliases, `.tool-versions`, ExUnit, Credo/Dialyzer configs; knowledge base entries.
+- Ruby provider: `Gemfile`, `Gemfile.lock`, `.ruby-version`, `.tool-versions`, Bundler, Rails, RSpec/Minitest/Rake test conventions, common tool configs; knowledge base entries. GitHub Actions recognizes `ruby/setup-ruby` runtime evidence.
 - Semaphore provider: pipelines, blocks, jobs, working directories, version and service evidence — same reconciliation path as GitHub Actions.
 - Whatever gaps the dogfood repositories expose.
 
 Acceptance:
 
 - Golden plans for `elixir-ecto/ecto`, then `superplanehq/superplane`, `operately/operately`, and `semaphoreio/semaphore` are correct end to end.
+- The focused `ruby-rails` golden fixture is correct: Ruby and Rails identity, runtime and Bundler versions, dependency installation, tests, server, tool configuration, and GitHub Actions reconciliation all remain evidence-backed.
+- Golden plans for `basecamp/once-campfire` as a production Rails application and `ruby/rake` as a framework-free Ruby project are correct at pinned commits.
+
+Status: in progress. Elixir and Semaphore support are implemented; Ruby/Rails support has been added while the milestone's complex-project output remains under evaluation.
 
 ## Milestone 8 — Polish and v0 release
 
@@ -208,4 +213,4 @@ Acceptance:
 
 ## Out of scope for v0
 
-Per idea.md: command execution, execution profiles, behavior characteristics, README/docs parsing, workspace fan-out modeling, Python/Ruby/Rust/JVM/.NET providers, GitLab/CircleCI/Buildkite.
+Per idea.md: command execution, execution profiles, behavior characteristics, README/docs parsing, workspace fan-out modeling, Python/Rust/JVM/.NET providers, GitLab/CircleCI/Buildkite.

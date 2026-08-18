@@ -17,6 +17,7 @@ import (
 	"github.com/superplanehq/suss/provider/golang"
 	"github.com/superplanehq/suss/provider/makefile"
 	"github.com/superplanehq/suss/provider/node"
+	"github.com/superplanehq/suss/provider/ruby"
 	"github.com/superplanehq/suss/provider/semaphore"
 	"github.com/superplanehq/suss/reconcile"
 )
@@ -25,6 +26,7 @@ var projectProviders = []provider.Provider{
 	node.Provider{},
 	golang.Provider{},
 	elixir.Provider{},
+	ruby.Provider{},
 	makefile.Provider{},
 	envfile.Provider{},
 }

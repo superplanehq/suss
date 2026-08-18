@@ -13,10 +13,36 @@
               "source": "package.json"
             }
           ]
+        },
+        {
+          "name": "ruby",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile"
+            }
+          ]
         }
       ],
       "frameworks": [],
       "packageManagers": [
+        {
+          "name": "bundler",
+          "version": "2.4.19",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "declaration",
+              "source": "Gemfile.lock",
+              "pointer": "/BUNDLED WITH"
+            }
+          ]
+        },
         {
           "name": "npm",
           "confidence": "high",
@@ -579,6 +605,42 @@
             }
           ],
           "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_77b1b2eca82e5c1c1edf88be53cd14be",
+          "name": "install dependencies",
+          "run": "bundle install",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "convention",
+              "source": "ruby-ecosystem",
+              "pointer": "dependencies",
+              "description": "Bundler-managed Ruby projects conventionally install dependencies with bundle install."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "ruby-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Bundler dependencies."
+                }
+              ]
+            }
+          ],
           "variants": []
         },
         {

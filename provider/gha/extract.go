@@ -137,6 +137,14 @@ func usesFindings(ctx provider.Context, source, dir, stepPointer string, step st
 	case "erlef/setup-beam":
 		findings := setupRuntimeFindings(ctx, source, dir, stepPointer, "elixir", step.With, matrix, []string{"elixir-version"})
 		return append(findings, setupRuntimeFindings(ctx, source, dir, stepPointer, "erlang", step.With, matrix, []string{"otp-version"})...)
+	case "ruby/setup-ruby":
+		if file := strings.TrimSpace(step.With["ruby-version"]); file != "" && !isExpression(file) {
+			relative := resolveDirectory(ctx.RepositoryRoot, ".", file)
+			if info, err := os.Stat(filepath.Join(ctx.RepositoryRoot, filepath.FromSlash(relative))); err == nil && !info.IsDir() {
+				return versionFileFindings(ctx, source, dir, stepPointer, "ruby", "ruby-version", file)
+			}
+		}
+		return setupRuntimeFindings(ctx, source, dir, stepPointer, "ruby", step.With, matrix, []string{"ruby-version"})
 	case "golangci/golangci-lint-action":
 		return golangciActionFindings(source, dir, stepPointer, step)
 	default:
@@ -424,7 +432,7 @@ func skipStatement(stmt knowledge.Statement) bool {
 	if knowledge.IsGlobalInstall(stmt.Invocation) {
 		return true
 	}
-	if knowledge.IsRemoteGoInstall(stmt.Invocation) || knowledge.IsToolPlumbing(stmt.Invocation) {
+	if knowledge.IsRemoteGoInstall(stmt.Invocation) || knowledge.IsRemoteGemInstall(stmt.Invocation) || knowledge.IsSystemPackagePlumbing(stmt.Invocation) || knowledge.IsToolPlumbing(stmt.Invocation) {
 		return true
 	}
 	if knowledge.HasUnclosedGHAExpression(raw) {

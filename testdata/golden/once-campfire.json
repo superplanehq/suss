@@ -1,0 +1,454 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "ruby",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile"
+            }
+          ]
+        }
+      ],
+      "frameworks": [
+        {
+          "name": "rails",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile",
+              "pointer": "/gems/rails",
+              "description": "The Gemfile declares Rails."
+            }
+          ]
+        }
+      ],
+      "packageManagers": [
+        {
+          "name": "bundler",
+          "version": "4.0.13",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "declaration",
+              "source": "Gemfile.lock",
+              "pointer": "/BUNDLED WITH"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "brakeman",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile",
+              "pointer": "/gems/brakeman"
+            },
+            {
+              "kind": "configuration",
+              "source": "config/brakeman.ignore"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "rubocop",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile",
+              "pointer": "/gems/rubocop-rails-omakase"
+            },
+            {
+              "kind": "configuration",
+              "source": ".rubocop.yml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "ruby",
+          "version": "3.4.5",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": ".ruby-version"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/lint/steps/1/with/ruby-version",
+              "description": "The setup action reads .ruby-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/scan/steps/1/with/ruby-version",
+              "description": "The setup action reads .ruby-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/2/with/ruby-version",
+              "description": "The setup action reads .ruby-version."
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test_system/steps/2/with/ruby-version",
+              "description": "The setup action reads .ruby-version."
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "redis",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/services/redis/image"
+            },
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test_system/services/redis/image"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "IMAGE_DESCRIPTION",
+          "isRequired": false,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish-image.yml",
+              "pointer": "/env/IMAGE_DESCRIPTION"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_77b1b2eca82e5c1c1edf88be53cd14be",
+          "name": "install dependencies",
+          "run": "bundle install",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "convention",
+              "source": "ruby-ecosystem",
+              "pointer": "dependencies",
+              "description": "Bundler-managed Ruby projects conventionally install dependencies with bundle install."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "ruby-ecosystem",
+                  "pointer": "dependencies",
+                  "description": "The command installs Bundler dependencies."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_03cdb11acfe891b909e9341a04eb9fdb",
+          "name": "rubocop",
+          "run": "bin/rubocop",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/lint/steps/2/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/lint/steps/2/run",
+                  "description": "The command runs RuboCop."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_1c98381db654326960bd5d878132ead4",
+          "name": "cosign sign",
+          "run": "cosign sign --yes \"$tag\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish-image.yml",
+              "pointer": "/jobs/manifest/steps/6/run#command=8"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_3505ec54976a7f514b184bd4f1ac1020",
+          "name": "docker buildx",
+          "run": "docker buildx imagetools create        --tag \"$tag\"        --annotation \"index:org.opencontainers.image.description=${IMAGE_DESCRIPTION}\"        \"${src_tag}-amd64\"        \"${src_tag}-arm64\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish-image.yml",
+              "pointer": "/jobs/manifest/steps/4/run#command=18"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_5718dbc3abf414026fcf566189840388",
+          "name": "brakeman",
+          "run": "bin/brakeman",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/scan/steps/2/run"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_58c7be762bfbb0552ed16f0b6c7610fc",
+          "name": "docker buildx",
+          "run": "docker buildx imagetools create        --tag \"$tag\"        \"${src_tag}-amd64\"        \"${src_tag}-arm64\"",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/publish-image.yml",
+              "pointer": "/jobs/manifest/steps/4/run#command=20"
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        },
+        {
+          "id": "cmd_68c21fa4f6167d8f349bf46c03e35051",
+          "name": "test",
+          "run": "bin/rails test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "file",
+              "source": "bin/rails"
+            },
+            {
+              "kind": "file",
+              "source": "config/application.rb"
+            },
+            {
+              "kind": "file",
+              "source": "test/channels/application_cable/connection_test.rb"
+            },
+            {
+              "kind": "convention",
+              "source": "ruby-ecosystem",
+              "pointer": "test",
+              "description": "Rails applications with Minitest files conventionally run them with rails test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "ruby-ecosystem",
+                  "pointer": "test",
+                  "description": "The command runs Rails tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_71d5ad89658e951104979172768cf2a0",
+          "name": "server",
+          "run": "bin/rails server",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "file",
+              "source": "bin/rails"
+            },
+            {
+              "kind": "file",
+              "source": "config/application.rb"
+            },
+            {
+              "kind": "convention",
+              "source": "ruby-ecosystem",
+              "pointer": "server",
+              "description": "Rails applications conventionally start the development server with rails server."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "ruby-ecosystem",
+                  "pointer": "server",
+                  "description": "The command starts the Rails server."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_86c1f542fa14fc2aef3132f3530779b1",
+          "name": "rails db:setup",
+          "run": "bin/rails db:setup test:system",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test_system/steps/3/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test_system/steps/3/run",
+                  "description": "The command prepares the Rails database and runs system tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_ae7afe3a46ff08a0258dade242c19af3",
+          "name": "rails db:setup",
+          "run": "bin/rails db:setup test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "observed",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/ci.yml",
+              "pointer": "/jobs/test/steps/3/run"
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "invocation",
+                  "source": ".github/workflows/ci.yml",
+                  "pointer": "/jobs/test/steps/3/run",
+                  "description": "The command prepares the Rails database and runs tests."
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

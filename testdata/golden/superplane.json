@@ -14,10 +14,37 @@
               "pointer": "/module"
             }
           ]
+        },
+        {
+          "name": "ruby",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile"
+            }
+          ]
         }
       ],
       "frameworks": [],
-      "packageManagers": [],
+      "packageManagers": [
+        {
+          "name": "bundler",
+          "version": "2.4.19",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Gemfile"
+            },
+            {
+              "kind": "declaration",
+              "source": "Gemfile.lock",
+              "pointer": "/BUNDLED WITH"
+            }
+          ]
+        }
+      ],
       "facts": [
         {
           "name": "provider.make.limitation",
