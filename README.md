@@ -20,11 +20,12 @@ That writes a `suss` binary in the repository root. `go install ./cmd/suss` inst
 
 ```text
 ./suss .
+./suss . --uninterpreted --evidence
 ./suss . --json
 ./suss path/to/repo
 ```
 
-Without `--json`, Suss prints a human-readable plan. With `--json`, it emits the versioned plan document. Detection is static: it does not install dependencies or execute repository commands.
+Without `--json`, Suss prints a human-readable plan. Uninterpreted commands and evidence are omitted unless requested with `--uninterpreted` and `--evidence`. With `--json`, it emits the versioned plan document. Detection is static: it does not install dependencies or execute repository commands.
 
 ## Test
 

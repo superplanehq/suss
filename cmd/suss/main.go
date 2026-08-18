@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	suss "github.com/superplanehq/suss"
@@ -45,13 +46,20 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 
-	render.Write(stdout, document, render.Options{Providers: suss.Providers()})
+	render.Write(stdout, document, render.Options{
+		Providers:         suss.Providers(),
+		RepositoryName:    repositoryName(opts.path),
+		ShowUninterpreted: opts.uninterpreted,
+		ShowEvidence:      opts.evidence,
+	})
 	return 0
 }
 
 type options struct {
-	path string
-	json bool
+	path          string
+	json          bool
+	uninterpreted bool
+	evidence      bool
 }
 
 func parseArgs(args []string) (options, error) {
@@ -62,6 +70,10 @@ func parseArgs(args []string) (options, error) {
 		switch {
 		case arg == "--json":
 			opts.json = true
+		case arg == "--uninterpreted":
+			opts.uninterpreted = true
+		case arg == "--evidence":
+			opts.evidence = true
 		case arg == "-h", arg == "--help":
 			return options{}, errHelp
 		case strings.HasPrefix(arg, "-"):
@@ -78,13 +90,23 @@ func parseArgs(args []string) (options, error) {
 	return opts, nil
 }
 
+func repositoryName(path string) string {
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return filepath.Base(path)
+	}
+	return filepath.Base(absolute)
+}
+
 func usage() string {
-	return `Usage: suss [path] [--json]
+	return `Usage: suss [path] [--json] [--uninterpreted] [--evidence]
 
 Inspect a repository and emit how to set it up, build it, test it, and run it.
 
-  path     repository to inspect (default: .)
-  --json   emit the versioned plan document
+  path              repository to inspect (default: .)
+  --json            emit the versioned plan document
+  --uninterpreted   include commands without a known purpose
+  --evidence        include source files that support the plan
 
 Without --json, a human-readable rendering of the plan is printed.
 `

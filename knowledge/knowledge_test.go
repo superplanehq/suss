@@ -280,6 +280,29 @@ func TestInterpretMatchesGoToolchainInvocations(t *testing.T) {
 	}
 }
 
+func TestInterpretMatchesMixInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		inv  Invocation
+		want []plan.Capability
+	}{
+		{inv: Invocation{Executable: "mix", Args: []string{"deps.get"}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
+		{inv: Invocation{Executable: "mix", Args: []string{"compile", "--warnings-as-errors"}}, want: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{inv: Invocation{Executable: "mix", Args: []string{"test"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "mix", Args: []string{"credo", "--strict"}}, want: []plan.Capability{plan.CapabilityCodeLint}},
+		{inv: Invocation{Executable: "mix", Args: []string{"dialyzer"}}, want: []plan.Capability{plan.CapabilityCodeTypecheck}},
+		{inv: Invocation{Executable: "mix", Args: []string{"format", "--check-formatted"}}, want: []plan.Capability{plan.CapabilityCodeFormat}},
+		{inv: Invocation{Executable: "mix", Args: []string{"phx.server"}}, want: []plan.Capability{plan.CapabilityApplicationRun}},
+	}
+	for _, tt := range tests {
+		got := capabilities(Interpret(tt.inv))
+		if !slices.Equal(got, tt.want) {
+			t.Fatalf("Interpret(%s %v) = %v, want %v", tt.inv.Executable, tt.inv.Args, got, tt.want)
+		}
+	}
+}
+
 func TestIsRemoteGoInstall(t *testing.T) {
 	t.Parallel()
 

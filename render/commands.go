@@ -202,7 +202,9 @@ func writeCommandTable(w io.Writer, labelHeading string, rows []commandRow) {
 			width = len(row.label)
 		}
 	}
-	fmt.Fprintf(w, "    %-*s  Command\n", width, labelHeading)
+	const commandHeading = "Command"
+	fmt.Fprintf(w, "    %-*s  %s\n", width, labelHeading, commandHeading)
+	fmt.Fprintf(w, "    %s  %s\n", strings.Repeat("-", width), strings.Repeat("-", len(commandHeading)))
 	for _, row := range rows {
 		fmt.Fprintf(w, "    %-*s  %s\n", width, row.label, row.run)
 	}

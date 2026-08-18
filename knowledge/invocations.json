@@ -230,6 +230,62 @@
       "capabilities": ["dependencies.install"],
       "confidence": "high",
       "description": "The command fetches Go dependencies with go get."
+    },
+    {
+      "id": "mix-deps-get",
+      "executable": "mix",
+      "argsPrefix": ["deps.get"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command fetches Mix dependencies."
+    },
+    {
+      "id": "mix-compile",
+      "executable": "mix",
+      "argsPrefix": ["compile"],
+      "capabilities": ["artifact.build"],
+      "confidence": "high",
+      "description": "The command compiles a Mix project."
+    },
+    {
+      "id": "mix-test",
+      "executable": "mix",
+      "argsPrefix": ["test"],
+      "capabilities": ["test.run"],
+      "confidence": "high",
+      "description": "The command runs ExUnit tests through Mix."
+    },
+    {
+      "id": "mix-credo",
+      "executable": "mix",
+      "argsPrefix": ["credo"],
+      "capabilities": ["code.lint"],
+      "confidence": "high",
+      "description": "The command runs Credo."
+    },
+    {
+      "id": "mix-dialyzer",
+      "executable": "mix",
+      "argsPrefix": ["dialyzer"],
+      "capabilities": ["code.typecheck"],
+      "confidence": "high",
+      "description": "The command runs Dialyzer through Dialyxir."
+    },
+    {
+      "id": "mix-format",
+      "executable": "mix",
+      "argsPrefix": ["format"],
+      "capabilities": ["code.format"],
+      "confidence": "high",
+      "description": "The command formats Elixir source with Mix."
+    },
+    {
+      "id": "mix-phx-server",
+      "executable": "mix",
+      "argsPrefix": ["phx.server"],
+      "capabilities": ["application.run"],
+      "confidence": "high",
+      "description": "The command starts the Phoenix server."
     }
   ]
 }

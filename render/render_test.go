@@ -12,11 +12,29 @@ func TestWriteReportsNoProjectRoots(t *testing.T) {
 	t.Parallel()
 
 	got := renderDocument(plan.NewDocument(nil), []string{"node"})
-	if !strings.Contains(got, "Providers: node") {
-		t.Fatalf("output %q, want providers", got)
-	}
 	if !strings.Contains(got, "No project roots were detected") {
 		t.Fatalf("output %q, want an empty-repository explanation", got)
+	}
+	if strings.Contains(got, "Providers:") {
+		t.Fatalf("output %q, want no supported-provider catalog", got)
+	}
+}
+
+func TestWriteExplainsUnclaimedProject(t *testing.T) {
+	t.Parallel()
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{plan.NewProjectPlan(".")}), []string{"node", "go"})
+	if !strings.Contains(got, "No implemented provider produced findings for this project") {
+		t.Fatalf("output %q, want an unclaimed-project explanation", got)
+	}
+	if !strings.Contains(got, "Providers that ran: node, go") {
+		t.Fatalf("output %q, want the providers that ran", got)
+	}
+	if !strings.Contains(got, "Repository root\n===============") {
+		t.Fatalf("output %q, want a human heading for the repository root", got)
+	}
+	if strings.Contains(got, "Project: .") {
+		t.Fatalf("output %q, want no JSON-path project heading", got)
 	}
 }
 
@@ -35,18 +53,21 @@ func TestWriteOmitsHighConfidenceFixtureProjects(t *testing.T) {
 	}}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root, fixture}), []string{"node"})
-	if !strings.Contains(got, "Projects: 1 (1 fixture project omitted; use --json to inspect)") {
-		t.Fatalf("output %q, want visible and omitted project counts", got)
+	if !strings.Contains(got, "1 fixture project omitted; use --json to inspect") {
+		t.Fatalf("output %q, want an omitted-fixture notice", got)
 	}
 	if strings.Contains(got, "Project: testdata/sample") {
 		t.Fatalf("output %q, want the fixture project omitted", got)
 	}
-	if !strings.Contains(got, "Project: .") {
+	if !strings.Contains(got, "Repository root") {
 		t.Fatalf("output %q, want the primary project", got)
+	}
+	if strings.Contains(got, "Project: .") {
+		t.Fatalf("output %q, want no JSON-path project heading", got)
 	}
 }
 
-func TestWriteKeepsMediumConfidenceFixtureProjectsVisible(t *testing.T) {
+func TestWriteRendersStandaloneExampleProjectsInFull(t *testing.T) {
 	t.Parallel()
 
 	project := plan.NewProjectPlan("examples/demo")
@@ -58,17 +79,99 @@ func TestWriteKeepsMediumConfidenceFixtureProjectsVisible(t *testing.T) {
 	}}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
-	if !strings.Contains(got, "Projects: 1") {
-		t.Fatalf("output %q, want the project count", got)
-	}
 	if strings.Contains(got, "fixture project omitted") {
 		t.Fatalf("output %q, want no omitted project notice", got)
 	}
-	if !strings.Contains(got, "Project: examples/demo") {
-		t.Fatalf("output %q, want the uncertain fixture project kept visible", got)
+	if !strings.Contains(got, "Example: examples/demo") {
+		t.Fatalf("output %q, want the example labeled as an example", got)
+	}
+	if strings.Contains(got, "Project: examples/demo") {
+		t.Fatalf("output %q, want no peer-project heading for an example", got)
 	}
 	if !strings.Contains(got, "project.role: fixture") {
 		t.Fatalf("output %q, want the fixture fact", got)
+	}
+}
+
+func TestWriteIndexesExampleProjectsAfterPrimary(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Languages = []plan.DetectedValue{{Name: "elixir"}}
+	install := "mix deps.get"
+	root.Preparation = []plan.Command{{
+		Run: &install,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityDependenciesInstall,
+		}},
+	}}
+
+	example := plan.NewProjectPlan("examples/friends")
+	example.Languages = []plan.DetectedValue{{Name: "elixir"}}
+	example.PackageManagers = []plan.DetectedTool{{Name: "mix"}}
+	example.Facts = []plan.ProjectFact{{
+		Name:       "project.role",
+		Value:      "fixture",
+		Confidence: plan.ConfidenceMedium,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceFile, Source: "examples/friends"}},
+	}}
+	exampleInstall := "mix deps.get"
+	example.Preparation = []plan.Command{{
+		Run: &exampleInstall,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityDependenciesInstall,
+		}},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root, example}), nil)
+	if strings.Contains(got, "Projects: 2") {
+		t.Fatalf("output %q, want examples excluded from the peer project count", got)
+	}
+	if strings.Contains(got, "Project: examples/friends") {
+		t.Fatalf("output %q, want the example not listed as a peer project", got)
+	}
+	if strings.Count(got, "How to work with this project:") != 1 {
+		t.Fatalf("output %q, want a single primary command section", got)
+	}
+	if !strings.Contains(got, "Example project:\n  examples/friends  (elixir, mix)") {
+		t.Fatalf("output %q, want a compact example index", got)
+	}
+}
+
+func TestWriteUsesRepositoryNameForTheRootHeading(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Languages = []plan.DetectedValue{{Name: "elixir"}}
+
+	var buf bytes.Buffer
+	Write(&buf, plan.NewDocument([]plan.ProjectPlan{root}), Options{RepositoryName: "ecto"})
+	got := buf.String()
+	if !strings.Contains(got, "ecto\n====") {
+		t.Fatalf("output %q, want the repository name as the root heading", got)
+	}
+	if strings.Contains(got, "Repository root") || strings.Contains(got, "Project: .") {
+		t.Fatalf("output %q, want the repository name instead of a generic root heading", got)
+	}
+}
+
+func TestWriteKeepsNestedNonFixtureProjectsAsPeers(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Languages = []plan.DetectedValue{{Name: "go"}}
+	frontend := plan.NewProjectPlan("frontend")
+	frontend.Languages = []plan.DetectedValue{{Name: "javascript"}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root, frontend}), nil)
+	if !strings.Contains(got, "Projects: 2") {
+		t.Fatalf("output %q, want a peer-project count", got)
+	}
+	if !strings.Contains(got, "Repository root\n===============") {
+		t.Fatalf("output %q, want a human heading for the repository root", got)
+	}
+	if !strings.Contains(got, "Project: frontend\n=================") {
+		t.Fatalf("output %q, want the nested project kept as a peer", got)
 	}
 }
 
@@ -83,8 +186,8 @@ func TestWriteExplainsWhenOnlyFixtureProjectsWereDetected(t *testing.T) {
 	}}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{fixture}), []string{"node"})
-	if !strings.Contains(got, "Projects: 0 (1 fixture project omitted; use --json to inspect)") {
-		t.Fatalf("output %q, want the omitted project count", got)
+	if !strings.Contains(got, "1 fixture project omitted; use --json to inspect") {
+		t.Fatalf("output %q, want the omitted project notice", got)
 	}
 	if !strings.Contains(got, "No non-fixture project roots were detected.") {
 		t.Fatalf("output %q, want an explanation for the empty human view", got)
@@ -167,7 +270,6 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
 	for _, want := range []string{
-		"Providers: node",
 		"Languages: javascript",
 		"Package managers: npm",
 		"npm ci",
@@ -175,13 +277,35 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		"CI variant          npm test --coverage",
 		"environment API_TOKEN (required, default present)",
 		"eslint is configured. No command interpreted as code.lint was found.",
-		"package.json",
-		"eslint.config.js",
-		".github/workflows/ci.yml",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("output %q, want %q", got, want)
 		}
+	}
+	if strings.Contains(got, "Providers:") {
+		t.Fatalf("output %q, want no supported-provider catalog on a covered project", got)
+	}
+	if strings.Contains(got, "Project: .") {
+		t.Fatalf("output %q, want no JSON-path project heading", got)
+	}
+	if strings.Contains(got, "Evidence:") {
+		t.Fatalf("output %q, want evidence omitted by default", got)
+	}
+}
+
+func TestWriteIncludesEvidenceWhenRequested(t *testing.T) {
+	t.Parallel()
+
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{
+		Name:       "javascript",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json"}},
+	}}
+
+	got := renderDocumentWith(plan.NewDocument([]plan.ProjectPlan{project}), Options{ShowEvidence: true})
+	if !strings.Contains(got, "Evidence:\n    package.json") {
+		t.Fatalf("output %q, want evidence when requested", got)
 	}
 }
 
@@ -244,11 +368,24 @@ func TestWriteListsInterpretedCommandsFirst(t *testing.T) {
 	}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
-	lintAt := strings.Index(got, "lint")
-	testAt := strings.Index(got, "test")
+	lintAt := strings.Index(got, "Lint")
+	testAt := strings.Index(got, "Test")
+	if lintAt < 0 || testAt < 0 {
+		t.Fatalf("output %q, want lint and test", got)
+	}
+	if testAt >= lintAt {
+		t.Fatalf("output %q, want lifecycle-ordered interpreted commands", got)
+	}
+	if strings.Contains(got, "e2e:harness:coverage") || strings.Contains(got, "Uninterpreted commands:") {
+		t.Fatalf("output %q, want uninterpreted commands omitted by default", got)
+	}
+
+	got = renderDocumentWith(plan.NewDocument([]plan.ProjectPlan{project}), Options{Providers: []string{"node"}, ShowUninterpreted: true})
 	unknownAt := strings.Index(got, "e2e:harness:coverage")
-	if lintAt < 0 || testAt < 0 || unknownAt < 0 {
-		t.Fatalf("output %q, want lint, test, and e2e:harness:coverage", got)
+	lintAt = strings.Index(got, "Lint")
+	testAt = strings.Index(got, "Test")
+	if unknownAt < 0 {
+		t.Fatalf("output %q, want uninterpreted commands when requested", got)
 	}
 	if testAt >= lintAt || lintAt >= unknownAt {
 		t.Fatalf("output %q, want lifecycle-ordered interpreted commands before uninterpreted commands", got)
@@ -277,7 +414,7 @@ func TestWriteKeepsMultilineCommandRunsOnOneLine(t *testing.T) {
 		Variants:   []plan.CommandVariant{},
 	}}
 
-	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
+	got := renderDocumentWith(plan.NewDocument([]plan.ProjectPlan{project}), Options{Providers: []string{"node"}, ShowUninterpreted: true})
 	if strings.Contains(got, "\n# suite leftover") {
 		t.Fatalf("output %q, want the run collapsed onto one line", got)
 	}
@@ -357,7 +494,10 @@ func TestWritePrioritizesInterpretedCommandsWithinDistinctProjectBlocks(t *testi
 	testRun := "pnpm run test"
 	unknownRun := "pnpm run generate:icons"
 	frontend := plan.NewProjectPlan("frontend")
-	frontend.Languages = []plan.DetectedValue{{Name: "typescript"}}
+	frontend.Languages = []plan.DetectedValue{{
+		Name:     "typescript",
+		Evidence: []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "frontend/package.json"}},
+	}}
 	frontend.PackageManagers = []plan.DetectedTool{{Name: "pnpm", Version: "9"}}
 	frontend.Requirements = []plan.Requirement{{Kind: plan.RequirementRuntime, Name: "node", Version: "22"}}
 	frontend.Preparation = []plan.Command{
@@ -428,7 +568,7 @@ func TestWritePrioritizesInterpretedCommandsWithinDistinctProjectBlocks(t *testi
 		"Projects: 2",
 		"Project: backend\n================",
 		"Project: frontend\n=================",
-		"  How to work with this project:\n    Purpose               Command",
+		"  How to work with this project:\n    Purpose               Command\n    --------------------  -------",
 		"    Install dependencies  pnpm install --frozen-lockfile",
 		"    Prepare               docker compose up -d",
 		"    Test                  pnpm run test",
@@ -437,7 +577,6 @@ func TestWritePrioritizesInterpretedCommandsWithinDistinctProjectBlocks(t *testi
 		"      More than one test invocation is plausible.\n      - pnpm run test\n      - npm test",
 		"    Conflict: runtime.node.version\n      Runtime declarations disagree.",
 		"      Selected: 22 (The version file is more specific.)",
-		"  Uninterpreted commands:\n    Name            Command\n    generate:icons  pnpm run generate:icons",
 		"  Project details:\n    Languages: typescript\n    Package managers: pnpm 9",
 		"    Requirements:\n      runtime node 22",
 	} {
@@ -448,18 +587,45 @@ func TestWritePrioritizesInterpretedCommandsWithinDistinctProjectBlocks(t *testi
 	if strings.Contains(got, "Path:") {
 		t.Fatalf("output %q, want the project path only in its heading", got)
 	}
+	if strings.Contains(got, "Uninterpreted commands:") || strings.Contains(got, "generate:icons") {
+		t.Fatalf("output %q, want uninterpreted commands omitted by default", got)
+	}
+	if strings.Contains(got, "Evidence:") {
+		t.Fatalf("output %q, want evidence omitted by default", got)
+	}
 	frontendOutput := got[strings.Index(got, "Project: frontend"):]
 	interpretedAt := strings.Index(frontendOutput, "How to work with this project:")
 	attentionAt := strings.Index(frontendOutput, "Needs attention:")
-	uninterpretedAt := strings.Index(frontendOutput, "Uninterpreted commands:")
 	detailsAt := strings.Index(frontendOutput, "Project details:")
-	if interpretedAt < 0 || attentionAt < 0 || uninterpretedAt < 0 || detailsAt < 0 || interpretedAt >= attentionAt || attentionAt >= uninterpretedAt || uninterpretedAt >= detailsAt {
-		t.Fatalf("output %q, want interpreted commands, attention items, uninterpreted commands, then project details", got)
+	if interpretedAt < 0 || attentionAt < 0 || detailsAt < 0 || interpretedAt >= attentionAt || attentionAt >= detailsAt {
+		t.Fatalf("output %q, want interpreted commands, attention items, then project details", got)
+	}
+
+	got = renderDocumentWith(plan.NewDocument([]plan.ProjectPlan{backend, frontend}), Options{
+		Providers:         []string{"golang", "node"},
+		ShowUninterpreted: true,
+		ShowEvidence:      true,
+	})
+	if !strings.Contains(got, "  Uninterpreted commands:\n    Name            Command\n    --------------  -------\n    generate:icons  pnpm run generate:icons") {
+		t.Fatalf("output %q, want uninterpreted commands when requested", got)
+	}
+	frontendOutput = got[strings.Index(got, "Project: frontend"):]
+	interpretedAt = strings.Index(frontendOutput, "How to work with this project:")
+	attentionAt = strings.Index(frontendOutput, "Needs attention:")
+	uninterpretedAt := strings.Index(frontendOutput, "Uninterpreted commands:")
+	detailsAt = strings.Index(frontendOutput, "Project details:")
+	evidenceAt := strings.Index(frontendOutput, "Evidence:")
+	if interpretedAt < 0 || attentionAt < 0 || uninterpretedAt < 0 || detailsAt < 0 || evidenceAt < 0 || interpretedAt >= attentionAt || attentionAt >= uninterpretedAt || uninterpretedAt >= detailsAt || detailsAt >= evidenceAt {
+		t.Fatalf("output %q, want interpreted commands, attention items, uninterpreted commands, project details, then evidence", got)
 	}
 }
 
 func renderDocument(document plan.Document, providers []string) string {
+	return renderDocumentWith(document, Options{Providers: providers})
+}
+
+func renderDocumentWith(document plan.Document, opts Options) string {
 	var buf bytes.Buffer
-	Write(&buf, document, Options{Providers: providers})
+	Write(&buf, document, opts)
 	return buf.String()
 }

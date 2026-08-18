@@ -86,6 +86,18 @@ var corpus = []corpusEntry{
 		commit: "670c01717d48647093335cc23a6be6f4b79c3b6b",
 		golden: "listmonk.json",
 	},
+	{
+		name:   "superplane",
+		gitURL: "https://github.com/superplanehq/superplane.git",
+		commit: "cb916a3de1d9bd26e26711e51943863aaa7f058e",
+		golden: "superplane.json",
+	},
+	{
+		name:   "operately",
+		gitURL: "https://github.com/operately/operately.git",
+		commit: "063fdefe80a9ddd1d8db005e146f1040f117e6ba",
+		golden: "operately.json",
+	},
 }
 
 func TestCorpusSnapshots(t *testing.T) {
