@@ -19,6 +19,7 @@ type pythonProject struct {
 	HasPackageTable       bool
 	HasUVDefaultGroups    bool
 	UVDefaultGroups       []string
+	OptionalPoetryGroups  map[string]struct{}
 }
 
 const (
@@ -65,10 +66,11 @@ var managerTables = map[string]string{
 func parsePyproject(contents string) pythonProject {
 	doc := parseTOML(contents)
 	parsed := pythonProject{
-		Manifest:      "pyproject.toml",
-		Dependencies:  make(map[string]depDeclaration),
-		ToolTables:    make(map[string]struct{}),
-		ManagerTables: make(map[string]struct{}),
+		Manifest:             "pyproject.toml",
+		Dependencies:         make(map[string]depDeclaration),
+		ToolTables:           make(map[string]struct{}),
+		ManagerTables:        make(map[string]struct{}),
+		OptionalPoetryGroups: make(map[string]struct{}),
 	}
 
 	if project, ok := doc["project"]; ok {
@@ -129,11 +131,28 @@ func parsePyproject(contents string) pythonProject {
 			}
 		}
 	}
+	if dev, ok := doc["tool.poetry.dev-dependencies"]; ok {
+		for _, name := range dev.keys {
+			if name != "python" {
+				addDependency(&parsed, "pyproject.toml", "/tool/poetry/dev-dependencies", name, depOrigin{Kind: depKindGroup, Group: "dev"})
+			}
+		}
+	}
 	for _, name := range sortedTOMLNames(doc) {
-		if !strings.HasPrefix(name, "tool.poetry.group.") || !strings.HasSuffix(name, ".dependencies") {
+		if !strings.HasPrefix(name, "tool.poetry.group.") {
 			continue
 		}
-		group := strings.TrimSuffix(strings.TrimPrefix(name, "tool.poetry.group."), ".dependencies")
+		rest := strings.TrimPrefix(name, "tool.poetry.group.")
+		if !strings.Contains(rest, ".") {
+			if isTOMLTrue(doc[name].scalars["optional"]) {
+				parsed.OptionalPoetryGroups[rest] = struct{}{}
+			}
+			continue
+		}
+		if !strings.HasSuffix(name, ".dependencies") {
+			continue
+		}
+		group := strings.TrimSuffix(rest, ".dependencies")
 		for _, dep := range doc[name].keys {
 			if dep != "python" {
 				addDependency(&parsed, "pyproject.toml", "/tool/poetry/group", dep, depOrigin{Kind: depKindGroup, Group: group})
@@ -233,6 +252,14 @@ func mergeProject(base, extra pythonProject) pythonProject {
 	if extra.HasUVDefaultGroups && !base.HasUVDefaultGroups {
 		base.HasUVDefaultGroups = true
 		base.UVDefaultGroups = append([]string(nil), extra.UVDefaultGroups...)
+	}
+	if len(extra.OptionalPoetryGroups) > 0 {
+		if base.OptionalPoetryGroups == nil {
+			base.OptionalPoetryGroups = make(map[string]struct{})
+		}
+		for group := range extra.OptionalPoetryGroups {
+			base.OptionalPoetryGroups[group] = struct{}{}
+		}
 	}
 	for name := range extra.ToolTables {
 		base.ToolTables[name] = struct{}{}
@@ -363,6 +390,15 @@ func hasDependency(parsed pythonProject, names ...string) bool {
 		}
 	}
 	return false
+}
+
+func isTOMLTrue(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "true", "1":
+		return true
+	default:
+		return false
+	}
 }
 
 func poetryScalar(section *tomlSection, key string) string {

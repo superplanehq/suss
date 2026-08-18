@@ -63,7 +63,7 @@ line-length = 88
 	}
 
 	commands := commandsByName(result)
-	assertCommand(t, commands["install dependencies"], "pip install -r requirements.txt", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commands["install dependencies"], "pip install -r requirements.txt -e '.[dev]'", plan.CapabilityDependenciesInstall)
 	assertCommand(t, commands["test"], "pytest", plan.CapabilityTestRun)
 	assertCommand(t, commands["server"], "python manage.py runserver", plan.CapabilityApplicationRun)
 
@@ -599,7 +599,7 @@ dev = ["pytest"]
 		"tests/test_widget.py": "def test_widget():\n    assert True\n",
 	})
 
-	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -e .[dev]", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -e '.[dev]'", plan.CapabilityDependenciesInstall)
 	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
 }
 
@@ -661,6 +661,110 @@ default-groups = ["dev", "tests"]
 	})
 
 	assertCommand(t, commandsByName(result)["install dependencies"], "uv sync", plan.CapabilityDependenciesInstall)
+}
+
+func TestDetectRequirementsPlusOptionalPytestKeepsExtra(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+`,
+		"requirements.txt":     "django>=5.0\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "pip install -r requirements.txt -e '.[dev]'", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+}
+
+func TestDetectOptionalPoetryGroupUsesWith(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[tool.poetry]
+name = "widget"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.0"
+`,
+		"poetry.lock":          "[[package]]\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "poetry install --with test", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "poetry run pytest", plan.CapabilityTestRun)
+}
+
+func TestDetectLegacyPoetryDevDependenciesSelectPytest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[tool.poetry]
+name = "widget"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.0"
+`,
+		"poetry.lock":          "[[package]]\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "poetry run pytest", plan.CapabilityTestRun)
+	assertCommand(t, commandsByName(result)["install dependencies"], "poetry install", plan.CapabilityDependenciesInstall)
+}
+
+func TestDetectPDMOptionalExtraUsesGroupFlag(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.pdm]
+`,
+		"pdm.lock":             "[[package]]\n",
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["install dependencies"], "pdm install -G test", plan.CapabilityDependenciesInstall)
+	assertCommand(t, commandsByName(result)["test"], "pdm run pytest", plan.CapabilityTestRun)
+}
+
+func TestDetectSetupCfgPytestInfersPytest(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nname = \"widget\"\n",
+		"setup.cfg": `[tool:pytest]
+testpaths = tests
+`,
+		"tests/test_widget.py": "def test_widget():\n    assert True\n",
+	})
+
+	assertCommand(t, commandsByName(result)["test"], "pytest", plan.CapabilityTestRun)
+	if !slices.Contains(configuredToolValues(result), "pytest") {
+		t.Fatalf("configured tools = %v, want pytest", configuredToolValues(result))
+	}
 }
 
 func TestDetectPytestPluginInfersPytest(t *testing.T) {

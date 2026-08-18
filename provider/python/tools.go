@@ -47,6 +47,9 @@ func configuredToolEvidence(ctx provider.Context, project pythonProject, tool co
 			evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceConfiguration, Source: ctx.SourcePath(name)})
 		}
 	}
+	if tool.name == "pytest" {
+		evidence = append(evidence, setupCfgPytestEvidence(ctx)...)
+	}
 	for _, table := range tool.tables {
 		if _, ok := project.ToolTables[table]; ok {
 			evidence = append(evidence, plan.Evidence{

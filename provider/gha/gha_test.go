@@ -924,6 +924,34 @@ jobs:
 	}
 }
 
+func TestDetectRetainsPipGroupAndUnresolvedInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: pip install --group test
+      - run: pip install "$WHEEL_PATH"
+`,
+	})
+
+	found := map[string]bool{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = true
+	}
+	for _, run := range []string{"pip install --group test", `pip install "$WHEEL_PATH"`} {
+		if !found[run] {
+			t.Fatalf("missing %q in %+v", run, result.Findings)
+		}
+	}
+}
+
 func TestDetectSkipsRemoteGemInstalls(t *testing.T) {
 	t.Parallel()
 

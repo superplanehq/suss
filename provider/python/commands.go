@@ -2,6 +2,8 @@ package python
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/superplanehq/suss/knowledge"
@@ -163,6 +165,7 @@ func pytestEvidence(ctx provider.Context, project pythonProject) []plan.Evidence
 			evidence = append(evidence, plan.Evidence{Kind: plan.EvidenceConfiguration, Source: ctx.SourcePath(name)})
 		}
 	}
+	evidence = append(evidence, setupCfgPytestEvidence(ctx)...)
 	if _, ok := project.ToolTables["pytest"]; ok {
 		evidence = append(evidence, plan.Evidence{
 			Kind:    plan.EvidenceConfiguration,
@@ -194,6 +197,39 @@ func pytestEvidence(ctx provider.Context, project pythonProject) []plan.Evidence
 		}
 	}
 	return evidence
+}
+
+func setupCfgPytestEvidence(ctx provider.Context) []plan.Evidence {
+	contents, err := os.ReadFile(filepath.Join(ctx.ProjectDir(), "setup.cfg"))
+	if err != nil {
+		return nil
+	}
+	if !iniHasSection(string(contents), "tool:pytest", "pytest") {
+		return nil
+	}
+	return []plan.Evidence{{
+		Kind:    plan.EvidenceConfiguration,
+		Source:  ctx.SourcePath("setup.cfg"),
+		Pointer: "/tool:pytest",
+	}}
+}
+
+func iniHasSection(contents string, sections ...string) bool {
+	wanted := make(map[string]struct{}, len(sections))
+	for _, section := range sections {
+		wanted[strings.ToLower(section)] = struct{}{}
+	}
+	for _, line := range strings.Split(contents, "\n") {
+		line = strings.TrimSpace(line)
+		if len(line) < 3 || line[0] != '[' || line[len(line)-1] != ']' {
+			continue
+		}
+		name := strings.ToLower(strings.TrimSpace(line[1 : len(line)-1]))
+		if _, ok := wanted[name]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 func flaskApplicationFile(ctx provider.Context) string {

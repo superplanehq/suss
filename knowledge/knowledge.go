@@ -624,7 +624,7 @@ var pythonManagerValueFlags = map[string]struct{}{
 	"--index-url": {}, "-i": {}, "--extra-index-url": {},
 	"--trusted-host": {}, "--find-links": {}, "-f": {},
 	"--directory": {}, "-C": {}, "--project": {}, "-p": {},
-	"--python": {}, "--config-file": {},
+	"--python": {}, "--config-file": {}, "--group": {},
 }
 
 var pythonRunnerDirFlags = map[string]struct{}{

@@ -522,6 +522,8 @@ func TestInterpretMatchesPythonInvocations(t *testing.T) {
 		{invocation: Invocation{Executable: "pip", Args: []string{"install", "-e", "."}}, capability: plan.CapabilityDependenciesInstall},
 		{invocation: Invocation{Executable: "uv", Args: []string{"sync"}}, capability: plan.CapabilityDependenciesInstall},
 		{invocation: Invocation{Executable: "poetry", Args: []string{"install"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "poetry", Args: []string{"sync"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "pipenv", Args: []string{"sync"}}, capability: plan.CapabilityDependenciesInstall},
 		{invocation: Invocation{Executable: "pytest"}, capability: plan.CapabilityTestRun},
 		{invocation: Invocation{Executable: "python", Args: []string{"manage.py", "test"}}, capability: plan.CapabilityTestRun},
 		{invocation: Invocation{Executable: "python", Args: []string{"manage.py", "runserver"}}, capability: plan.CapabilityApplicationRun},
@@ -564,6 +566,15 @@ func TestIsRemotePipInstall(t *testing.T) {
 	}
 	if !IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"--index-url", "https://pypi.org/simple", "install", "tox"}}) {
 		t.Fatal("IsRemotePipInstall(pip --index-url … install tox) = false, want true")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "--group", "test"}}) {
+		t.Fatal("IsRemotePipInstall(pip install --group test) = true, want false")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "$WHEEL_PATH"}}) {
+		t.Fatal("IsRemotePipInstall(pip install $WHEEL_PATH) = true, want false")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "${{ github.workspace }}/dist/pkg.whl"}}) {
+		t.Fatal("IsRemotePipInstall(expression wheel) = true, want false")
 	}
 }
 
@@ -1184,6 +1195,14 @@ func TestClassifyManagerTreatsPythonInstalls(t *testing.T) {
 	pdm, ok := ClassifyManager(Invocation{Executable: "pdm", Args: []string{"sync"}})
 	if !ok || pdm.Manager != "pdm" || !pdm.Install {
 		t.Fatalf("ClassifyManager(pdm sync) = %+v, ok=%v", pdm, ok)
+	}
+	poetrySync, ok := ClassifyManager(Invocation{Executable: "poetry", Args: []string{"sync"}})
+	if !ok || poetrySync.Manager != "poetry" || !poetrySync.Install {
+		t.Fatalf("ClassifyManager(poetry sync) = %+v, ok=%v", poetrySync, ok)
+	}
+	pipenvSync, ok := ClassifyManager(Invocation{Executable: "pipenv", Args: []string{"sync"}})
+	if !ok || pipenvSync.Manager != "pipenv" || !pipenvSync.Install {
+		t.Fatalf("ClassifyManager(pipenv sync) = %+v, ok=%v", pipenvSync, ok)
 	}
 	run, ok := ClassifyManager(Invocation{Executable: "uv", Args: []string{"run", "pytest"}})
 	if !ok || run.Install {

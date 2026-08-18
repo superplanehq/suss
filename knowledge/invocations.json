@@ -624,6 +624,14 @@
       "description": "The command installs Poetry dependencies."
     },
     {
+      "id": "poetry-sync",
+      "executable": "poetry",
+      "argsPrefix": ["sync"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs a locked Poetry environment."
+    },
+    {
       "id": "pdm-install",
       "executable": "pdm",
       "argsPrefix": ["install"],
@@ -646,6 +654,14 @@
       "capabilities": ["dependencies.install"],
       "confidence": "high",
       "description": "The command installs Pipenv dependencies."
+    },
+    {
+      "id": "pipenv-sync",
+      "executable": "pipenv",
+      "argsPrefix": ["sync"],
+      "capabilities": ["dependencies.install"],
+      "confidence": "high",
+      "description": "The command installs a locked Pipenv environment."
     },
     {
       "id": "pytest",

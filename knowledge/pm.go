@@ -73,7 +73,11 @@ func classifyPythonManager(inv Invocation) ManagerInvocation {
 		return ManagerInvocation{Manager: manager}
 	}
 	switch manager {
-	case "poetry", "pipenv", "pip":
+	case "poetry", "pipenv":
+		if rest[0] == "install" || rest[0] == "sync" {
+			return ManagerInvocation{Manager: manager, Install: true}
+		}
+	case "pip":
 		if rest[0] == "install" {
 			return ManagerInvocation{Manager: manager, Install: true}
 		}
@@ -281,9 +285,18 @@ func IsRemotePipInstall(inv Invocation) bool {
 		}
 		if name == "-e" || name == "--editable" {
 			hasLocal = true
+			if !strings.Contains(arg, "=") && i+1 < len(rest) && !strings.HasPrefix(rest[i+1], "-") {
+				i++
+			}
 			continue
 		}
 		if strings.HasPrefix(arg, "-") {
+			if pipInstallTakesValue(name) && !strings.Contains(arg, "=") && i+1 < len(rest) && !strings.HasPrefix(rest[i+1], "-") {
+				i++
+			}
+			continue
+		}
+		if isUnresolvedInstallTarget(arg) {
 			continue
 		}
 		if isLocalPythonInstall(arg) {
@@ -293,6 +306,24 @@ func IsRemotePipInstall(inv Invocation) bool {
 		hasNamed = true
 	}
 	return hasNamed && !hasRequirement && !hasLocal
+}
+
+func pipInstallTakesValue(name string) bool {
+	switch name {
+	case "-r", "--requirement", "-c", "--constraint", "-e", "--editable", "--group",
+		"--index-url", "-i", "--extra-index-url", "--trusted-host", "--find-links", "-f",
+		"--target", "-t", "--prefix", "--root", "--src", "--config-settings", "--global-option",
+		"--hash", "--report", "--abi", "--implementation", "--python-version", "--platform",
+		"--no-binary", "--only-binary":
+		return true
+	default:
+		_, ok := pythonManagerValueFlags[name]
+		return ok
+	}
+}
+
+func isUnresolvedInstallTarget(arg string) bool {
+	return strings.HasPrefix(arg, "$") || strings.Contains(arg, "${") || strings.Contains(arg, "${{")
 }
 
 func isLocalPythonInstall(arg string) bool {

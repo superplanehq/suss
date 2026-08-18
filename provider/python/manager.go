@@ -162,11 +162,13 @@ func applyInstallSelectors(manager, run string, extras, groups []string) string 
 	slices.Sort(groups)
 	switch manager {
 	case "pip":
-		if run != "pip install -e ." {
-			return run
-		}
 		if len(extras) > 0 {
-			return "pip install -e .[" + strings.Join(extras, ",") + "]"
+			spec := " -e " + pipExtrasSpec(extras)
+			if run == "pip install -e ." {
+				run = "pip install -e " + pipExtrasSpec(extras)
+			} else {
+				run += spec
+			}
 		}
 		for _, group := range groups {
 			run += " --group " + group
@@ -189,11 +191,11 @@ func applyInstallSelectors(manager, run string, extras, groups []string) string 
 		}
 		return run
 	case "pdm":
-		if len(extras) > 0 {
-			run += " --extras " + strings.Join(extras, ",")
-		}
-		for _, group := range groups {
-			run += " -G " + group
+		selectors := append(append([]string{}, extras...), groups...)
+		slices.Sort(selectors)
+		selectors = slices.Compact(selectors)
+		for _, name := range selectors {
+			run += " -G " + name
 		}
 		return run
 	case "pipenv":
@@ -297,11 +299,18 @@ func groupInstalledByDefault(project pythonProject, manager, group string) bool 
 			return slices.Contains(project.UVDefaultGroups, group)
 		}
 		return group == "dev"
-	case "poetry", "pdm":
+	case "poetry":
+		_, optional := project.OptionalPoetryGroups[group]
+		return !optional
+	case "pdm":
 		return true
 	default:
 		return false
 	}
+}
+
+func pipExtrasSpec(extras []string) string {
+	return "'.[" + strings.Join(extras, ",") + "]'"
 }
 
 func pipInstallRun(ctx provider.Context) string {
