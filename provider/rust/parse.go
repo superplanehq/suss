@@ -456,7 +456,14 @@ func packageFrameworks(dependencies []cargoDependency) []cargoDependency {
 			continue
 		}
 		seen[framework] = struct{}{}
-		found = append(found, cargoDependency{Name: framework, Key: dep.Key, Table: dep.Table})
+		found = append(found, cargoDependency{
+			Name:         framework,
+			Key:          dep.Key,
+			Table:        dep.Table,
+			Workspace:    dep.Workspace,
+			AliasSource:  dep.AliasSource,
+			AliasPointer: dep.AliasPointer,
+		})
 	}
 	return found
 }
