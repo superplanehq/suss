@@ -95,18 +95,35 @@ func projectFindings(ctx provider.Context, manifest cargoManifest) []plan.Findin
 		}}))
 	}
 	for _, framework := range packageFrameworks(manifest.Dependencies) {
-		pointer := framework.Key
-		if pointer == "" {
-			pointer = framework.Name
-		}
-		findings = append(findings, propertyFinding(ctx, plan.PropertyFramework, framework.Name, "", []plan.Evidence{{
-			Kind:        plan.EvidenceDeclaration,
-			Source:      source,
-			Pointer:     "/dependencies/" + pointerToken(pointer),
-			Description: "The Cargo dependency list includes " + framework.Name + ".",
-		}}))
+		findings = append(findings, propertyFinding(ctx, plan.PropertyFramework, framework.Name, "", frameworkEvidence(source, framework)))
 	}
 	return findings
+}
+
+func frameworkEvidence(source string, framework cargoDependency) []plan.Evidence {
+	pointer := framework.Key
+	if pointer == "" {
+		pointer = framework.Name
+	}
+	member := plan.Evidence{
+		Kind:    plan.EvidenceDeclaration,
+		Source:  source,
+		Pointer: "/dependencies/" + pointerToken(pointer),
+	}
+	if framework.Workspace && framework.Name != framework.Key && framework.AliasSource != "" {
+		member.Description = "The package inherits the " + framework.Key + " workspace dependency."
+		return []plan.Evidence{
+			member,
+			{
+				Kind:        plan.EvidenceDeclaration,
+				Source:      framework.AliasSource,
+				Pointer:     framework.AliasPointer,
+				Description: "The workspace dependency " + framework.Key + " is the " + framework.Name + " crate.",
+			},
+		}
+	}
+	member.Description = "The Cargo dependency list includes " + framework.Name + "."
+	return []plan.Evidence{member}
 }
 
 func cargoManagerEvidence(ctx provider.Context) []plan.Evidence {

@@ -15,7 +15,7 @@ import (
 
 type runtimePin struct {
 	version  string
-	evidence plan.Evidence
+	evidence []plan.Evidence
 	exact    bool
 }
 
@@ -82,7 +82,7 @@ func mergeRuntimePins(ctx provider.Context, pins []runtimePin) ([]plan.Finding, 
 	} else if len(exact) > 0 {
 		evidence := make([]plan.Evidence, 0, len(exact))
 		for _, pin := range exact {
-			evidence = append(evidence, pin.evidence)
+			evidence = append(evidence, pin.evidence...)
 		}
 		confidence := plan.ConfidenceHigh
 		if incompatible, _ := pinsIncompatibleWithMSRV(exact, msrv); incompatible {
@@ -209,7 +209,7 @@ func groupPinEvidence(pins []runtimePin) (map[string][]plan.Evidence, []string) 
 		if _, ok := grouped[pin.version]; !ok {
 			order = append(order, pin.version)
 		}
-		grouped[pin.version] = append(grouped[pin.version], pin.evidence)
+		grouped[pin.version] = append(grouped[pin.version], pin.evidence...)
 	}
 	return grouped, order
 }
@@ -227,21 +227,21 @@ func cargoRustVersionPin(ctx provider.Context, manifest cargoManifest) (*runtime
 	if manifest.RustVersion != "" {
 		return &runtimePin{
 			version: cargoMinimumVersion(manifest.RustVersion),
-			evidence: plan.Evidence{
+			evidence: []plan.Evidence{{
 				Kind:    plan.EvidenceDeclaration,
 				Source:  ctx.SourcePath("Cargo.toml"),
 				Pointer: "/package/rust-version",
-			},
+			}},
 		}, nil
 	}
 	if manifest.WorkspaceRustVersion != "" {
 		return &runtimePin{
 			version: cargoMinimumVersion(manifest.WorkspaceRustVersion),
-			evidence: plan.Evidence{
+			evidence: []plan.Evidence{{
 				Kind:    plan.EvidenceDeclaration,
 				Source:  ctx.SourcePath("Cargo.toml"),
 				Pointer: "/workspace/package/rust-version",
-			},
+			}},
 		}, nil
 	}
 	if !manifest.RustVersionWorkspace {
@@ -254,11 +254,18 @@ func cargoRustVersionPin(ctx provider.Context, manifest cargoManifest) (*runtime
 	}
 	return &runtimePin{
 		version: cargoMinimumVersion(version),
-		evidence: plan.Evidence{
-			Kind:        plan.EvidenceDeclaration,
-			Source:      source,
-			Pointer:     "/workspace/package/rust-version",
-			Description: "Cargo.toml inherits rust-version from the workspace.",
+		evidence: []plan.Evidence{
+			{
+				Kind:        plan.EvidenceDeclaration,
+				Source:      ctx.SourcePath("Cargo.toml"),
+				Pointer:     "/package/rust-version",
+				Description: "Cargo.toml inherits rust-version from the workspace.",
+			},
+			{
+				Kind:    plan.EvidenceDeclaration,
+				Source:  source,
+				Pointer: "/workspace/package/rust-version",
+			},
 		},
 	}, nil
 }
@@ -294,19 +301,32 @@ func resolveInheritedWorkspaceDependencies(ctx provider.Context, deps []cargoDep
 	return applyWorkspaceDependencyAliases(deps, aliases), nil
 }
 
-func ancestorWorkspaceDependencyCrates(ctx provider.Context) (map[string]string, error) {
-	aliases := make(map[string]string)
+func ancestorWorkspaceDependencyCrates(ctx provider.Context) (map[string]workspaceCrateAlias, error) {
+	aliases := make(map[string]workspaceCrateAlias)
 	dir := ctx.ProjectDir()
 	for {
 		path := filepath.Join(dir, "Cargo.toml")
 		contents, err := os.ReadFile(path)
 		switch {
 		case err == nil:
+			relative, relErr := filepath.Rel(ctx.RepositoryRoot, path)
+			if relErr != nil {
+				return nil, fmt.Errorf("resolve workspace Cargo.toml source: %w", relErr)
+			}
+			source := filepath.ToSlash(relative)
 			parsed := parseCargoTOML(string(contents))
-			for key, crate := range workspaceDependencyAliases(parsed.Dependencies) {
-				if _, exists := aliases[key]; !exists {
-					aliases[key] = crate
+			for _, dep := range parsed.Dependencies {
+				if dep.Table != "workspace.dependencies" || dep.Key == "" || dep.Name == "" {
+					continue
 				}
+				if _, exists := aliases[dep.Key]; exists {
+					continue
+				}
+				pointer := "/workspace/dependencies/" + pointerToken(dep.Key)
+				if dep.Name != dep.Key {
+					pointer += "/package"
+				}
+				aliases[dep.Key] = workspaceCrateAlias{Name: dep.Name, Source: source, Pointer: pointer}
 			}
 		case !os.IsNotExist(err):
 			return nil, fmt.Errorf("read %s: %w", path, err)
@@ -363,7 +383,7 @@ func readToolchainPin(ctx provider.Context) (*runtimePin, error) {
 	return &runtimePin{
 		version:  channel,
 		exact:    true,
-		evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path},
+		evidence: []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: path}},
 	}, nil
 }
 
@@ -380,7 +400,7 @@ func readAncestorToolVersion(ctx provider.Context) (*runtimePin, error) {
 			return &runtimePin{
 				version:  fields[1],
 				exact:    true,
-				evidence: plan.Evidence{Kind: plan.EvidenceDeclaration, Source: path, Pointer: "/rust"},
+				evidence: []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: path, Pointer: "/rust"}},
 			}, nil
 		}
 	}

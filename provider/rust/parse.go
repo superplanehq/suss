@@ -6,10 +6,12 @@ import (
 )
 
 type cargoDependency struct {
-	Name      string
-	Key       string
-	Table     string
-	Workspace bool
+	Name         string
+	Key          string
+	Table        string
+	Workspace    bool
+	AliasSource  string
+	AliasPointer string
 }
 
 type cargoManifest struct {
@@ -395,7 +397,13 @@ func setDependencyWorkspace(deps *[]cargoDependency, table, key string) {
 	}
 }
 
-func applyWorkspaceDependencyAliases(deps []cargoDependency, aliases map[string]string) []cargoDependency {
+type workspaceCrateAlias struct {
+	Name    string
+	Source  string
+	Pointer string
+}
+
+func applyWorkspaceDependencyAliases(deps []cargoDependency, aliases map[string]workspaceCrateAlias) []cargoDependency {
 	if len(aliases) == 0 {
 		return deps
 	}
@@ -404,21 +412,15 @@ func applyWorkspaceDependencyAliases(deps []cargoDependency, aliases map[string]
 		if !dep.Workspace || dep.Table != "dependencies" || dep.Name != dep.Key {
 			continue
 		}
-		if crate := aliases[dep.Key]; crate != "" {
-			out[i].Name = crate
+		alias, ok := aliases[dep.Key]
+		if !ok || alias.Name == "" {
+			continue
 		}
+		out[i].Name = alias.Name
+		out[i].AliasSource = alias.Source
+		out[i].AliasPointer = alias.Pointer
 	}
 	return out
-}
-
-func workspaceDependencyAliases(deps []cargoDependency) map[string]string {
-	aliases := make(map[string]string)
-	for _, dep := range deps {
-		if dep.Table == "workspace.dependencies" && dep.Key != "" && dep.Name != "" {
-			aliases[dep.Key] = dep.Name
-		}
-	}
-	return aliases
 }
 
 func setDependencyCrate(deps *[]cargoDependency, table, key, crate string) {

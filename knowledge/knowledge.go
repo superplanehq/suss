@@ -727,8 +727,8 @@ func stripCargoGlobalOptions(args []string) []string {
 			break
 		}
 		name, _, hasValue := strings.Cut(arg, "=")
-		if cargoGlobalOptionTakesValue(name) {
-			if hasValue {
+		if option, attached := cargoGlobalOptionName(name); option != "" {
+			if attached || hasValue {
 				i++
 				continue
 			}
@@ -746,6 +746,18 @@ func stripCargoGlobalOptions(args []string) []string {
 		break
 	}
 	return args[i:]
+}
+
+func cargoGlobalOptionName(name string) (option string, attached bool) {
+	if cargoGlobalOptionTakesValue(name) {
+		return name, false
+	}
+	for _, short := range []string{"-Z", "-C"} {
+		if strings.HasPrefix(name, short) && len(name) > len(short) && !strings.HasPrefix(name, "--") {
+			return short, true
+		}
+	}
+	return "", false
 }
 
 func cargoGlobalOptionTakesValue(name string) bool {

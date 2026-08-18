@@ -194,6 +194,12 @@ func TestDetectReportsWorkspaceFactAndInheritsRustVersion(t *testing.T) {
 	if len(member.Requirements) != 1 || member.Requirements[0].Version != ">=1.80" {
 		t.Fatalf("member requirements = %+v, want inherited rust >=1.80", member.Requirements)
 	}
+	if !hasEvidence(member.Requirements[0].Evidence, "crates/tool/Cargo.toml", "/package/rust-version", "Cargo.toml inherits rust-version from the workspace.") {
+		t.Fatalf("member evidence = %+v, want inheritance on crates/tool/Cargo.toml", member.Requirements[0].Evidence)
+	}
+	if !hasEvidence(member.Requirements[0].Evidence, "Cargo.toml", "/workspace/package/rust-version", "") {
+		t.Fatalf("member evidence = %+v, want workspace rust-version value on Cargo.toml", member.Requirements[0].Evidence)
+	}
 	if commandRuns(member.Commands)["test"] != "cargo test" {
 		t.Fatalf("member commands = %+v, want cargo test", member.Commands)
 	}
@@ -427,8 +433,11 @@ func TestDetectResolvesRenamedInheritedWorkspaceFramework(t *testing.T) {
 	if got := names(project.Frameworks); !slices.Equal(got, []string{"axum"}) {
 		t.Fatalf("frameworks = %v, want axum from workspace key web, not from renamed key axum", got)
 	}
-	if len(project.Frameworks[0].Evidence) == 0 || project.Frameworks[0].Evidence[0].Pointer != "/dependencies/web" {
-		t.Fatalf("framework evidence = %+v, want /dependencies/web", project.Frameworks[0].Evidence)
+	if !hasEvidence(project.Frameworks[0].Evidence, "crates/app/Cargo.toml", "/dependencies/web", "The package inherits the web workspace dependency.") {
+		t.Fatalf("framework evidence = %+v, want member inheritance of web", project.Frameworks[0].Evidence)
+	}
+	if !hasEvidence(project.Frameworks[0].Evidence, "Cargo.toml", "/workspace/dependencies/web/package", "The workspace dependency web is the axum crate.") {
+		t.Fatalf("framework evidence = %+v, want workspace package = axum", project.Frameworks[0].Evidence)
 	}
 }
 
@@ -850,6 +859,15 @@ func factValues(facts []plan.ProjectFact, name string) []string {
 func hasFact(facts []plan.ProjectFact, name string) bool {
 	for _, fact := range facts {
 		if fact.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func hasEvidence(evidence []plan.Evidence, source, pointer, description string) bool {
+	for _, item := range evidence {
+		if item.Source == source && item.Pointer == pointer && item.Description == description {
 			return true
 		}
 	}

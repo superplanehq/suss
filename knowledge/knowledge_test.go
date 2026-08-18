@@ -764,6 +764,8 @@ func TestInterpretMatchesCargoInvocations(t *testing.T) {
 		{inv: Invocation{Executable: "cargo", Args: []string{"clippy", "--", "-D", "warnings"}}, want: []plan.Capability{plan.CapabilityCodeLint}},
 		{inv: Invocation{Executable: "cargo", Args: []string{"fmt", "--check"}}, want: []plan.Capability{plan.CapabilityCodeFormat}},
 		{inv: Invocation{Executable: "cargo", Args: []string{"check"}}, want: []plan.Capability{plan.CapabilityCodeTypecheck}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"-Zunstable-options", "check"}}, want: []plan.Capability{plan.CapabilityCodeTypecheck}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"-Z", "unstable-options", "check"}}, want: []plan.Capability{plan.CapabilityCodeTypecheck}},
 		{inv: Invocation{Executable: "cargo", Args: []string{"run"}}, want: []plan.Capability{plan.CapabilityApplicationRun}},
 		{inv: Invocation{Executable: "cargo", Args: []string{"nextest", "run"}}, want: []plan.Capability{plan.CapabilityTestRun}},
 	}
