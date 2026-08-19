@@ -120,7 +120,7 @@ func TestVersionSatisfiesPEP440PythonConstraints(t *testing.T) {
 		{constraint: "==3.11", version: "3.12.0", want: false},
 	}
 	for _, tt := range tests {
-		got, known := versionSatisfies(tt.constraint, tt.version)
+		got, known := versionSatisfies("python", tt.constraint, tt.version)
 		if !known || got != tt.want {
 			t.Fatalf("versionSatisfies(%q, %q) = (%t, %t), want (%t, true)", tt.constraint, tt.version, got, known, tt.want)
 		}
@@ -130,11 +130,11 @@ func TestVersionSatisfiesPEP440PythonConstraints(t *testing.T) {
 func TestVersionSatisfiesPrereleaseBoundsAreUnevaluable(t *testing.T) {
 	t.Parallel()
 
-	got, known := versionSatisfies(">=3.13rc1", "3.12")
+	got, known := versionSatisfies("python", ">=3.13rc1", "3.12")
 	if known {
 		t.Fatalf("versionSatisfies(>=3.13rc1, 3.12) = (%t, %t), want unevaluable", got, known)
 	}
-	got, known = versionSatisfies(">=3.13.0rc1", "3.13")
+	got, known = versionSatisfies("python", ">=3.13.0rc1", "3.13")
 	if known {
 		t.Fatalf("versionSatisfies(>=3.13.0rc1, 3.13) = (%t, %t), want unevaluable", got, known)
 	}
