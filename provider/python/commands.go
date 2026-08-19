@@ -209,7 +209,23 @@ func flaskApplicationFile(ctx provider.Context) string {
 }
 
 func firstPythonTest(root string) (string, error) {
-	path, err := firstFile(root, isPythonTestName)
+	for _, dir := range configuredPytestTestPaths(root) {
+		path, err := firstPythonTestAt(root, dir)
+		if err != nil {
+			return "", fmt.Errorf("find Python tests: %w", err)
+		}
+		if path != "" {
+			return path, nil
+		}
+	}
+	path, err := firstFileUnderDirNames(root, []string{"test", "tests"}, isPythonTestName)
+	if err != nil {
+		return "", fmt.Errorf("find Python tests: %w", err)
+	}
+	if path != "" {
+		return path, nil
+	}
+	path, err = firstFile(root, isPythonTestName)
 	if err != nil {
 		return "", fmt.Errorf("find Python tests: %w", err)
 	}

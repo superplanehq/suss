@@ -250,6 +250,87 @@ func TestDetectIgnoresVirtualenvNamedEnv(t *testing.T) {
 	}
 }
 
+func TestDetectPrefersPytestTestpathsOverFilenameMatch(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+dependencies = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+`,
+		"src/app/settings/test_settings.py": "DEBUG = True\n",
+		"src/tests/test_widget.py":          "def test_widget():\n    assert True\n",
+	})
+
+	sources := commandEvidenceSources(commandsByName(result)["test"])
+	if !slices.Contains(sources, "src/tests/test_widget.py") {
+		t.Fatalf("test evidence = %v, want src/tests/test_widget.py", sources)
+	}
+	if slices.Contains(sources, "src/app/settings/test_settings.py") {
+		t.Fatalf("test evidence = %v, did not want test_settings.py", sources)
+	}
+}
+
+func TestDetectPrefersTestsDirectoryOverFilenameMatch(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": `
+[project]
+name = "widget"
+dependencies = ["pytest"]
+`,
+		"src/app/settings/test_settings.py": "DEBUG = True\n",
+		"src/tests/test_widget.py":          "def test_widget():\n    assert True\n",
+	})
+
+	sources := commandEvidenceSources(commandsByName(result)["test"])
+	if !slices.Contains(sources, "src/tests/test_widget.py") {
+		t.Fatalf("test evidence = %v, want src/tests/test_widget.py", sources)
+	}
+	if slices.Contains(sources, "src/app/settings/test_settings.py") {
+		t.Fatalf("test evidence = %v, did not want test_settings.py", sources)
+	}
+}
+
+func TestDetectReadsPytestIniTestpaths(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml":                    "[project]\nname = \"widget\"\ndependencies = [\"pytest\"]\n",
+		"pytest.ini":                        "[pytest]\ntestpaths = integration\n",
+		"src/app/settings/test_settings.py": "DEBUG = True\n",
+		"tests/test_widget.py":              "def test_widget():\n    assert True\n",
+		"integration/test_api.py":           "def test_api():\n    assert True\n",
+	})
+
+	sources := commandEvidenceSources(commandsByName(result)["test"])
+	if !slices.Contains(sources, "integration/test_api.py") {
+		t.Fatalf("test evidence = %v, want integration/test_api.py", sources)
+	}
+	if slices.Contains(sources, "tests/test_widget.py") {
+		t.Fatalf("test evidence = %v, did not want the conventional tests/ file when pytest.ini names integration", sources)
+	}
+}
+
+func TestDetectFallsBackToFilenameTestMatch(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml":                    "[project]\nname = \"widget\"\ndependencies = [\"pytest\"]\n",
+		"src/app/settings/test_settings.py": "DEBUG = True\n",
+	})
+
+	sources := commandEvidenceSources(commandsByName(result)["test"])
+	if !slices.Contains(sources, "src/app/settings/test_settings.py") {
+		t.Fatalf("test evidence = %v, want filename fallback", sources)
+	}
+}
+
 func TestDetectCompetingLockfiles(t *testing.T) {
 	t.Parallel()
 
