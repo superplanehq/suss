@@ -148,6 +148,8 @@ func usesFindings(ctx provider.Context, source, dir, stepPointer string, step st
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "ruby", step.With, matrix, []string{"ruby-version"})
 	case "shivammathur/setup-php":
 		return setupRuntimeFindings(ctx, source, dir, stepPointer, "php", step.With, matrix, []string{"php-version"})
+	case "actions/setup-python":
+		return setupRuntimeFindings(ctx, source, dir, stepPointer, "python", step.With, matrix, []string{"python-version", "python-version-file"})
 	case "dtolnay/rust-toolchain":
 		return rustSetupFindings(ctx, source, dir, stepPointer, step, matrix, rustToolchainActionTag(step.Uses), "")
 	case "actions-rs/toolchain":
@@ -389,7 +391,7 @@ func versionFileFindings(ctx provider.Context, source, dir, stepPointer, runtime
 	abs := filepath.Join(ctx.RepositoryRoot, filepath.FromSlash(rel))
 	contents, err := os.ReadFile(abs)
 	if err == nil {
-		if version := firstVersionLine(string(contents)); version != "" && !strings.Contains(version, " ") && !strings.Contains(version, "\t") {
+		if version := firstVersionLine(string(contents)); looksLikeRuntimeVersion(runtime, version) {
 			evidence = append(evidence, plan.Evidence{
 				Kind:   plan.EvidenceDeclaration,
 				Source: rel,
@@ -422,6 +424,21 @@ func firstVersionLine(contents string) string {
 		return strings.TrimSpace(line)
 	}
 	return ""
+}
+
+func looksLikeRuntimeVersion(runtime, version string) bool {
+	if version == "" || strings.ContainsAny(version, " \t") {
+		return false
+	}
+	if runtime != "python" {
+		return true
+	}
+	switch version[0] {
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '>', '<', '~', '^', 'v', 'V':
+		return true
+	}
+	lower := strings.ToLower(version)
+	return strings.HasPrefix(lower, "pypy") || strings.HasPrefix(lower, "graalpy") || strings.HasPrefix(lower, "lts") || strings.HasPrefix(lower, "python")
 }
 
 func runtimeFinding(source, dir, pointer, name, version, description string) plan.Finding {
@@ -599,7 +616,7 @@ func skipStatement(stmt knowledge.Statement) bool {
 	if knowledge.IsGlobalInstall(stmt.Invocation) {
 		return true
 	}
-	if knowledge.IsRemoteGoInstall(stmt.Invocation) || knowledge.IsRemoteGemInstall(stmt.Invocation) || knowledge.IsRemoteCargoInstall(stmt.Invocation) || knowledge.IsSystemPackagePlumbing(stmt.Invocation) || knowledge.IsToolPlumbing(stmt.Invocation) {
+	if knowledge.IsRemoteGoInstall(stmt.Invocation) || knowledge.IsRemoteGemInstall(stmt.Invocation) || knowledge.IsRemoteCargoInstall(stmt.Invocation) || knowledge.IsRemotePipInstall(stmt.Invocation) || knowledge.IsSystemPackagePlumbing(stmt.Invocation) || knowledge.IsToolPlumbing(stmt.Invocation) {
 		return true
 	}
 	if knowledge.HasUnclosedGHAExpression(raw) {

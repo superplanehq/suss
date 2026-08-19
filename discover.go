@@ -12,29 +12,37 @@ import (
 )
 
 var projectManifests = map[string]struct{}{
-	"package.json":  {},
-	"go.mod":        {},
-	"Cargo.toml":    {},
-	"mix.exs":       {},
-	"Gemfile":       {},
-	"composer.json": {},
-	"GNUmakefile":   {},
-	"Makefile":      {},
-	"makefile":      {},
-	".env.example":  {},
-	".env.sample":   {},
-	".env.template": {},
+	"package.json":   {},
+	"go.mod":         {},
+	"Cargo.toml":     {},
+	"mix.exs":        {},
+	"Gemfile":        {},
+	"composer.json":  {},
+	"pyproject.toml": {},
+	"setup.py":       {},
+	"Pipfile":        {},
+	"GNUmakefile":    {},
+	"Makefile":       {},
+	"makefile":       {},
+	".env.example":   {},
+	".env.sample":    {},
+	".env.template":  {},
 }
 
 var skippedDirectories = map[string]struct{}{
-	"node_modules": {},
-	"vendor":       {},
-	"vendor-bin":   {},
-	"_build":       {},
-	"deps":         {},
-	"dist":         {},
-	"target":       {},
-	"tmp":          {},
+	"node_modules":  {},
+	"vendor":        {},
+	"vendor-bin":    {},
+	"_build":        {},
+	"deps":          {},
+	"dist":          {},
+	"target":        {},
+	"tmp":           {},
+	"venv":          {},
+	"virtualenv":    {},
+	"site-packages": {},
+	"__pycache__":   {},
+	"htmlcov":       {},
 }
 
 func findProjectRoots(root string) ([]string, error) {
@@ -48,7 +56,7 @@ func findProjectRoots(root string) ([]string, error) {
 			if path == root {
 				return nil
 			}
-			if shouldSkipDirectory(entry) {
+			if shouldSkipDirectory(path, entry) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -76,7 +84,7 @@ func findProjectRoots(root string) ([]string, error) {
 	return paths, nil
 }
 
-func shouldSkipDirectory(entry fs.DirEntry) bool {
+func shouldSkipDirectory(path string, entry fs.DirEntry) bool {
 	name := entry.Name()
 	if strings.HasPrefix(name, ".") {
 		return true
@@ -84,7 +92,15 @@ func shouldSkipDirectory(entry fs.DirEntry) bool {
 	if _, skipped := skippedDirectories[name]; skipped {
 		return true
 	}
-	return entry.Type()&os.ModeSymlink != 0
+	if entry.Type()&os.ModeSymlink != 0 {
+		return true
+	}
+	return isVirtualEnvDir(path)
+}
+
+func isVirtualEnvDir(path string) bool {
+	info, err := os.Stat(filepath.Join(path, "pyvenv.cfg"))
+	return err == nil && !info.IsDir()
 }
 
 // Fixture-like roots remain in the versioned document. Path evidence is

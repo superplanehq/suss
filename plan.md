@@ -221,7 +221,47 @@ Canonical corpus:
 
 Status: in progress.
 
-## Milestone 8 — Polish and v0 release
+## Milestone 8 — Python
+
+Python was listed as post-v0 in idea.md. It is pulled forward because the ecosystem has several first-class project shapes, and the Ruby milestone already established the fixture-plus-two-remotes pattern for covering that without overfitting.
+
+Python project types that matter for detection (not every type gets a corpus repository):
+
+| Shape | Identity | Manager signal | Covered by |
+| --- | --- | --- | --- |
+| PEP 621 library | `pyproject.toml` | `uv.lock` or none | `pallets/click` + unit tests |
+| Poetry | `pyproject.toml` + `poetry.lock` / `[tool.poetry]` | poetry | unit tests |
+| uv | `pyproject.toml` + `uv.lock` | uv | click, pretalx, unit tests |
+| Pipenv | `Pipfile` | pipenv | unit tests |
+| setuptools legacy | `setup.py` | pip | unit tests |
+| Django application | `pyproject.toml` + `manage.py` | pip or uv | `python-django` fixture + `pretalx/pretalx` |
+| Flask / FastAPI application | framework dependency + app file | various | unit tests (server inferred only with application evidence) |
+| `requirements.txt` only | not a project root | — | known limitation (too many false positives in docs/examples) |
+| conda `environment.yml` | — | — | out of scope |
+
+Canonical test repositories, matching Ruby (`ruby-rails` fixture, `ruby/rake` library, `basecamp/once-campfire` app):
+
+- Focused fixture `python-django`: Django identity, runtime pins, pip install, pytest, `manage.py` server, Ruff configuration, and `actions/setup-python` reconciliation.
+- `pallets/click` at a pinned commit: framework-free library, PEP 621, pytest, Ruff, uv.lock.
+- `pretalx/pretalx` at a pinned commit: production Django application, uv.lock, pytest-django, `src/manage.py`.
+
+Scope:
+
+- Python provider: `pyproject.toml`, `setup.py`, `Pipfile`, lockfiles (`uv.lock`, `poetry.lock`, `pdm.lock`, `Pipfile.lock`), `requirements.txt` as install evidence (not a root marker), `.python-version`, `.tool-versions`, `requires-python`.
+- Package-manager selection from lockfiles and `[tool.poetry]` / `[tool.uv]` / `[tool.pdm]`; competing lockfiles are an ambiguity, not a silent choice.
+- Convention inference: manager-specific install, pytest / unittest / `manage.py test`, Django/Flask server only with application evidence. Configured tools (pytest, ruff, black, mypy, flake8, tox) without a matching command stay `tool.configured`.
+- Knowledge-base entries for pip/uv/poetry/pdm/pipenv, pytest, ruff, black, mypy, flask, uvicorn, `manage.py`.
+- GitHub Actions recognizes `actions/setup-python` runtime evidence.
+- Discovery skips `venv`, `__pycache__`, `.tox`, and other generated Python trees.
+
+Acceptance:
+
+- The focused `python-django` golden fixture is correct: Python and Django identity, runtime, dependency installation, tests, server, tool configuration, and GitHub Actions reconciliation all remain evidence-backed.
+- Golden plans for `pallets/click` as a framework-free Python project and `pretalx/pretalx` as a production Django application are correct at pinned commits.
+
+Status: in progress.
+
+## Milestone 9 — Polish and v0 release
 
 Scope:
 
@@ -237,4 +277,4 @@ Acceptance:
 
 ## Out of scope for v0
 
-Per idea.md: command execution, execution profiles, behavior characteristics, README/docs parsing, workspace fan-out modeling, Python/JVM/.NET providers, GitLab/CircleCI/Buildkite.
+Per idea.md: command execution, execution profiles, behavior characteristics, README/docs parsing, workspace fan-out modeling, JVM/.NET providers, GitLab/CircleCI/Buildkite. Conda/`environment.yml` and `requirements.txt`-only trees are not Python project roots.

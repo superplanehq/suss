@@ -1,0 +1,4 @@
+django>=5.0
+pytest
+pytest-django
+ruff

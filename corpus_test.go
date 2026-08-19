@@ -46,6 +46,7 @@ var corpus = []corpusEntry{
 	{name: "compose-env", fixture: "compose-env", golden: "compose-env.json"},
 	{name: "ruby-rails", fixture: "ruby-rails", golden: "ruby-rails.json"},
 	{name: "php-laravel", fixture: "php-laravel", golden: "php-laravel.json"},
+	{name: "python-django", fixture: "python-django", golden: "python-django.json"},
 	{name: "rust-simple", fixture: "rust-simple", golden: "rust-simple.json"},
 	{name: "rust-gha", fixture: "rust-gha", golden: "rust-gha.json"},
 	{name: "rust-workspace", fixture: "rust-workspace", golden: "rust-workspace.json"},
@@ -132,6 +133,18 @@ var corpus = []corpusEntry{
 		gitURL: "https://github.com/clap-rs/clap.git",
 		commit: "3716f9f4289594b43abec42b2538efd1a90ff897",
 		golden: "clap.json",
+	},
+	{
+		name:   "click",
+		gitURL: "https://github.com/pallets/click.git",
+		commit: "61b69e967e525bd502f5bf42def4d551e761fe0e",
+		golden: "click.json",
+	},
+	{
+		name:   "pretalx",
+		gitURL: "https://github.com/pretalx/pretalx.git",
+		commit: "a2b3dc5d8b15aaf82c490b9ae1d5df1922f453ef",
+		golden: "pretalx.json",
 	},
 }
 

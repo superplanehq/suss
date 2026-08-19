@@ -440,6 +440,157 @@ func TestClassifyManagerTreatsComposerScriptAndInstall(t *testing.T) {
 	}
 }
 
+func TestParseScriptStripsPythonWrappers(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("poetry run pytest -q && uv run --locked --group dev tox run && python -m pytest && python src/manage.py test && uv run python -m pytest && poetry run python -m pytest && pdm run pytest && pipenv run flask run")
+	want := []Invocation{
+		{Executable: "pytest", Args: []string{"-q"}},
+		{Executable: "tox", Args: []string{"run"}},
+		{Executable: "pytest"},
+		{Executable: "python", Args: []string{"manage.py", "test"}},
+		{Executable: "pytest"},
+		{Executable: "pytest"},
+		{Executable: "pytest"},
+		{Executable: "flask", Args: []string{"run"}},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestParseScriptCapturesPoetryPipenvPdmRunDirectory(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript(`poetry -C backend run pytest && poetry --directory=packages/api run pytest && pdm -p services/web run pytest && pipenv --python 3.12 run pytest`)
+	want := []Invocation{
+		{Executable: "pytest", Directory: "backend"},
+		{Executable: "pytest", Directory: "packages/api"},
+		{Executable: "pytest", Directory: "services/web"},
+		{Executable: "pytest"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestInterpretToxAndNoxOnlyMatchUnqualifiedRuns(t *testing.T) {
+	t.Parallel()
+
+	if got := capabilities(Interpret(Invocation{Executable: "tox"})); !slices.Equal(got, []plan.Capability{plan.CapabilityTestRun}) {
+		t.Fatalf("Interpret(tox) = %v, want test.run", got)
+	}
+	if got := capabilities(Interpret(Invocation{Executable: "tox", Args: []string{"run"}})); !slices.Equal(got, []plan.Capability{plan.CapabilityTestRun}) {
+		t.Fatalf("Interpret(tox run) = %v, want test.run", got)
+	}
+	if got := capabilities(Interpret(Invocation{Executable: "tox", Args: []string{"run", "-e", "typing"}})); len(got) != 0 {
+		t.Fatalf("Interpret(tox run -e typing) = %v, want no matches", got)
+	}
+	if got := capabilities(Interpret(Invocation{Executable: "nox"})); !slices.Equal(got, []plan.Capability{plan.CapabilityTestRun}) {
+		t.Fatalf("Interpret(nox) = %v, want test.run", got)
+	}
+	if got := capabilities(Interpret(Invocation{Executable: "nox", Args: []string{"-s", "lint"}})); len(got) != 0 {
+		t.Fatalf("Interpret(nox -s lint) = %v, want no matches", got)
+	}
+}
+
+func TestParseScriptCapturesUvProjectDirectory(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript(`uv --project backend sync && uv run --project frontend pytest && uv --project=services/api run pytest`)
+	want := []Invocation{
+		{Executable: "uv", Args: []string{"--project", "backend", "sync"}, Directory: "backend"},
+		{Executable: "pytest", Directory: "frontend"},
+		{Executable: "pytest", Directory: "services/api"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestParseScriptCapturesUvRunDirectory(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript(`uv run --directory packages/api pytest && uv run -C packages/web python -m pytest && uv run --directory=packages/cli --locked pytest && uv --directory packages/api run pytest && uv -C packages/web tool run ruff && uv run --env-file .env pytest && uv run --with-requirements extras.txt pytest`)
+	want := []Invocation{
+		{Executable: "pytest", Directory: "packages/api"},
+		{Executable: "pytest", Directory: "packages/web"},
+		{Executable: "pytest", Directory: "packages/cli"},
+		{Executable: "pytest", Directory: "packages/api"},
+		{Executable: "ruff", Directory: "packages/web"},
+		{Executable: "pytest"},
+		{Executable: "pytest"},
+	}
+	if !slices.EqualFunc(got, want, invocationsEqual) {
+		t.Fatalf("ParseScript() = %#v, want %#v", got, want)
+	}
+}
+
+func TestInterpretMatchesPythonInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		invocation Invocation
+		capability plan.Capability
+	}{
+		{invocation: Invocation{Executable: "pip", Args: []string{"install", "-e", "."}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "uv", Args: []string{"sync"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "poetry", Args: []string{"install"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "poetry", Args: []string{"sync"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "pipenv", Args: []string{"sync"}}, capability: plan.CapabilityDependenciesInstall},
+		{invocation: Invocation{Executable: "pytest"}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "python", Args: []string{"manage.py", "test"}}, capability: plan.CapabilityTestRun},
+		{invocation: Invocation{Executable: "python", Args: []string{"manage.py", "runserver"}}, capability: plan.CapabilityApplicationRun},
+		{invocation: Invocation{Executable: "flask", Args: []string{"run"}}, capability: plan.CapabilityApplicationRun},
+		{invocation: Invocation{Executable: "ruff", Args: []string{"check"}}, capability: plan.CapabilityCodeLint},
+		{invocation: Invocation{Executable: "mypy"}, capability: plan.CapabilityCodeTypecheck},
+	}
+	for _, tt := range tests {
+		matches := Interpret(tt.invocation)
+		if len(matches) != 1 || matches[0].Capability != tt.capability {
+			t.Fatalf("Interpret(%+v) = %+v, want %s", tt.invocation, matches, tt.capability)
+		}
+	}
+}
+
+func TestIsRemotePipInstall(t *testing.T) {
+	t.Parallel()
+
+	if !IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "ruff", "pytest"}}) {
+		t.Fatal("IsRemotePipInstall(pip install ruff pytest) = false, want true")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "-r", "requirements.txt"}}) {
+		t.Fatal("IsRemotePipInstall(requirements file) = true, want false")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "-e", "."}}) {
+		t.Fatal("IsRemotePipInstall(editable project) = true, want false")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "../shared"}}) {
+		t.Fatal("IsRemotePipInstall(relative parent path) = true, want false")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "packages/widget"}}) {
+		t.Fatal("IsRemotePipInstall(relative package path) = true, want false")
+	}
+	if !IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "-c", "constraints.txt", "tox"}}) {
+		t.Fatal("IsRemotePipInstall(constraint plus named package) = false, want true")
+	}
+	if !IsRemotePipInstall(Invocation{Executable: "uv", Args: []string{"--directory", ".", "pip", "install", "ruff"}}) {
+		t.Fatal("IsRemotePipInstall(uv --directory . pip install ruff) = false, want true")
+	}
+	if !IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"--index-url", "https://pypi.org/simple", "install", "tox"}}) {
+		t.Fatal("IsRemotePipInstall(pip --index-url … install tox) = false, want true")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "--group", "test"}}) {
+		t.Fatal("IsRemotePipInstall(pip install --group test) = true, want false")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "$WHEEL_PATH"}}) {
+		t.Fatal("IsRemotePipInstall(pip install $WHEEL_PATH) = true, want false")
+	}
+	if IsRemotePipInstall(Invocation{Executable: "pip", Args: []string{"install", "${{ github.workspace }}/dist/pkg.whl"}}) {
+		t.Fatal("IsRemotePipInstall(expression wheel) = true, want false")
+	}
+}
+
 func TestIsRemoteGemInstall(t *testing.T) {
 	t.Parallel()
 
@@ -673,7 +824,42 @@ func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	if dir != "./packages/app" {
 		t.Fatalf("dir = %q, want ./packages/app", dir)
 	}
-	want := Invocation{Executable: "yarn", Args: []string{"test", "--watch=false"}}
+	want := Invocation{Executable: "yarn", Args: []string{"test", "--watch=false"}, Directory: "./packages/app"}
+	if !invocationsEqual(got, want) {
+		t.Fatalf("canonical = %+v, want %+v", got, want)
+	}
+}
+
+func TestStripDirectoryFlagsRemovesUvProject(t *testing.T) {
+	t.Parallel()
+
+	dir, got := StripDirectoryFlags(Invocation{Executable: "uv", Args: []string{"--project", "backend", "sync"}})
+	if dir != "backend" {
+		t.Fatalf("dir = %q, want backend", dir)
+	}
+	want := Invocation{Executable: "uv", Args: []string{"sync"}, Directory: "backend"}
+	if !invocationsEqual(got, want) {
+		t.Fatalf("canonical = %+v, want %+v", got, want)
+	}
+
+	dir, got = StripDirectoryFlags(Invocation{Executable: "uv", Args: []string{"run", "--project", "frontend", "pytest"}})
+	if dir != "frontend" {
+		t.Fatalf("run --project dir = %q, want frontend", dir)
+	}
+	want = Invocation{Executable: "uv", Args: []string{"run", "pytest"}, Directory: "frontend"}
+	if !invocationsEqual(got, want) {
+		t.Fatalf("run canonical = %+v, want %+v", got, want)
+	}
+}
+
+func TestStripDirectoryFlagsPreservesUvRunDirectory(t *testing.T) {
+	t.Parallel()
+
+	dir, got := StripDirectoryFlags(Invocation{Executable: "pytest", Directory: "packages/api"})
+	if dir != "packages/api" {
+		t.Fatalf("dir = %q, want packages/api", dir)
+	}
+	want := Invocation{Executable: "pytest", Directory: "packages/api"}
 	if !invocationsEqual(got, want) {
 		t.Fatalf("canonical = %+v, want %+v", got, want)
 	}
@@ -935,6 +1121,18 @@ func TestIsToolPlumbingCoversVersionProbes(t *testing.T) {
 	if IsToolPlumbing(Invocation{Executable: "php", Args: []string{"artisan", "test"}}) {
 		t.Fatal("IsToolPlumbing(php artisan test) = true, want false")
 	}
+	if IsToolPlumbing(Invocation{Executable: "pip", Args: []string{"-v", "install", "-r", "requirements.txt"}}) {
+		t.Fatal("IsToolPlumbing(pip -v install) = true, want false; -v is verbose")
+	}
+	if IsToolPlumbing(Invocation{Executable: "uv", Args: []string{"-v", "sync"}}) {
+		t.Fatal("IsToolPlumbing(uv -v sync) = true, want false; -v is verbose")
+	}
+	if IsToolPlumbing(Invocation{Executable: "poetry", Args: []string{"-v", "install"}}) {
+		t.Fatal("IsToolPlumbing(poetry -v install) = true, want false; -v is verbose")
+	}
+	if !IsToolPlumbing(Invocation{Executable: "pip", Args: []string{"--version"}}) {
+		t.Fatal("IsToolPlumbing(pip --version) = false, want true")
+	}
 }
 
 func TestParseScriptKeepsGHAExpressionsAtomic(t *testing.T) {
@@ -1013,6 +1211,39 @@ func TestClassifyManagerReadsPnpmFilterAndSkipsGlobalInstall(t *testing.T) {
 	}
 }
 
+func TestClassifyManagerTreatsPythonInstalls(t *testing.T) {
+	t.Parallel()
+
+	uvSync, ok := ClassifyManager(Invocation{Executable: "uv", Args: []string{"sync"}})
+	if !ok || uvSync.Manager != "uv" || !uvSync.Install {
+		t.Fatalf("ClassifyManager(uv sync) = %+v, ok=%v", uvSync, ok)
+	}
+	poetry, ok := ClassifyManager(Invocation{Executable: "poetry", Args: []string{"install"}})
+	if !ok || poetry.Manager != "poetry" || !poetry.Install {
+		t.Fatalf("ClassifyManager(poetry install) = %+v, ok=%v", poetry, ok)
+	}
+	pip, ok := ClassifyManager(Invocation{Executable: "pip", Args: []string{"install", "-r", "requirements.txt"}})
+	if !ok || pip.Manager != "pip" || !pip.Install {
+		t.Fatalf("ClassifyManager(pip install) = %+v, ok=%v", pip, ok)
+	}
+	pdm, ok := ClassifyManager(Invocation{Executable: "pdm", Args: []string{"sync"}})
+	if !ok || pdm.Manager != "pdm" || !pdm.Install {
+		t.Fatalf("ClassifyManager(pdm sync) = %+v, ok=%v", pdm, ok)
+	}
+	poetrySync, ok := ClassifyManager(Invocation{Executable: "poetry", Args: []string{"sync"}})
+	if !ok || poetrySync.Manager != "poetry" || !poetrySync.Install {
+		t.Fatalf("ClassifyManager(poetry sync) = %+v, ok=%v", poetrySync, ok)
+	}
+	pipenvSync, ok := ClassifyManager(Invocation{Executable: "pipenv", Args: []string{"sync"}})
+	if !ok || pipenvSync.Manager != "pipenv" || !pipenvSync.Install {
+		t.Fatalf("ClassifyManager(pipenv sync) = %+v, ok=%v", pipenvSync, ok)
+	}
+	run, ok := ClassifyManager(Invocation{Executable: "uv", Args: []string{"run", "pytest"}})
+	if !ok || run.Install {
+		t.Fatalf("ClassifyManager(uv run pytest) = %+v, ok=%v, did not want install", run, ok)
+	}
+}
+
 func statementRaws(statements []Statement) []string {
 	if len(statements) == 0 {
 		return nil
@@ -1025,5 +1256,5 @@ func statementRaws(statements []Statement) []string {
 }
 
 func invocationsEqual(a, b Invocation) bool {
-	return a.Executable == b.Executable && slices.Equal(a.Args, b.Args)
+	return a.Executable == b.Executable && slices.Equal(a.Args, b.Args) && a.Directory == b.Directory
 }

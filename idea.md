@@ -578,13 +578,14 @@ RustProvider
 ElixirProvider
 RubyProvider
 PHPProvider
+PythonProvider
 GitHubActionsProvider
 SemaphoreProvider
 MakeProvider
 DockerComposeProvider
 ```
 
-Post-v0 providers include Python, JVM, and .NET.
+Post-v0 providers include JVM and .NET.
 
 Providers emit evidence-backed findings rather than directly producing a final plan.
 
@@ -669,6 +670,7 @@ The initial version should support:
 - Elixir;
 - Ruby and Ruby on Rails;
 - PHP, Composer, Laravel, and Symfony;
+- Python (pyproject.toml / setup.py / Pipfile), including Django, Flask, and FastAPI;
 - GitHub Actions;
 - Semaphore;
 - Docker Compose;
@@ -677,7 +679,7 @@ The initial version should support:
 - common runtime-version files;
 - common test, lint, type-check, and build tools.
 
-Python and remaining ecosystems come after v0.
+JVM and .NET come after v0. Python was pulled forward: the ecosystem is fragmented (pip, Poetry, uv, Pipenv, pytest vs unittest, Django vs Flask vs FastAPI), so it needs the same fixture-plus-two-remotes treatment as Ruby.
 
 ### Dogfood repositories and evaluation
 
@@ -698,6 +700,8 @@ To avoid overfitting to our own conventions, the corpus also includes neutral op
 - `Seldaek/monolog` — a Composer PHP library with declared test and PHPStan scripts; the framework-free PHP case.
 - `koel/koel` — a production Laravel application with a Vue frontend, Composer scripts, and GitHub Actions.
 - `grafana/grafana` — a very large Go + TypeScript monorepo with a heavy Makefile and extensive CI; the stress test.
+- `pallets/click` — a framework-free Python library with PEP 621 metadata, pytest, Ruff, and a uv.lock; the `ruby/rake` analog.
+- `pretalx/pretalx` — a production Django application with pyproject.toml, uv.lock, pytest-django, and `manage.py`; the `basecamp/once-campfire` analog.
 
 Each corpus repository has an expected golden plan checked in, and detection runs against the corpus as snapshot tests. The corpus is the definition of done for v0 and the regression suite as providers evolve.
 

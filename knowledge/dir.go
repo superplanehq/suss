@@ -7,7 +7,7 @@ import "strings"
 // is not modified. Unrecognized executables are returned unchanged.
 func StripDirectoryFlags(inv Invocation) (dir string, canonical Invocation) {
 	args := append([]string{}, inv.Args...)
-	dir = ""
+	dir = inv.Directory
 	switch inv.Executable {
 	case "yarn":
 		args, dir = stripFlag(args, "--cwd", dir)
@@ -25,8 +25,19 @@ func StripDirectoryFlags(inv Invocation) (dir string, canonical Invocation) {
 		}
 		args, dir = stripFlag(args, "-C", dir)
 		args, _ = stripFlag(args, "--manifest-path", "")
+	case "uv":
+		args, dir = stripFlag(args, "--directory", dir)
+		args, dir = stripFlag(args, "-C", dir)
+		args, dir = stripFlag(args, "--project", dir)
+	case "poetry", "pipenv", "pdm":
+		args, dir = stripFlag(args, "--directory", dir)
+		args, dir = stripFlag(args, "-C", dir)
+		args, dir = stripFlag(args, "--project", dir)
+		if inv.Executable == "pdm" {
+			args, dir = stripFlag(args, "-p", dir)
+		}
 	}
-	return dir, Invocation{Executable: inv.Executable, Args: args}
+	return dir, Invocation{Executable: inv.Executable, Args: args, Directory: dir}
 }
 
 // CanonicalInvocation strips directory flags and Cargo global options so

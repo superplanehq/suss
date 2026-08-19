@@ -46,6 +46,16 @@ var toolCapabilities = map[string][]plan.Capability{
 	"clippy":        {plan.CapabilityCodeLint},
 	"rustfmt":       {plan.CapabilityCodeFormat},
 	"nextest":       {plan.CapabilityTestRun},
+	"pytest":        {plan.CapabilityTestRun},
+	"ruff":          {plan.CapabilityCodeLint, plan.CapabilityCodeFormat},
+	"black":         {plan.CapabilityCodeFormat},
+	"mypy":          {plan.CapabilityCodeTypecheck},
+	"pyright":       {plan.CapabilityCodeTypecheck},
+	"flake8":        {plan.CapabilityCodeLint},
+	"pylint":        {plan.CapabilityCodeLint},
+	"isort":         {plan.CapabilityCodeFormat},
+	"tox":           {plan.CapabilityTestRun},
+	"nox":           {plan.CapabilityTestRun},
 }
 
 type classifiedProjects struct {
@@ -60,7 +70,7 @@ func Write(w io.Writer, document plan.Document, opts Options) {
 	writePreface(w, len(classified.primary), classified.omittedFixtures)
 
 	if len(document.Projects) == 0 {
-		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, mix.exs, Gemfile, composer.json, Makefile, and .env.example.")
+		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, Cargo.toml, mix.exs, Gemfile, composer.json, pyproject.toml, Makefile, and .env.example.")
 		return
 	}
 	if len(classified.primary) == 0 && len(classified.examples) == 0 {
@@ -142,7 +152,7 @@ func writeProject(w io.Writer, project plan.ProjectPlan, opts Options) {
 
 	if !claimed(project) {
 		fmt.Fprintln(w)
-		fmt.Fprintf(w, "  No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json; a Go project requires go.mod.\n", joinProviders(opts.Providers))
+		fmt.Fprintf(w, "  No implemented provider produced findings for this project. Providers that ran: %s. A Node project requires package.json; a Go project requires go.mod; a Python project requires pyproject.toml.\n", joinProviders(opts.Providers))
 		writeProjectDetails(w, project)
 		if opts.ShowEvidence {
 			writeEvidence(w, project)

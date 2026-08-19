@@ -62,6 +62,19 @@
           ]
         },
         {
+          "kind": "runtime",
+          "name": "python",
+          "version": "3.x",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/github-pages.yml",
+              "pointer": "/jobs/deploy/steps/1/with/python-version"
+            }
+          ]
+        },
+        {
           "kind": "tool",
           "name": "docker",
           "confidence": "high",
@@ -904,24 +917,6 @@
               "kind": "invocation",
               "source": ".github/workflows/nightly.yml",
               "pointer": "/jobs/nightly/steps/12/run#command=1"
-            }
-          ],
-          "interpretations": [],
-          "variants": []
-        },
-        {
-          "id": "cmd_b696c6fe65f864c2d066c9ef491c3053",
-          "name": "pip install",
-          "run": "pip install mkdocs-material",
-          "directory": ".",
-          "scope": "project",
-          "origin": "observed",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/github-pages.yml",
-              "pointer": "/jobs/deploy/steps/2/run"
             }
           ],
           "interpretations": [],

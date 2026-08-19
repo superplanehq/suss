@@ -18,6 +18,7 @@ import (
 	"github.com/superplanehq/suss/provider/makefile"
 	"github.com/superplanehq/suss/provider/node"
 	"github.com/superplanehq/suss/provider/php"
+	"github.com/superplanehq/suss/provider/python"
 	"github.com/superplanehq/suss/provider/ruby"
 	"github.com/superplanehq/suss/provider/rust"
 	"github.com/superplanehq/suss/provider/semaphore"
@@ -31,6 +32,7 @@ var projectProviders = []provider.Provider{
 	elixir.Provider{},
 	ruby.Provider{},
 	php.Provider{},
+	python.Provider{},
 	makefile.Provider{},
 	envfile.Provider{},
 }

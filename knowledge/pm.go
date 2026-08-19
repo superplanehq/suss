@@ -11,13 +11,17 @@ type ManagerInvocation struct {
 	Install bool
 }
 
-// ClassifyManager reports whether inv is an npm, pnpm, yarn, bun, or composer command.
+// ClassifyManager reports whether inv is a Node, Composer, or Python
+// package-manager command. Install classification is used by reconciliation
+// to variant or conflict dependency-install invocations across managers.
 func ClassifyManager(inv Invocation) (ManagerInvocation, bool) {
 	switch inv.Executable {
 	case "npm", "pnpm", "yarn", "bun":
 		return classifyManager(inv.Executable, inv.Args), true
 	case "composer":
 		return classifyComposer(inv.Args), true
+	case "uv", "poetry", "pipenv", "pdm", "pip", "pip3":
+		return classifyPythonManager(inv), true
 	default:
 		return ManagerInvocation{}, false
 	}
@@ -45,6 +49,44 @@ func classifyComposer(args []string) ManagerInvocation {
 		return ManagerInvocation{Manager: "composer"}
 	}
 	return ManagerInvocation{Manager: "composer", Script: rest[0], Args: rest[1:]}
+}
+
+func classifyPythonManager(inv Invocation) ManagerInvocation {
+	manager := inv.Executable
+	if manager == "pip3" {
+		manager = "pip"
+	}
+	args := inv.Args
+	if manager == "uv" {
+		rest, _ := skipUVGlobals(args)
+		if len(rest) >= 1 && rest[0] == "sync" {
+			return ManagerInvocation{Manager: "uv", Install: true}
+		}
+		if len(rest) >= 2 && rest[0] == "pip" && rest[1] == "install" {
+			return ManagerInvocation{Manager: "uv", Install: true}
+		}
+		return ManagerInvocation{Manager: "uv"}
+	}
+
+	rest := dropLeadingFlagsWithValues(args, pythonManagerValueFlags)
+	if len(rest) == 0 {
+		return ManagerInvocation{Manager: manager}
+	}
+	switch manager {
+	case "poetry", "pipenv":
+		if rest[0] == "install" || rest[0] == "sync" {
+			return ManagerInvocation{Manager: manager, Install: true}
+		}
+	case "pip":
+		if rest[0] == "install" {
+			return ManagerInvocation{Manager: manager, Install: true}
+		}
+	case "pdm":
+		if rest[0] == "install" || rest[0] == "sync" {
+			return ManagerInvocation{Manager: manager, Install: true}
+		}
+	}
+	return ManagerInvocation{Manager: manager}
 }
 
 func classifyManager(manager string, args []string) ManagerInvocation {
@@ -200,6 +242,103 @@ func IsRemoteCargoInstall(inv Invocation) bool {
 	return hasRemoteSource || positional > 0
 }
 
+// IsRemotePipInstall reports whether inv installs named PyPI packages rather
+// than a local project or a requirements file. Named pip installs in CI
+// provision tools; they do not install the repository's dependency set.
+func IsRemotePipInstall(inv Invocation) bool {
+	executable := inv.Executable
+	args := inv.Args
+	if executable == "uv" {
+		rest, _ := skipUVGlobals(args)
+		if len(rest) == 0 || rest[0] != "pip" {
+			return false
+		}
+		args = rest[1:]
+		executable = "pip"
+	}
+	if executable != "pip" && executable != "pip3" {
+		return false
+	}
+	args = dropLeadingFlagsWithValues(args, pythonManagerValueFlags)
+	if len(args) == 0 || args[0] != "install" {
+		return false
+	}
+	rest := args[1:]
+	hasRequirement := false
+	hasLocal := false
+	hasNamed := false
+	for i := 0; i < len(rest); i++ {
+		arg := rest[i]
+		name, _, _ := strings.Cut(arg, "=")
+		if name == "-r" || name == "--requirement" {
+			hasRequirement = true
+			if !strings.Contains(arg, "=") && i+1 < len(rest) {
+				i++
+			}
+			continue
+		}
+		if name == "-c" || name == "--constraint" {
+			if !strings.Contains(arg, "=") && i+1 < len(rest) {
+				i++
+			}
+			continue
+		}
+		if name == "-e" || name == "--editable" {
+			hasLocal = true
+			if !strings.Contains(arg, "=") && i+1 < len(rest) && !strings.HasPrefix(rest[i+1], "-") {
+				i++
+			}
+			continue
+		}
+		if strings.HasPrefix(arg, "-") {
+			if pipInstallTakesValue(name) && !strings.Contains(arg, "=") && i+1 < len(rest) && !strings.HasPrefix(rest[i+1], "-") {
+				i++
+			}
+			continue
+		}
+		if isUnresolvedInstallTarget(arg) {
+			continue
+		}
+		if isLocalPythonInstall(arg) {
+			hasLocal = true
+			continue
+		}
+		hasNamed = true
+	}
+	return hasNamed && !hasRequirement && !hasLocal
+}
+
+func pipInstallTakesValue(name string) bool {
+	switch name {
+	case "-r", "--requirement", "-c", "--constraint", "-e", "--editable", "--group",
+		"--index-url", "-i", "--extra-index-url", "--trusted-host", "--find-links", "-f",
+		"--target", "-t", "--prefix", "--root", "--src", "--config-settings", "--global-option",
+		"--hash", "--report", "--abi", "--implementation", "--python-version", "--platform",
+		"--no-binary", "--only-binary":
+		return true
+	default:
+		_, ok := pythonManagerValueFlags[name]
+		return ok
+	}
+}
+
+func isUnresolvedInstallTarget(arg string) bool {
+	return strings.HasPrefix(arg, "$") || strings.Contains(arg, "${") || strings.Contains(arg, "${{")
+}
+
+func isLocalPythonInstall(arg string) bool {
+	if arg == "." || strings.HasPrefix(arg, "./") || strings.HasPrefix(arg, "../") || strings.HasPrefix(arg, "/") || strings.HasPrefix(arg, ".[") {
+		return true
+	}
+	if strings.Contains(arg, "://") {
+		return false
+	}
+	if strings.ContainsAny(arg, "/\\") {
+		return true
+	}
+	return strings.HasSuffix(arg, ".whl") || strings.HasSuffix(arg, ".tar.gz") || strings.HasSuffix(arg, ".zip") || strings.HasPrefix(arg, "requirements")
+}
+
 // IsRemoteGemInstall reports whether inv installs named gems rather than a
 // local gem archive. Named gem installs in CI provision tools; they do not
 // install the repository's Bundler dependency set.
@@ -271,7 +410,10 @@ func IsToolPlumbing(inv Invocation) bool {
 		return isDockerPlumbing(inv.Args)
 	case "docker-compose":
 		return isVersionInfoHelp(inv.Args)
-	case "node", "python", "python3", "ruby", "java":
+	case "pip", "pip3", "poetry", "uv":
+		// -v is verbose on these tools, not a version probe.
+		return isPythonManagerVersionHelp(inv.Args)
+	case "node", "python", "python3", "ruby", "java", "pipenv", "pdm":
 		return isFlagVersionHelp(inv.Args)
 	case "php":
 		return isPHPPlumbing(inv.Args)
@@ -401,6 +543,22 @@ func isFlagVersionHelp(args []string) bool {
 			return false
 		}
 		if isVersionHelpFlag(arg) {
+			return true
+		}
+	}
+	return false
+}
+
+func isPythonManagerVersionHelp(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if !strings.HasPrefix(arg, "-") {
+			return false
+		}
+		name, _, _ := strings.Cut(arg, "=")
+		if name == "--version" || name == "-V" || name == "--help" || name == "-h" {
 			return true
 		}
 	}

@@ -54,13 +54,18 @@ var composeNames = func() map[string]struct{} {
 }()
 
 var skippedDirectories = map[string]struct{}{
-	"node_modules": {},
-	"vendor":       {},
-	"_build":       {},
-	"deps":         {},
-	"dist":         {},
-	"target":       {},
-	"tmp":          {},
+	"node_modules":  {},
+	"vendor":        {},
+	"_build":        {},
+	"deps":          {},
+	"dist":          {},
+	"target":        {},
+	"tmp":           {},
+	"venv":          {},
+	"virtualenv":    {},
+	"site-packages": {},
+	"__pycache__":   {},
+	"htmlcov":       {},
 }
 
 // Provider detects Docker Compose files at the repository root and below.
@@ -341,7 +346,7 @@ func findComposeFiles(root string) ([]string, error) {
 			if path == root {
 				return nil
 			}
-			if shouldSkipDirectory(entry) {
+			if shouldSkipDirectory(path, entry) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -370,7 +375,7 @@ func findComposeFiles(root string) ([]string, error) {
 	return files, nil
 }
 
-func shouldSkipDirectory(entry fs.DirEntry) bool {
+func shouldSkipDirectory(path string, entry fs.DirEntry) bool {
 	name := entry.Name()
 	if strings.HasPrefix(name, ".") {
 		return true
@@ -378,7 +383,15 @@ func shouldSkipDirectory(entry fs.DirEntry) bool {
 	if _, skipped := skippedDirectories[name]; skipped {
 		return true
 	}
-	return entry.Type()&os.ModeSymlink != 0
+	if entry.Type()&os.ModeSymlink != 0 {
+		return true
+	}
+	return isVirtualEnvDir(path)
+}
+
+func isVirtualEnvDir(path string) bool {
+	info, err := os.Stat(filepath.Join(path, "pyvenv.cfg"))
+	return err == nil && !info.IsDir()
 }
 
 func selectComposeFiles(files []string) (base, override string) {

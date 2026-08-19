@@ -6,8 +6,8 @@ Suss is under active development. See [plan.md](plan.md) for current status and 
 
 ## Supported
 
-- Languages and frameworks: JavaScript, TypeScript, Go, Rust, Elixir, Phoenix, Ruby, Rails, PHP, Laravel, and Symfony.
-- Package and task tooling: npm, pnpm, Yarn, Bun, Cargo, Mix, Bundler, Rake, Composer, and Make.
+- Languages and frameworks: JavaScript, TypeScript, Go, Rust, Elixir, Phoenix, Ruby, Rails, PHP, Laravel, Symfony, Python, Django, Flask, and FastAPI.
+- Package and task tooling: npm, pnpm, Yarn, Bun, Cargo, Mix, Bundler, Rake, Composer, pip, Poetry, uv, Pipenv, PDM, and Make.
 - Repository automation: GitHub Actions, Semaphore, and Docker Compose.
 - Structured signals: manifests, lockfiles, runtime-version files, tool configuration, CI services, and environment-variable names.
 - Output: a default human-readable plan or the versioned JSON document.

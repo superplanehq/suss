@@ -20,8 +20,13 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	writeFile(t, filepath.Join(root, "apps", "web", "mix.exs"), "defmodule Web.MixProject do\nend\n")
 	writeFile(t, filepath.Join(root, "admin", "Gemfile"), "source \"https://rubygems.org\"\n")
 	writeFile(t, filepath.Join(root, "api", "composer.json"), "{}\n")
+	writeFile(t, filepath.Join(root, "py", "pyproject.toml"), "[project]\nname = \"api\"\n")
+	writeFile(t, filepath.Join(root, "env", "pyproject.toml"), "[project]\nname = \"env-app\"\n")
 	writeFile(t, filepath.Join(root, "vendor-bin", "phpstan", "composer.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "worker", "Cargo.toml"), "[package]\nname = \"worker\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
+	writeFile(t, filepath.Join(root, "venv", "lib", "pyproject.toml"), "[project]\nname = \"venv\"\n")
+	writeFile(t, filepath.Join(root, "env", "lib", "python3.12", "site-packages", "other", "pyproject.toml"), "[project]\nname = \"env\"\n")
+	writeFile(t, filepath.Join(root, "lib", "site-packages", "other", "pyproject.toml"), "[project]\nname = \"site\"\n")
 	writeFile(t, filepath.Join(root, "node_modules", "left-pad", "package.json"), "{}\n")
 	writeFile(t, filepath.Join(root, "vendor", "module", "go.mod"), "module example.com/vendored\n\ngo 1.26\n")
 	writeFile(t, filepath.Join(root, "deps", "plug", "mix.exs"), "defmodule Plug.MixProject do\nend\n")
@@ -32,7 +37,7 @@ func TestFindProjectRootsDiscoversManifestsAndSkipsDependencyTrees(t *testing.T)
 	if err != nil {
 		t.Fatalf("findProjectRoots() error = %v", err)
 	}
-	want := []string{".", "admin", "api", "apps/web", "backend", "frontend", "worker"}
+	want := []string{".", "admin", "api", "apps/web", "backend", "env", "frontend", "py", "worker"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
 	}
@@ -81,6 +86,24 @@ func TestDetectRunsMakeAndEnvfileWithoutLanguageManifests(t *testing.T) {
 	}
 	if !sawMakeTest {
 		t.Fatalf("commands = %+v, want make test from a Makefile-only root", project.Commands)
+	}
+}
+
+func TestFindProjectRootsSkipsVirtualEnvMarkerNotEnvName(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "env", "pyproject.toml"), "[project]\nname = \"env-app\"\n")
+	writeFile(t, filepath.Join(root, "sandbox", "pyvenv.cfg"), "home = /usr/bin\n")
+	writeFile(t, filepath.Join(root, "sandbox", "pyproject.toml"), "[project]\nname = \"sandbox\"\n")
+
+	got, err := findProjectRoots(root)
+	if err != nil {
+		t.Fatalf("findProjectRoots() error = %v", err)
+	}
+	want := []string{"env"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findProjectRoots() = %v, want %v", got, want)
 	}
 }
 

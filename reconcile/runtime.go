@@ -83,7 +83,7 @@ const (
 
 func matchExistingRuntime(project plan.ProjectPlan, indexes []int, version string) (int, runtimeMatchKind) {
 	for _, index := range indexes {
-		if sameVersion(project.Requirements[index].Version, version) {
+		if sameRelease(project.Requirements[index].Version, version) {
 			return index, runtimeEqual
 		}
 	}
@@ -323,6 +323,15 @@ func equalitySatisfies(raw, version string) (ok, known bool) {
 	return sameVersion(bound, version), true
 }
 
+func sameRelease(a, b string) bool {
+	if sameVersion(a, b) {
+		return true
+	}
+	left, okLeft := numericBound(a)
+	right, okRight := numericBound(b)
+	return okLeft && okRight && compareVersions(left, right) == 0
+}
+
 func normalizeVersion(version string) string {
 	version = strings.TrimSpace(version)
 	version, _, _ = strings.Cut(version, "@")
@@ -347,7 +356,7 @@ func versionSatisfies(runtime, declared, version string) (ok, known bool) {
 	if declared == "" || version == "" || !comparableVersion(version) {
 		return false, false
 	}
-	if sameVersion(declared, version) {
+	if sameRelease(declared, version) {
 		return true, true
 	}
 	if !isVersionConstraint(declared) && !comparableVersion(normalizeVersion(declared)) {
@@ -437,10 +446,11 @@ func composerHyphenUpperBound(right, version string) (ok, known bool) {
 func splitConstraints(group string) []string {
 	var tokens []string
 	// Composer treats comma as AND (`>=8.1,<8.4`); npm-style ranges use spaces.
+	// PEP 440 uses the same comma-AND form, plus ~= and ===.
 	fields := strings.Fields(strings.ReplaceAll(group, ",", " "))
 	for i := 0; i < len(fields); i++ {
 		field := fields[i]
-		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "!=" || field == "<>" || field == "==" || field == "=" || field == "^" || field == "~" || field == "~>" {
+		if field == ">=" || field == "<=" || field == ">" || field == "<" || field == "!=" || field == "<>" || field == "===" || field == "==" || field == "=" || field == "^" || field == "~" || field == "~>" || field == "~=" {
 			if i+1 < len(fields) {
 				tokens = append(tokens, field+fields[i+1])
 				i++
@@ -468,6 +478,8 @@ func constraintSatisfies(runtime, token, version string) (ok, known bool) {
 		return compareVersions(version, bound) <= 0, true
 	case strings.HasPrefix(token, "!="), strings.HasPrefix(token, "<>"):
 		return inequalitySatisfies(strings.TrimSpace(token[2:]), version)
+	case strings.HasPrefix(token, "==="):
+		return false, false
 	case strings.HasPrefix(token, "="):
 		return equalitySatisfies(strings.TrimLeft(strings.TrimSpace(token), "="), version)
 	case strings.HasPrefix(token, ">"):
@@ -485,6 +497,8 @@ func constraintSatisfies(runtime, token, version string) (ok, known bool) {
 	case strings.HasPrefix(token, "^"):
 		return caretSatisfies(strings.TrimSpace(token[1:]), version)
 	case strings.HasPrefix(token, "~>"):
+		return pessimisticSatisfies(strings.TrimSpace(token[2:]), version)
+	case strings.HasPrefix(token, "~="):
 		return pessimisticSatisfies(strings.TrimSpace(token[2:]), version)
 	case strings.HasPrefix(token, "~"):
 		return tildeSatisfies(strings.TrimSpace(token[1:]), version, runtime == "php")
@@ -520,10 +534,11 @@ func pessimisticSatisfies(raw, version string) (ok, known bool) {
 }
 
 func caretSatisfies(base, version string) (ok, known bool) {
-	base = normalizeVersion(base)
-	if base == "" {
+	bound, comparable := numericBound(base)
+	if !comparable {
 		return false, false
 	}
+	base = bound
 	if compareVersions(version, base) < 0 {
 		return false, true
 	}
@@ -543,8 +558,8 @@ func caretSatisfies(base, version string) (ok, known bool) {
 
 func tildeSatisfies(raw, version string, composer bool) (ok, known bool) {
 	raw = strings.TrimPrefix(strings.TrimSpace(raw), "v")
-	base := normalizeVersion(raw)
-	if base == "" {
+	base, ok := numericBound(raw)
+	if !ok {
 		return false, false
 	}
 	if compareVersions(version, base) < 0 {
@@ -610,6 +625,14 @@ func comparableVersion(version string) bool {
 		}
 	}
 	return true
+}
+
+func numericBound(raw string) (string, bool) {
+	bound := normalizeVersion(raw)
+	if bound == "" || !comparableVersion(bound) {
+		return "", false
+	}
+	return bound, true
 }
 
 func versionPart(parts []string, i int) int {

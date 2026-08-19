@@ -259,6 +259,190 @@ jobs:
 	}
 }
 
+func TestDetectRetainsVerbosePythonManagerInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: pip -v install -r requirements.txt
+      - run: uv -v sync
+      - run: poetry -v install
+`,
+	})
+
+	found := map[string]bool{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = true
+	}
+	for _, run := range []string{"pip -v install -r requirements.txt", "uv -v sync", "poetry -v install"} {
+		if !found[run] {
+			t.Fatalf("missing %q in %+v", run, result.Findings)
+		}
+	}
+}
+
+func TestDetectAppliesUvDirectoryToCommandDirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: uv run --directory packages/api pytest
+      - run: uv run -C packages/web pytest
+      - run: uv --directory packages/cli run pytest
+`,
+	})
+
+	found := map[string]string{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = item.Command.Directory
+	}
+	if got := found["uv run --directory packages/api pytest"]; got != "packages/api" {
+		t.Fatalf("uv --directory directory = %q, want packages/api in %+v", got, found)
+	}
+	if got := found["uv run -C packages/web pytest"]; got != "packages/web" {
+		t.Fatalf("uv -C directory = %q, want packages/web in %+v", got, found)
+	}
+	if got := found["uv --directory packages/cli run pytest"]; got != "packages/cli" {
+		t.Fatalf("uv global --directory directory = %q, want packages/cli in %+v", got, found)
+	}
+	interpreted := false
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil || *item.Command.Run != "uv --directory packages/cli run pytest" {
+			continue
+		}
+		interpreted = commandHasCapability(item.Command, plan.CapabilityTestRun)
+	}
+	if !interpreted {
+		t.Fatal("uv --directory packages/cli run pytest was not interpreted as a test command")
+	}
+}
+
+func TestDetectAppliesUvProjectToCommandDirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: uv --project backend sync
+      - run: uv run --project frontend pytest
+`,
+	})
+
+	found := map[string]string{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = item.Command.Directory
+	}
+	if got := found["uv --project backend sync"]; got != "backend" {
+		t.Fatalf("uv --project directory = %q, want backend in %+v", got, found)
+	}
+	if got := found["uv run --project frontend pytest"]; got != "frontend" {
+		t.Fatalf("uv run --project directory = %q, want frontend in %+v", got, found)
+	}
+	interpreted := false
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil || *item.Command.Run != "uv run --project frontend pytest" {
+			continue
+		}
+		interpreted = commandHasCapability(item.Command, plan.CapabilityTestRun)
+	}
+	if !interpreted {
+		t.Fatal("uv run --project frontend pytest was not interpreted as a test command")
+	}
+}
+
+func TestDetectAppliesPoetryDirectoryToCommandDirectory(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: poetry -C backend run pytest
+      - run: pdm --project services/web run pytest
+`,
+	})
+
+	found := map[string]string{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = item.Command.Directory
+	}
+	if got := found["poetry -C backend run pytest"]; got != "backend" {
+		t.Fatalf("poetry -C directory = %q, want backend in %+v", got, found)
+	}
+	if got := found["pdm --project services/web run pytest"]; got != "services/web" {
+		t.Fatalf("pdm --project directory = %q, want services/web in %+v", got, found)
+	}
+	interpreted := false
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil || *item.Command.Run != "poetry -C backend run pytest" {
+			continue
+		}
+		interpreted = commandHasCapability(item.Command, plan.CapabilityTestRun)
+	}
+	if !interpreted {
+		t.Fatal("poetry -C backend run pytest was not interpreted as a test command")
+	}
+}
+
+func TestDetectLeavesUnresolvedUvDirectoryOnTheParent(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: uv --directory ${{ github.workspace }}/backend pytest
+      - run: uv run --directory ${{ github.workspace }}/backend pytest
+`,
+	})
+
+	found := map[string]string{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = item.Command.Directory
+	}
+	for _, run := range []string{
+		"uv --directory ${{ github.workspace }}/backend pytest",
+		"uv run --directory ${{ github.workspace }}/backend pytest",
+	} {
+		if got := found[run]; got != "." {
+			t.Fatalf("%s directory = %q, want the parent project in %+v", run, got, found)
+		}
+	}
+}
+
 func TestDetectAppliesYarnCwdToCommandDirectory(t *testing.T) {
 	t.Parallel()
 
@@ -370,6 +554,27 @@ jobs:
 
 	if !hasRequirement(result, plan.RequirementRuntime, "ruby", "3.4.5") {
 		t.Fatalf("missing Ruby 3.4.5 from .ruby-version in %+v", result.Findings)
+	}
+}
+
+func TestDetectReadsSetupRubyVersionFileEngineAliases(t *testing.T) {
+	t.Parallel()
+
+	for _, version := range []string{"ruby-3.3.0", "jruby-9.4.8.0", "truffleruby-24.1.0", "ruby-head"} {
+		result := detectFiles(t, map[string]string{
+			".ruby-version": version + "\n",
+			".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+`,
+		})
+		if !hasRequirement(result, plan.RequirementRuntime, "ruby", version) {
+			t.Fatalf("missing Ruby %q from .ruby-version in %+v", version, result.Findings)
+		}
 	}
 }
 
@@ -617,6 +822,171 @@ jobs:
 
 	if !hasRequirement(result, plan.RequirementRuntime, "rust", "stable") {
 		t.Fatalf("missing rust stable from toolchain file in %+v", result.Findings)
+	}
+}
+
+func TestDetectReadsSetupPythonMatrixVersions(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+`,
+	})
+
+	if got := sortedCopy(runtimeRequirementVersions(result, "python")); !slices.Equal(got, []string{"3.12", "3.13"}) {
+		t.Fatalf("Python versions = %v, want matrix pins", got)
+	}
+}
+
+func TestDetectIgnoresPyprojectTomlAsPythonVersionFile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"pyproject.toml": "[project]\nrequires-python = \">=3.10\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+`,
+	})
+
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.RequirementFinding)
+		if !ok || item.Requirement.Name != "python" {
+			continue
+		}
+		if item.Requirement.Version == "[project]" {
+			t.Fatalf("treated pyproject.toml table header as a Python version: %+v", item.Requirement)
+		}
+	}
+}
+
+func TestDetectReadsSetupPythonVersionFileInput(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".python-version": "3.12.8\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "python", "3.12.8") {
+		t.Fatalf("missing Python 3.12.8 from .python-version in %+v", result.Findings)
+	}
+}
+
+func TestDetectReadsSetupPythonGraalPyVersionFile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".python-version": "graalpy-24.1\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "python", "graalpy-24.1") {
+		t.Fatalf("missing graalpy-24.1 from .python-version in %+v", result.Findings)
+	}
+}
+
+func TestDetectSkipsRemotePipInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: pip install ruff pytest
+      - run: python -m pip install coveralls
+      - run: pip install -c constraints.txt tox
+      - run: uv --directory . pip install ruff
+      - run: pip --index-url https://pypi.org/simple install tox
+`,
+	})
+
+	if commands := commandByName(result); len(commands) != 0 {
+		t.Fatalf("remote pip install was emitted as a repository command: %+v", result.Findings)
+	}
+}
+
+func TestDetectRetainsRelativeLocalPipInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: pip install ../shared
+      - run: pip install packages/widget
+`,
+	})
+
+	found := map[string]bool{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = true
+	}
+	for _, run := range []string{"pip install ../shared", "pip install packages/widget"} {
+		if !found[run] {
+			t.Fatalf("missing %q in %+v", run, result.Findings)
+		}
+	}
+}
+
+func TestDetectRetainsPipGroupAndUnresolvedInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: pip install --group test
+      - run: pip install "$WHEEL_PATH"
+`,
+	})
+
+	found := map[string]bool{}
+	for _, finding := range result.Findings {
+		item, ok := finding.(plan.CommandFinding)
+		if !ok || item.Command.Run == nil {
+			continue
+		}
+		found[*item.Command.Run] = true
+	}
+	for _, run := range []string{"pip install --group test", `pip install "$WHEEL_PATH"`} {
+		if !found[run] {
+			t.Fatalf("missing %q in %+v", run, result.Findings)
+		}
 	}
 }
 

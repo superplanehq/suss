@@ -192,6 +192,26 @@ func TestApplyRecordsPackageManagerMismatchAsConflict(t *testing.T) {
 	}
 }
 
+func TestApplyRecordsPythonInstallManagerMismatchAsConflict(t *testing.T) {
+	t.Parallel()
+
+	inferred := command(t, "python", ".", "/#dependencies", "install dependencies", "uv sync", plan.CommandInferred, plan.CapabilityDependenciesInstall)
+	observed := command(t, "github-actions", ".", "/jobs/test/steps/1/run", "install dependencies", "poetry install", plan.CommandObserved, plan.CapabilityDependenciesInstall)
+
+	root := plan.NewProjectPlan(".")
+	root.Preparation = []plan.Command{inferred}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{plan.CommandFinding{Command: observed}},
+	})
+
+	if len(got[0].Preparation) != 1 || deref(got[0].Preparation[0].Run) != "uv sync" {
+		t.Fatalf("preparation = %+v, want inferred uv sync only", got[0].Preparation)
+	}
+	if len(got[0].Conflicts) != 1 || got[0].Conflicts[0].Subject != "dependencies.install" {
+		t.Fatalf("conflicts = %+v, want dependencies.install", got[0].Conflicts)
+	}
+}
+
 func TestApplyAssignsNestedWorkingDirectoryToTheNestedProject(t *testing.T) {
 	t.Parallel()
 
@@ -813,6 +833,101 @@ func TestApplyDoesNotFoldAVersionAboveAnUpperBound(t *testing.T) {
 	}
 }
 
+func TestApplyDoesNotFoldPythonAboveACommaUpperBound(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "python",
+		Version:    ">=3.9,<4",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "pyproject.toml", Pointer: "/requires-python"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPython("4.0")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 4.0 attached to >=3.9,<4", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 1 {
+		t.Fatalf("conflicts = %+v, want a version conflict for 4.0 vs >=3.9,<4", got[0].Conflicts)
+	}
+}
+
+func TestApplyFoldsZeroPaddedPythonRelease(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "python",
+		Version:    "==3.12",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "pyproject.toml", Pointer: "/requires-python"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPython("3.12.0")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a conflict for 3.12.0 vs ==3.12", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want CI 3.12.0 attached to ==3.12", got[0].Requirements[0].Evidence)
+	}
+}
+
+func TestApplyFoldsPythonCompatibleRelease(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "python",
+		Version:    "~=3.11",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "pyproject.toml", Pointer: "/requires-python"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPython("3.12")},
+	})
+
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a conflict for 3.12 vs ~=3.11", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("evidence = %+v, want CI 3.12 attached to ~=3.11", got[0].Requirements[0].Evidence)
+	}
+}
+
+func TestApplyDoesNotFoldPrereleasePythonBound(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{{
+		Kind:       plan.RequirementRuntime,
+		Name:       "python",
+		Version:    ">=3.13rc1",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "pyproject.toml", Pointer: "/requires-python"}},
+	}}
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{
+		Findings: []plan.Finding{ciPython("3.12")},
+	})
+
+	if len(got[0].Requirements[0].Evidence) != 1 {
+		t.Fatalf("evidence = %+v, did not want CI 3.12 attached to >=3.13rc1", got[0].Requirements[0].Evidence)
+	}
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want a conflict for an unevaluable prerelease bound", got[0].Conflicts)
+	}
+	if values := matrixPythonValues(got[0].Facts); len(values) != 1 || values[0] != "3.12" {
+		t.Fatalf("facts = %+v, want ci.matrix.python=3.12 for an unevaluable prerelease bound", got[0].Facts)
+	}
+}
+
 func TestApplyRecordsUnevaluableRangesAsMatrixFacts(t *testing.T) {
 	t.Parallel()
 
@@ -1008,18 +1123,26 @@ func ciPHP(version string) plan.RequirementFinding {
 }
 
 func ciNode(version string) plan.RequirementFinding {
+	return ciRuntime("node", version)
+}
+
+func ciPython(version string) plan.RequirementFinding {
+	return ciRuntime("python", version)
+}
+
+func ciRuntime(name, version string) plan.RequirementFinding {
 	return plan.RequirementFinding{
 		ProjectPath: ".",
 		Requirement: plan.Requirement{
 			Kind:       plan.RequirementRuntime,
-			Name:       "node",
+			Name:       name,
 			Version:    version,
 			Confidence: plan.ConfidenceHigh,
 			Evidence: []plan.Evidence{{
 				Kind:        plan.EvidenceInvocation,
 				Source:      ".github/workflows/ci.yml",
-				Pointer:     "/jobs/test/steps/1/with/node-version",
-				Description: "CI tests node " + version,
+				Pointer:     "/jobs/test/steps/1/with/" + name + "-version",
+				Description: "CI tests " + name + " " + version,
 			}},
 		},
 	}
@@ -1031,6 +1154,10 @@ func matrixNodeValues(facts []plan.ProjectFact) []string {
 
 func matrixPHPValues(facts []plan.ProjectFact) []string {
 	return matrixRuntimeValues(facts, "php")
+}
+
+func matrixPythonValues(facts []plan.ProjectFact) []string {
+	return matrixRuntimeValues(facts, "python")
 }
 
 func matrixRuntimeValues(facts []plan.ProjectFact, runtime string) []string {

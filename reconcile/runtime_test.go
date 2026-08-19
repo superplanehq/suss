@@ -95,3 +95,47 @@ func TestVersionSatisfiesElixirPessimisticConstraint(t *testing.T) {
 		}
 	}
 }
+
+func TestVersionSatisfiesPEP440PythonConstraints(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		constraint string
+		version    string
+		want       bool
+	}{
+		{constraint: ">=3.9,<4", version: "3.10", want: true},
+		{constraint: ">=3.9,<4", version: "3.9", want: true},
+		{constraint: ">=3.9,<4", version: "4.0", want: false},
+		{constraint: ">=3.9,<4", version: "4", want: false},
+		{constraint: ">=3.9, <4", version: "3.12", want: true},
+		{constraint: "~=3.11", version: "3.11", want: true},
+		{constraint: "~=3.11", version: "3.12", want: true},
+		{constraint: "~=3.11", version: "4.0", want: false},
+		{constraint: "~=3.11.0", version: "3.11.5", want: true},
+		{constraint: "~=3.11.0", version: "3.12", want: false},
+		{constraint: "==3.12", version: "3.12.0", want: true},
+		{constraint: "==3.12.0", version: "3.12", want: true},
+		{constraint: "3.12", version: "3.12.0", want: true},
+		{constraint: "==3.11", version: "3.12.0", want: false},
+	}
+	for _, tt := range tests {
+		got, known := versionSatisfies("python", tt.constraint, tt.version)
+		if !known || got != tt.want {
+			t.Fatalf("versionSatisfies(%q, %q) = (%t, %t), want (%t, true)", tt.constraint, tt.version, got, known, tt.want)
+		}
+	}
+}
+
+func TestVersionSatisfiesPrereleaseBoundsAreUnevaluable(t *testing.T) {
+	t.Parallel()
+
+	got, known := versionSatisfies("python", ">=3.13rc1", "3.12")
+	if known {
+		t.Fatalf("versionSatisfies(>=3.13rc1, 3.12) = (%t, %t), want unevaluable", got, known)
+	}
+	got, known = versionSatisfies("python", ">=3.13.0rc1", "3.13")
+	if known {
+		t.Fatalf("versionSatisfies(>=3.13.0rc1, 3.13) = (%t, %t), want unevaluable", got, known)
+	}
+}
