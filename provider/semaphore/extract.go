@@ -120,7 +120,7 @@ func extractCommands(ctx provider.Context, source, base, pointer string, command
 				if skipSemaphoreStatement(statement) {
 					continue
 				}
-				command, err := observedCommand(source, dir, statementPointer, statement)
+				command, err := observedCommand(source, dir, statementCurrent(currents, dir), statementPointer, statement)
 				if err != nil {
 					return base, nil, err
 				}
@@ -137,7 +137,7 @@ func extractCommands(ctx provider.Context, source, base, pointer string, command
 func expandStatementDirectories(repo string, currents []string, stmt knowledge.Statement, matrix map[string][]string) []string {
 	rel := stmt.Chdir
 	if rel == "" {
-		rel = stmt.WorkingDir
+		rel = knowledge.WorkingDirectory(stmt.Raw, stmt.Invocation)
 	}
 	if rel == "" {
 		return append([]string{}, currents...)
@@ -283,16 +283,32 @@ func expandMatrixValue(raw string, matrix map[string][]string) []string {
 	return []string{raw}
 }
 
-func observedCommand(source, directory, pointer string, statement knowledge.Statement) (plan.Command, error) {
+func statementCurrent(currents []string, dir string) string {
+	for _, current := range currents {
+		if current == dir {
+			return dir
+		}
+	}
+	if len(currents) > 0 {
+		return currents[0]
+	}
+	return dir
+}
+
+func observedCommand(source, directory, current, pointer string, statement knowledge.Statement) (plan.Command, error) {
 	id, err := plan.NewCommandID(plan.CommandIdentity{ProjectPath: directory, Provider: providerName, Source: source, Pointer: pointer})
 	if err != nil {
 		return plan.Command{}, err
 	}
-	_, canonical := knowledge.StripDirectoryFlags(statement.Invocation)
+	canonical := knowledge.CanonicalInvocation(statement.Invocation)
+	run := knowledge.RedactAssignmentValues(statement.Raw)
+	if directory != current {
+		run = knowledge.RewriteDirectoryFlags(statement.Raw, statement.Invocation)
+	}
 	return plan.Command{
 		ID:              id,
 		Name:            knowledge.CommandName(canonical),
-		Run:             stringPtr(knowledge.RedactAssignmentValues(statement.Raw)),
+		Run:             stringPtr(run),
 		Directory:       directory,
 		Scope:           plan.ScopeProject,
 		Origin:          plan.CommandObserved,
@@ -354,7 +370,7 @@ func skipSemaphoreStatement(statement knowledge.Statement) bool {
 	if executable == "" || strings.Contains(statement.Raw, "$(") {
 		return true
 	}
-	if knowledge.IsGlobalInstall(statement.Invocation) || knowledge.IsRemoteGoInstall(statement.Invocation) || knowledge.IsRemoteGemInstall(statement.Invocation) || knowledge.IsSystemPackagePlumbing(statement.Invocation) || knowledge.IsToolPlumbing(statement.Invocation) {
+	if knowledge.IsGlobalInstall(statement.Invocation) || knowledge.IsRemoteGoInstall(statement.Invocation) || knowledge.IsRemoteGemInstall(statement.Invocation) || knowledge.IsRemoteCargoInstall(statement.Invocation) || knowledge.IsSystemPackagePlumbing(statement.Invocation) || knowledge.IsToolPlumbing(statement.Invocation) {
 		return true
 	}
 	_, skip := semaphorePlumbing[executable]

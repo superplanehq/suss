@@ -14,6 +14,7 @@ import (
 var projectManifests = map[string]struct{}{
 	"package.json":  {},
 	"go.mod":        {},
+	"Cargo.toml":    {},
 	"mix.exs":       {},
 	"Gemfile":       {},
 	"composer.json": {},

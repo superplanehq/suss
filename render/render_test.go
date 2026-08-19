@@ -276,7 +276,7 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 		"npm test",
 		"CI variant          npm test --coverage",
 		"environment API_TOKEN (required, default present)",
-		"eslint is configured. No command interpreted as code.lint was found.",
+		"eslint is configured. No command that invokes it was found.",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("output %q, want %q", got, want)
@@ -290,6 +290,200 @@ func TestWriteRendersACoveredNodeProject(t *testing.T) {
 	}
 	if strings.Contains(got, "Evidence:") {
 		t.Fatalf("output %q, want evidence omitted by default", got)
+	}
+}
+
+func TestWriteHidesEslintWhenDeclaredScriptInvokesIt(t *testing.T) {
+	t.Parallel()
+
+	run := "npm run lint"
+	id := plan.CommandID("cmd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "javascript"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "eslint",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: "eslint.config.js"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:        id,
+		Name:      "lint",
+		Run:       &run,
+		Directory: ".",
+		Scope:     plan.ScopeProject,
+		Origin:    plan.CommandDeclared,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityCodeLint,
+			Confidence: plan.ConfidenceHigh,
+			Evidence: []plan.Evidence{{
+				Kind:        plan.EvidenceDeclaration,
+				Source:      "package.json",
+				Pointer:     "/scripts/lint",
+				Description: "The script invokes ESLint.",
+			}},
+		}},
+		Variants: []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
+	if strings.Contains(got, "eslint is configured") {
+		t.Fatalf("output %q, did not want an eslint gap when npm run lint invokes ESLint", got)
+	}
+}
+
+func TestWriteHidesTscWhenDeclaredScriptInvokesTypeScript(t *testing.T) {
+	t.Parallel()
+
+	run := "npm run build"
+	id := plan.CommandID("cmd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "javascript"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "tsc",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: "tsconfig.json"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:        id,
+		Name:      "build",
+		Run:       &run,
+		Directory: ".",
+		Scope:     plan.ScopeProject,
+		Origin:    plan.CommandDeclared,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityCodeTypecheck,
+			Confidence: plan.ConfidenceHigh,
+			Evidence: []plan.Evidence{{
+				Kind:        plan.EvidenceDeclaration,
+				Source:      "package.json",
+				Pointer:     "/scripts/build",
+				Description: "The script invokes the TypeScript compiler.",
+			}},
+		}},
+		Variants: []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"node"})
+	if strings.Contains(got, "tsc is configured") {
+		t.Fatalf("output %q, did not want a tsc gap when npm run build invokes the TypeScript compiler", got)
+	}
+}
+
+func TestWriteReportsNextestWhenOnlyCargoTestExists(t *testing.T) {
+	t.Parallel()
+
+	run := "cargo test"
+	id := plan.CommandID("cmd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "rust"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "nextest",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: ".config/nextest.toml"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:         id,
+		Name:       "test",
+		Run:        &run,
+		Directory:  ".",
+		Scope:      plan.ScopeProject,
+		Origin:     plan.CommandInferred,
+		Confidence: plan.ConfidenceHigh,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityTestRun,
+			Confidence: plan.ConfidenceHigh,
+		}},
+		Variants: []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"rust"})
+	if !strings.Contains(got, "nextest is configured. No command that invokes it was found.") {
+		t.Fatalf("output %q, want nextest visible when only cargo test exists", got)
+	}
+}
+
+func TestWriteHidesNextestWhenCargoNextestExists(t *testing.T) {
+	t.Parallel()
+
+	run := "cargo nextest run"
+	id := plan.CommandID("cmd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "rust"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "nextest",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: ".config/nextest.toml"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:         id,
+		Name:       "test",
+		Run:        &run,
+		Directory:  ".",
+		Scope:      plan.ScopeProject,
+		Origin:     plan.CommandObserved,
+		Confidence: plan.ConfidenceHigh,
+		Interpretations: []plan.Interpretation{{
+			Capability: plan.CapabilityTestRun,
+			Confidence: plan.ConfidenceHigh,
+		}},
+		Variants: []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"rust"})
+	if strings.Contains(got, "nextest is configured") {
+		t.Fatalf("output %q, did not want a nextest gap when cargo nextest run exists", got)
+	}
+}
+
+func TestWriteReportsConfiguredToolsWithoutCapabilityMapping(t *testing.T) {
+	t.Parallel()
+
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "rust"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "cargo-deny",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: "deny.toml"}},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"rust"})
+	if !strings.Contains(got, "cargo-deny is configured.") {
+		t.Fatalf("output %q, want cargo-deny configured notice", got)
+	}
+}
+
+func TestWriteHidesCargoDenyWhenCommandInvokesIt(t *testing.T) {
+	t.Parallel()
+
+	run := "cargo deny check"
+	id := plan.CommandID("cmd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	project := plan.NewProjectPlan(".")
+	project.Languages = []plan.DetectedValue{{Name: "rust"}}
+	project.Facts = []plan.ProjectFact{{
+		Name:       "tool.configured",
+		Value:      "cargo-deny",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceConfiguration, Source: "deny.toml"}},
+	}}
+	project.Commands = []plan.Command{{
+		ID:         id,
+		Name:       "cargo deny",
+		Run:        &run,
+		Directory:  ".",
+		Scope:      plan.ScopeProject,
+		Origin:     plan.CommandObserved,
+		Confidence: plan.ConfidenceHigh,
+		Variants:   []plan.CommandVariant{},
+	}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), []string{"rust"})
+	if strings.Contains(got, "cargo-deny is configured") {
+		t.Fatalf("output %q, did not want a cargo-deny gap when cargo deny check exists", got)
 	}
 }
 

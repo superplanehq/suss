@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "1",
+  "projects": [
+    {
+      "path": ".",
+      "languages": [
+        {
+          "name": "rust",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/package/name"
+            }
+          ]
+        }
+      ],
+      "frameworks": [],
+      "packageManagers": [
+        {
+          "name": "cargo",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "name": "tool.configured",
+          "value": "clippy",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "clippy.toml"
+            }
+          ]
+        },
+        {
+          "name": "tool.configured",
+          "value": "rustfmt",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "configuration",
+              "source": "rustfmt.toml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "runtime",
+          "name": "rust",
+          "version": ">=1.81",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Cargo.toml",
+              "pointer": "/package/rust-version"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_151e5401050fe58d4c563c69d00078ca",
+          "name": "download dependencies",
+          "run": "cargo fetch",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "dependencies",
+              "description": "Cargo packages conventionally download dependencies with cargo fetch."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "dependencies.install",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "dependencies"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "commands": [
+        {
+          "id": "cmd_8f52a5424cb61f45c7818109aa09a805",
+          "name": "test",
+          "run": "cargo test",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Cargo.toml"
+            },
+            {
+              "kind": "file",
+              "source": "src/lib.rs"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "test",
+              "description": "Cargo packages with tests conventionally run cargo test."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "test"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        },
+        {
+          "id": "cmd_becb52ccd7293ad8602700c2dbb77f42",
+          "name": "build",
+          "run": "cargo build",
+          "directory": ".",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "Cargo.toml"
+            },
+            {
+              "kind": "convention",
+              "source": "rust-ecosystem",
+              "pointer": "build",
+              "description": "Cargo packages conventionally compile with cargo build."
+            }
+          ],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "convention",
+                  "source": "rust-ecosystem",
+                  "pointer": "build"
+                }
+              ]
+            }
+          ],
+          "variants": []
+        }
+      ],
+      "ambiguities": [],
+      "conflicts": []
+    }
+  ]
+}

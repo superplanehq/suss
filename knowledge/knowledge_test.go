@@ -519,6 +519,153 @@ func TestStripDirectoryFlagsStopsAtDoubleDash(t *testing.T) {
 	}
 }
 
+func TestStripDirectoryFlagsUsesCargoCNotManifestPath(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		args []string
+		want string
+	}{
+		{args: []string{"test", "--manifest-path", "Cargo.toml"}, want: ""},
+		{args: []string{"test", "--manifest-path", "./Cargo.toml"}, want: ""},
+		{args: []string{"test", "--manifest-path=./Cargo.toml"}, want: ""},
+		{args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml"}, want: ""},
+		{args: []string{"-C", "crates/tool", "test", "--manifest-path", "Cargo.toml"}, want: "crates/tool"},
+		{args: []string{"-C", "crates", "test", "--manifest-path", "tool/Cargo.toml"}, want: "crates"},
+		{args: []string{"-C", "crates/tool", "test", "--manifest-path", "../cli/Cargo.toml"}, want: "crates/tool"},
+	}
+	for _, tt := range tests {
+		dir, got := StripDirectoryFlags(Invocation{Executable: "cargo", Args: tt.args})
+		if dir != tt.want {
+			t.Fatalf("dir(%v) = %q, want %q", tt.args, dir, tt.want)
+		}
+		if got.Executable != "cargo" || !slices.Equal(got.Args, []string{"test"}) {
+			t.Fatalf("canonical(%v) = %+v, want cargo test", tt.args, got)
+		}
+	}
+}
+
+func TestRewriteDirectoryFlagsStripsCargoPaths(t *testing.T) {
+	t.Parallel()
+
+	got := RewriteDirectoryFlags(
+		"cargo test --manifest-path crates/tool/Cargo.toml --locked",
+		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml", "--locked"}},
+	)
+	if got != "cargo test --manifest-path crates/tool/Cargo.toml --locked" {
+		t.Fatalf("RewriteDirectoryFlags(manifest-path) = %q, want the original invocation", got)
+	}
+	got = RewriteDirectoryFlags(
+		"cargo +nightly -C crates/tool test",
+		Invocation{Executable: "cargo", Args: []string{"-C", "crates/tool", "test"}},
+	)
+	if got != "cargo +nightly test" {
+		t.Fatalf("RewriteDirectoryFlags(-C) = %q, want cargo +nightly test", got)
+	}
+	got = RewriteDirectoryFlags(
+		"cargo -C crates/tool test --manifest-path Cargo.toml",
+		Invocation{Executable: "cargo", Args: []string{"-C", "crates/tool", "test", "--manifest-path", "Cargo.toml"}},
+	)
+	if got != "cargo test --manifest-path Cargo.toml" {
+		t.Fatalf("RewriteDirectoryFlags(-C and manifest-path) = %q, want cargo test with the manifest path kept", got)
+	}
+	got = RewriteDirectoryFlags(
+		`cargo test --manifest-path crates/tool/Cargo.toml --features "foo bar"`,
+		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml", "--features", "foo bar"}},
+	)
+	if got != `cargo test --manifest-path crates/tool/Cargo.toml --features "foo bar"` {
+		t.Fatalf("RewriteDirectoryFlags(quoted features) = %q, want the original invocation", got)
+	}
+	got = RewriteDirectoryFlags(
+		`cargo -C crates/tool test --features 'foo bar'`,
+		Invocation{Executable: "cargo", Args: []string{"-C", "crates/tool", "test", "--features", "foo bar"}},
+	)
+	if got != `cargo test --features 'foo bar'` {
+		t.Fatalf("RewriteDirectoryFlags(quoted -C) = %q, want quotes preserved", got)
+	}
+	got = RewriteDirectoryFlags(
+		"rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml",
+		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "crates/tool/Cargo.toml"}},
+	)
+	if got != "rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml" {
+		t.Fatalf("RewriteDirectoryFlags(rustup) = %q, want the original rustup invocation", got)
+	}
+	got = RewriteDirectoryFlags(
+		`cargo test --manifest-path "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"`,
+		Invocation{Executable: "cargo", Args: []string{"test", "--manifest-path", "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"}},
+	)
+	if got != `cargo test --manifest-path "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"` {
+		t.Fatalf("RewriteDirectoryFlags(dynamic) = %q, want the original run", got)
+	}
+	got = RewriteDirectoryFlags(
+		"yarn --cwd ./packages/app test",
+		Invocation{Executable: "yarn", Args: []string{"--cwd", "./packages/app", "test"}},
+	)
+	if got != "yarn --cwd ./packages/app test" {
+		t.Fatalf("RewriteDirectoryFlags(yarn) = %q, want the original run", got)
+	}
+	got = RewriteDirectoryFlags(
+		"cargo -C crate test > result.log",
+		Invocation{Executable: "cargo", Args: []string{"-C", "crate", "test"}},
+	)
+	if got != "cargo -C crate test > result.log" {
+		t.Fatalf("RewriteDirectoryFlags(redirect) = %q, want the original -C form", got)
+	}
+	got = RewriteDirectoryFlags(
+		"cargo -C crate test | tee result.log",
+		Invocation{Executable: "cargo", Args: []string{"-C", "crate", "test"}},
+	)
+	if got != "cargo -C crate test | tee result.log" {
+		t.Fatalf("RewriteDirectoryFlags(pipe) = %q, want the original -C form", got)
+	}
+}
+
+func TestWorkingDirectoryKeepsShellCwdForCargoRedirects(t *testing.T) {
+	t.Parallel()
+
+	inv := Invocation{Executable: "cargo", Args: []string{"-C", "crate", "test"}}
+	if got := WorkingDirectory("cargo -C crate test", inv); got != "crate" {
+		t.Fatalf("WorkingDirectory(simple) = %q, want crate", got)
+	}
+	if got := WorkingDirectory("cargo -C crate test > result.log", inv); got != "" {
+		t.Fatalf("WorkingDirectory(redirect) = %q, want empty so result.log stays at the shell cwd", got)
+	}
+	if got := WorkingDirectory("cargo -C crate test | tee result.log", inv); got != "" {
+		t.Fatalf("WorkingDirectory(pipe) = %q, want empty", got)
+	}
+
+	phpunit := Invocation{Executable: "phpunit"}
+	if got := WorkingDirectory("composer -d tools exec phpunit", phpunit); got != "tools" {
+		t.Fatalf("WorkingDirectory(composer exec) = %q, want tools after unwrap", got)
+	}
+}
+
+func TestStripDirectoryFlagsLeavesDynamicCargoPaths(t *testing.T) {
+	t.Parallel()
+
+	dir, got := StripDirectoryFlags(Invocation{
+		Executable: "cargo",
+		Args:       []string{"test", "--manifest-path", "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"},
+	})
+	if dir != "" {
+		t.Fatalf("dir = %q, want empty for a variable-valued manifest path", dir)
+	}
+	if !slices.Equal(got.Args, []string{"test", "--manifest-path", "$SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml"}) {
+		t.Fatalf("args = %v, want the original invocation", got.Args)
+	}
+
+	dir, got = StripDirectoryFlags(Invocation{
+		Executable: "cargo",
+		Args:       []string{"-C", "${{ matrix.crate }}", "test"},
+	})
+	if dir != "" {
+		t.Fatalf("dir = %q, want empty for an expression-valued -C", dir)
+	}
+	if !slices.Equal(got.Args, []string{"-C", "${{ matrix.crate }}", "test"}) {
+		t.Fatalf("args = %v, want the original invocation", got.Args)
+	}
+}
+
 func TestStripDirectoryFlagsRemovesYarnCwd(t *testing.T) {
 	t.Parallel()
 
@@ -605,6 +752,36 @@ func TestInterpretMatchesMixInvocations(t *testing.T) {
 	}
 }
 
+func TestInterpretMatchesCargoInvocations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		inv  Invocation
+		want []plan.Capability
+	}{
+		{inv: Invocation{Executable: "cargo", Args: []string{"test"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"+nightly", "test", "--locked"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"--locked", "test"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"--color", "always", "test"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"--offline", "--locked", "build", "--release"}}, want: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"build", "--release"}}, want: []plan.Capability{plan.CapabilityArtifactBuild}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"fetch"}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"clippy", "--", "-D", "warnings"}}, want: []plan.Capability{plan.CapabilityCodeLint}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"fmt", "--check"}}, want: []plan.Capability{plan.CapabilityCodeFormat}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"check"}}, want: []plan.Capability{plan.CapabilityCodeTypecheck}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"-Zunstable-options", "check"}}, want: []plan.Capability{plan.CapabilityCodeTypecheck}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"-Z", "unstable-options", "check"}}, want: []plan.Capability{plan.CapabilityCodeTypecheck}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"run"}}, want: []plan.Capability{plan.CapabilityApplicationRun}},
+		{inv: Invocation{Executable: "cargo", Args: []string{"nextest", "run"}}, want: []plan.Capability{plan.CapabilityTestRun}},
+	}
+	for _, tt := range tests {
+		got := capabilities(Interpret(tt.inv))
+		if !slices.Equal(got, tt.want) {
+			t.Fatalf("Interpret(%s %v) = %v, want %v", tt.inv.Executable, tt.inv.Args, got, tt.want)
+		}
+	}
+}
+
 func TestIsRemoteGoInstall(t *testing.T) {
 	t.Parallel()
 
@@ -630,6 +807,83 @@ func TestIsGoPlumbing(t *testing.T) {
 	}
 	if IsGoPlumbing(Invocation{Executable: "go", Args: []string{"test", "./..."}}) {
 		t.Fatal("IsGoPlumbing(go test) = true, want false")
+	}
+}
+
+func TestIsRemoteCargoInstall(t *testing.T) {
+	t.Parallel()
+
+	if !IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"install", "cargo-nextest"}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo install cargo-nextest) = false, want true")
+	}
+	if !IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"install", "--locked", "cargo-deny"}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo install --locked cargo-deny) = false, want true")
+	}
+	if !IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"--locked", "install", "cargo-nextest"}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo --locked install cargo-nextest) = false, want true")
+	}
+	if IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"install", "--path", "."}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo install --path .) = true, want false")
+	}
+	if IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"install"}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo install) = true, want false")
+	}
+	if IsRemoteCargoInstall(Invocation{Executable: "cargo", Args: []string{"test"}}) {
+		t.Fatal("IsRemoteCargoInstall(cargo test) = true, want false")
+	}
+}
+
+func TestIsRustPlumbing(t *testing.T) {
+	t.Parallel()
+
+	if !IsRustPlumbing(Invocation{Executable: "rustup", Args: []string{"update"}}) {
+		t.Fatal("IsRustPlumbing(rustup update) = false, want true")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"--version"}}) {
+		t.Fatal("IsRustPlumbing(cargo --version) = false, want true")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"version"}}) {
+		t.Fatal("IsRustPlumbing(cargo version) = false, want true")
+	}
+	if IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"test"}}) {
+		t.Fatal("IsRustPlumbing(cargo test) = true, want false")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"-V"}}) {
+		t.Fatal("IsRustPlumbing(cargo -V) = false, want true")
+	}
+	if IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"-v"}}) {
+		t.Fatal("IsRustPlumbing(cargo -v) = true, want false; -v is verbose")
+	}
+	if IsRustPlumbing(Invocation{Executable: "cargo", Args: []string{"test", "-v"}}) {
+		t.Fatal("IsRustPlumbing(cargo test -v) = true, want false")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "rustc", Args: []string{"-V"}}) {
+		t.Fatal("IsRustPlumbing(rustc -V) = false, want true")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "rustc", Args: []string{"-Vv"}}) {
+		t.Fatal("IsRustPlumbing(rustc -Vv) = false, want true")
+	}
+	if !IsRustPlumbing(Invocation{Executable: "rustc", Args: []string{"-vV"}}) {
+		t.Fatal("IsRustPlumbing(rustc -vV) = false, want true")
+	}
+	if IsRustPlumbing(Invocation{Executable: "rustc", Args: []string{"-v"}}) {
+		t.Fatal("IsRustPlumbing(rustc -v) = true, want false; -v is verbose")
+	}
+	if IsRustPlumbing(Invocation{Executable: "rustup", Args: []string{"run", "nightly", "cargo", "test"}}) {
+		t.Fatal("IsRustPlumbing(rustup run nightly cargo test) = true, want false")
+	}
+}
+
+func TestParseScriptUnwrapsRustupRun(t *testing.T) {
+	t.Parallel()
+
+	got := ParseScript("rustup run nightly cargo test --locked")
+	if len(got) != 1 || got[0].Executable != "cargo" || !slices.Equal(got[0].Args, []string{"test", "--locked"}) {
+		t.Fatalf("ParseScript(rustup run) = %+v, want cargo test --locked", got)
+	}
+	matches := Interpret(got[0])
+	if !slices.Equal(capabilities(matches), []plan.Capability{plan.CapabilityTestRun}) {
+		t.Fatalf("Interpret(unwrapped rustup run) = %v, want test.run", capabilities(matches))
 	}
 }
 

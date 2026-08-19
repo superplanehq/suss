@@ -574,6 +574,7 @@ Suss uses a provider model:
 ```text
 NodeProvider
 GoProvider
+RustProvider
 ElixirProvider
 RubyProvider
 PHPProvider
@@ -583,7 +584,7 @@ MakeProvider
 DockerComposeProvider
 ```
 
-Post-v0 providers include Python, Rust, JVM, and .NET.
+Post-v0 providers include Python, JVM, and .NET.
 
 Providers emit evidence-backed findings rather than directly producing a final plan.
 
@@ -664,6 +665,7 @@ The initial version should support:
 
 - Node.js and TypeScript;
 - Go;
+- Rust;
 - Elixir;
 - Ruby and Ruby on Rails;
 - PHP, Composer, Laravel, and Symfony;
@@ -675,7 +677,7 @@ The initial version should support:
 - common runtime-version files;
 - common test, lint, type-check, and build tools.
 
-Python and other ecosystems come after v0.
+Python and remaining ecosystems come after v0.
 
 ### Dogfood repositories and evaluation
 

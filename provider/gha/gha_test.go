@@ -136,6 +136,129 @@ jobs:
 	}
 }
 
+func TestDetectRewritesCargoDirectoryFlags(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: cargo test --manifest-path crates/tool/Cargo.toml --locked
+      - run: cargo -C crates/tool build
+`,
+	})
+
+	commands := commandByName(result)
+	testCmd := commands["cargo test"]
+	if testCmd.Directory != "." {
+		t.Fatalf("test directory = %q, want . so Cargo still reads the parent .cargo config", testCmd.Directory)
+	}
+	if deref(testCmd.Run) != "cargo test --manifest-path crates/tool/Cargo.toml --locked" {
+		t.Fatalf("test run = %q, want the original manifest-path invocation", deref(testCmd.Run))
+	}
+	if !commandHasCapability(testCmd, plan.CapabilityTestRun) {
+		t.Fatalf("test interpretations = %+v, want test.run", testCmd.Interpretations)
+	}
+	buildCmd := commands["cargo build"]
+	if buildCmd.Directory != "crates/tool" {
+		t.Fatalf("build directory = %q, want crates/tool", buildCmd.Directory)
+	}
+	if deref(buildCmd.Run) != "cargo build" {
+		t.Fatalf("build run = %q, want cargo build without -C", deref(buildCmd.Run))
+	}
+}
+
+func TestDetectPreservesCargoCWithShellRedirects(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crate/Cargo.toml": "[package]\nname = \"crate\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: cargo -C crate test > result.log
+`,
+	})
+
+	got := commandByName(result)["cargo test"]
+	if got.Directory != "." {
+		t.Fatalf("directory = %q, want . so result.log stays at the repository root", got.Directory)
+	}
+	if deref(got.Run) != "cargo -C crate test > result.log" {
+		t.Fatalf("run = %q, want the original -C redirect invocation", deref(got.Run))
+	}
+}
+
+func TestDetectComposesCargoDirectoryAndManifestPath(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: cargo -C crates/tool test --manifest-path Cargo.toml
+`,
+	})
+
+	commands := commandByName(result)
+	testCmd := commands["cargo test"]
+	if testCmd.Directory != "crates/tool" {
+		t.Fatalf("directory = %q, want crates/tool from -C plus a relative manifest path", testCmd.Directory)
+	}
+	if deref(testCmd.Run) != "cargo test --manifest-path Cargo.toml" {
+		t.Fatalf("run = %q, want cargo test with the manifest path kept after stripping -C", deref(testCmd.Run))
+	}
+}
+
+func TestDetectRewritesCargoDirectoryFlagsThroughRustup(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml
+`,
+	})
+
+	got := commandByName(result)["cargo test"]
+	if got.Directory != "." {
+		t.Fatalf("directory = %q, want . so Cargo still reads the parent .cargo config", got.Directory)
+	}
+	if deref(got.Run) != "rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml" {
+		t.Fatalf("run = %q, want the original rustup manifest-path invocation", deref(got.Run))
+	}
+}
+
+func TestDetectLeavesDynamicCargoManifestPathUnresolved(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - run: cargo test --manifest-path $SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml
+`,
+	})
+
+	got := commandByName(result)["cargo test"]
+	if got.Directory != "." {
+		t.Fatalf("directory = %q, want . for a variable-valued manifest path", got.Directory)
+	}
+	if deref(got.Run) != "cargo test --manifest-path $SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml" {
+		t.Fatalf("run = %q, want the original command", deref(got.Run))
+	}
+}
+
 func TestDetectAppliesYarnCwdToCommandDirectory(t *testing.T) {
 	t.Parallel()
 
@@ -317,6 +440,183 @@ jobs:
 
 	if hasRequirement(result, plan.RequirementRuntime, "php", "8.3.6") {
 		t.Fatal("setup-php php-version-file input was treated as a supported version pin")
+	}
+}
+
+func TestDetectReadsRustToolchainActionTag(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: dtolnay/rust-toolchain@1.81.0
+      - run: cargo test
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "rust", "1.81.0") {
+		t.Fatalf("missing rust 1.81.0 from action tag in %+v", result.Findings)
+	}
+	if commands := commandByName(result); deref(commands["cargo test"].Run) != "cargo test" {
+		t.Fatalf("commands = %+v, want cargo test", commands)
+	}
+}
+
+func TestDetectReadsRustToolchainFileAndSkipsRemoteInstalls(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.80.0\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        rust: ["1.80.0", "1.81.0"]
+    steps:
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - run: rustup component add clippy
+      - run: cargo install cargo-nextest
+      - run: cargo test --locked
+`,
+	})
+
+	if got := sortedCopy(runtimeRequirementVersions(result, "rust")); !slices.Equal(got, []string{"1.80.0", "1.81.0"}) {
+		t.Fatalf("Rust versions = %v, want matrix pins", got)
+	}
+	commands := commandByName(result)
+	if deref(commands["cargo test"].Run) != "cargo test --locked" {
+		t.Fatalf("commands = %+v, want cargo test --locked", commands)
+	}
+	if _, ok := commands["rustup component add"]; ok {
+		t.Fatalf("rustup was emitted as a repository command: %+v", result.Findings)
+	}
+	if _, ok := commands["cargo install"]; ok {
+		t.Fatalf("remote cargo install was emitted as a repository command: %+v", result.Findings)
+	}
+}
+
+func TestDetectRejectsRustToolchainActionSHA(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: dtolnay/rust-toolchain@0123456789abcdef0123456789abcdef01234567
+      - run: rustup run nightly cargo test
+      - run: rustc -V
+      - run: rustc -vV
+`,
+	})
+
+	versions := runtimeRequirementVersions(result, "rust")
+	if len(versions) != 1 || versions[0] != "" {
+		t.Fatalf("rust versions = %v, want one unversioned requirement", versions)
+	}
+	commands := commandByName(result)
+	if deref(commands["cargo test"].Run) != "rustup run nightly cargo test" {
+		t.Fatalf("commands = %+v, want rustup run nightly cargo test kept as cargo test", commands)
+	}
+	if _, ok := commands["rustc"]; ok {
+		t.Fatalf("rustc version probes were emitted as repository commands: %+v", result.Findings)
+	}
+}
+
+func TestDetectUsesSetupRustToolchainStableDefault(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.80.0\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+`,
+	})
+
+	versions := runtimeRequirementVersions(result, "rust")
+	if !slices.Contains(versions, "stable") {
+		t.Fatalf("rust versions = %v, want the action default stable", versions)
+	}
+	if slices.Contains(versions, "1.80.0") {
+		t.Fatalf("rust versions = %v, did not want the repository toolchain file", versions)
+	}
+}
+
+func TestDetectExpandsMatrixToolchainFile(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.80.0\"\n",
+		"ci/msrv.toml":        "[toolchain]\nchannel = \"1.74.0\"\n",
+		"ci/current.toml":     "[toolchain]\nchannel = \"1.81.0\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    strategy:
+      matrix:
+        toolchain_file: ["ci/msrv.toml", "ci/current.toml"]
+    steps:
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain-file: ${{ matrix.toolchain_file }}
+`,
+	})
+
+	got := sortedCopy(runtimeRequirementVersions(result, "rust"))
+	if !slices.Equal(got, []string{"1.74.0", "1.81.0"}) {
+		t.Fatalf("rust versions = %v, want matrix toolchain files", got)
+	}
+	if slices.Contains(got, "1.80.0") {
+		t.Fatalf("rust versions = %v, did not want the default rust-toolchain.toml", got)
+	}
+}
+
+func TestDetectLeavesUnresolvedToolchainFileExpression(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"1.80.0\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain-file: ${{ vars.TOOLCHAIN_FILE }}
+`,
+	})
+
+	versions := runtimeRequirementVersions(result, "rust")
+	if len(versions) != 1 || versions[0] != "" {
+		t.Fatalf("rust versions = %v, want one unresolved requirement", versions)
+	}
+}
+
+func TestDetectReadsRustToolchainFileInput(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"rust-toolchain.toml": "[toolchain]\nchannel = \"stable\"\n",
+		".github/workflows/ci.yml": `
+jobs:
+  test:
+    steps:
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain-file: rust-toolchain.toml
+`,
+	})
+
+	if !hasRequirement(result, plan.RequirementRuntime, "rust", "stable") {
+		t.Fatalf("missing rust stable from toolchain file in %+v", result.Findings)
 	}
 }
 

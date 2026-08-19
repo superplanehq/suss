@@ -19,6 +19,7 @@ import (
 	"github.com/superplanehq/suss/provider/node"
 	"github.com/superplanehq/suss/provider/php"
 	"github.com/superplanehq/suss/provider/ruby"
+	"github.com/superplanehq/suss/provider/rust"
 	"github.com/superplanehq/suss/provider/semaphore"
 	"github.com/superplanehq/suss/reconcile"
 )
@@ -26,6 +27,7 @@ import (
 var projectProviders = []provider.Provider{
 	node.Provider{},
 	golang.Provider{},
+	rust.Provider{},
 	elixir.Provider{},
 	ruby.Provider{},
 	php.Provider{},

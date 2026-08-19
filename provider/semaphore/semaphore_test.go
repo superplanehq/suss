@@ -82,6 +82,162 @@ after_pipeline:
 	}
 }
 
+func TestDetectAppliesCargoDirectoryFlags(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - cargo test --manifest-path crates/tool/Cargo.toml
+            - cargo -C crates/tool build
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["."], "cargo test --manifest-path crates/tool/Cargo.toml") {
+		t.Fatalf("commands = %v, want the original manifest-path command on the workspace root", commands)
+	}
+	if !slices.Contains(commands["crates/tool"], "cargo build") {
+		t.Fatalf("commands = %v, want cargo build attached to crates/tool without -C", commands)
+	}
+	if slices.Contains(commands["crates/tool"], "cargo test") {
+		t.Fatalf("commands = %v, did not want a rewritten manifest-path command on crates/tool", commands)
+	}
+}
+
+func TestDetectComposesCargoDirectoryAndManifestPath(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - cargo -C crates/tool test --manifest-path Cargo.toml
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["crates/tool"], "cargo test --manifest-path Cargo.toml") {
+		t.Fatalf("commands = %v, want cargo test on crates/tool with the manifest path kept", commands)
+	}
+	if slices.Contains(commands["."], "cargo test") || slices.Contains(commands["."], "cargo -C crates/tool test --manifest-path Cargo.toml") {
+		t.Fatalf("commands = %v, did not want the composed command on the workspace root", commands)
+	}
+}
+
+func TestDetectRewritesCargoDirectoryFlagsThroughRustup(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["."], "rustup run nightly cargo test --manifest-path crates/tool/Cargo.toml") {
+		t.Fatalf("commands = %v, want the original rustup manifest-path command on the workspace root", commands)
+	}
+}
+
+func TestDetectPreservesCargoCWithShellRedirects(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crate/Cargo.toml": "[package]\nname = \"crate\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - cargo -C crate test > result.log
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["."], "cargo -C crate test > result.log") {
+		t.Fatalf("commands = %v, want the original -C redirect command on the repository root", commands)
+	}
+	if slices.Contains(commands["crate"], "cargo test > result.log") || slices.Contains(commands["crate"], "cargo test") {
+		t.Fatalf("commands = %v, did not want a rewritten redirect on crate/", commands)
+	}
+}
+
+func TestDetectPreservesCargoFlagsWhenManifestDirectoryIsMissing(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - cargo test --manifest-path generated/tool/Cargo.toml
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["."], "cargo test --manifest-path generated/tool/Cargo.toml") {
+		t.Fatalf("commands = %v, want the original manifest-path command when the target directory is absent", commands)
+	}
+	if slices.Contains(commands["."], "cargo test") {
+		t.Fatalf("commands = %v, did not want cargo test rewritten onto the repository root", commands)
+	}
+}
+
+func TestDetectLeavesDynamicCargoManifestPathUnresolved(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"crates/tool/Cargo.toml": "[package]\nname = \"tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+		".semaphore/semaphore.yml": `version: v1.0
+name: CI
+blocks:
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit
+          commands:
+            - cargo test --manifest-path $SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml
+`,
+	})
+
+	commands := commandRuns(result)
+	if !slices.Contains(commands["."], "cargo test --manifest-path $SEMAPHORE_GIT_DIR/crates/tool/Cargo.toml") {
+		t.Fatalf("commands = %v, want the original dynamic manifest-path command on the workspace root", commands)
+	}
+	if slices.Contains(commands["crates/tool"], "cargo test") {
+		t.Fatalf("commands = %v, did not want a rewritten command on crates/tool", commands)
+	}
+}
+
 func TestDetectLeavesComplexShellProgramsUninterpreted(t *testing.T) {
 	t.Parallel()
 

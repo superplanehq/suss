@@ -106,6 +106,18 @@
           ]
         },
         {
+          "name": "ci.matrix.php",
+          "value": "8.4",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/release.yml",
+              "pointer": "/jobs/build/steps/2/with/php-version"
+            }
+          ]
+        },
+        {
           "name": "ci.matrix.postgres",
           "value": "postgres:${{ matrix.postgres-version }}",
           "confidence": "high",
@@ -223,11 +235,6 @@
               "kind": "declaration",
               "source": "composer.json",
               "pointer": "/require/php"
-            },
-            {
-              "kind": "invocation",
-              "source": ".github/workflows/release.yml",
-              "pointer": "/jobs/build/steps/2/with/php-version"
             }
           ]
         },

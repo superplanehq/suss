@@ -134,8 +134,7 @@ func invocationOf(command plan.Command) (knowledge.Invocation, bool) {
 		if statements[i].Invocation.Executable == "" {
 			continue
 		}
-		_, canonical := knowledge.StripDirectoryFlags(statements[i].Invocation)
-		return canonical, true
+		return knowledge.CanonicalInvocation(statements[i].Invocation), true
 	}
 	return knowledge.Invocation{}, false
 }

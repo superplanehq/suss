@@ -87,6 +87,9 @@ func Interpret(inv Invocation) []Match {
 	if executable == "" {
 		return nil
 	}
+	if executable == "cargo" {
+		inv.Args = normalizeCargoArgs(inv.Args)
+	}
 
 	bestLen := -1
 	var matches []Match
@@ -312,6 +315,7 @@ func parseInvocation(part string) (Invocation, bool) {
 	tokens := splitShell(part)
 	tokens = dropLeadingAssignments(tokens)
 	tokens = dropWrappers(tokens)
+	tokens = stripCargoToolchain(tokens)
 	if len(tokens) == 0 {
 		return Invocation{}, false
 	}
@@ -324,6 +328,14 @@ func parseInvocation(part string) (Invocation, bool) {
 }
 
 func splitShell(part string) []string {
+	return splitShellTokens(part, false)
+}
+
+func splitShellQuoted(part string) []string {
+	return splitShellTokens(part, true)
+}
+
+func splitShellTokens(part string, keepQuotes bool) []string {
 	var tokens []string
 	var current strings.Builder
 	inSingle, inDouble := false, false
@@ -359,8 +371,14 @@ func splitShell(part string) []string {
 		switch {
 		case r == '\'' && !inDouble:
 			inSingle = !inSingle
+			if keepQuotes {
+				current.WriteRune(r)
+			}
 		case r == '"' && !inSingle:
 			inDouble = !inDouble
+			if keepQuotes {
+				current.WriteRune(r)
+			}
 		case startsComment(inSingle, inDouble, current.String()) && r == '#':
 			flush()
 			return tokens
@@ -539,6 +557,10 @@ func dropWrappers(tokens []string) []string {
 		if len(tokens) >= 2 && tokens[1] == "x" {
 			return dropLeadingFlags(tokens[2:])
 		}
+	case "rustup":
+		if unwrapped := unwrapRustupRun(tokens); len(unwrapped) > 0 {
+			return dropWrappers(unwrapped)
+		}
 	}
 	return tokens
 }
@@ -664,6 +686,110 @@ func phpCLIOptionTakesValue(name string) bool {
 	default:
 		return false
 	}
+}
+
+func unwrapRustupRun(tokens []string) []string {
+	if len(tokens) == 0 || tokens[0] != "rustup" {
+		return nil
+	}
+	rest := dropLeadingFlags(tokens[1:])
+	if len(rest) < 3 || rest[0] != "run" {
+		return nil
+	}
+	return rest[2:]
+}
+
+func stripCargoToolchain(tokens []string) []string {
+	if len(tokens) < 2 || tokens[0] != "cargo" {
+		return tokens
+	}
+	selector := tokens[1]
+	if !strings.HasPrefix(selector, "+") || selector == "+" {
+		return tokens
+	}
+	out := make([]string, 0, len(tokens)-1)
+	out = append(out, "cargo")
+	return append(out, tokens[2:]...)
+}
+
+func normalizeCargoArgs(args []string) []string {
+	if len(args) > 0 && strings.HasPrefix(args[0], "+") && args[0] != "+" {
+		args = args[1:]
+	}
+	return stripCargoGlobalOptions(args)
+}
+
+func stripCargoGlobalOptions(args []string) []string {
+	i := 0
+	for i < len(args) {
+		arg := args[i]
+		if arg == "--" || !strings.HasPrefix(arg, "-") {
+			break
+		}
+		name, _, hasValue := strings.Cut(arg, "=")
+		if option, attached := cargoGlobalOptionName(name); option != "" {
+			if attached || hasValue {
+				i++
+				continue
+			}
+			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+				i += 2
+				continue
+			}
+			i++
+			continue
+		}
+		if isCargoGlobalOption(name) {
+			i++
+			continue
+		}
+		break
+	}
+	return args[i:]
+}
+
+func cargoGlobalOptionName(name string) (option string, attached bool) {
+	if cargoGlobalOptionTakesValue(name) {
+		return name, false
+	}
+	for _, short := range []string{"-Z", "-C"} {
+		if strings.HasPrefix(name, short) && len(name) > len(short) && !strings.HasPrefix(name, "--") {
+			return short, true
+		}
+	}
+	return "", false
+}
+
+func cargoGlobalOptionTakesValue(name string) bool {
+	switch name {
+	case "--color", "--config", "-Z", "-C", "--manifest-path", "--explain":
+		return true
+	default:
+		return false
+	}
+}
+
+func isCargoGlobalOption(name string) bool {
+	switch name {
+	case "--verbose", "--quiet", "-q", "--offline", "--locked", "--frozen":
+		return true
+	}
+	return isCargoVerboseFlag(name)
+}
+
+func isCargoVerboseFlag(name string) bool {
+	if name == "--verbose" {
+		return true
+	}
+	if !strings.HasPrefix(name, "-") || strings.HasPrefix(name, "--") || len(name) < 2 {
+		return false
+	}
+	for _, r := range name[1:] {
+		if r != 'v' {
+			return false
+		}
+	}
+	return true
 }
 
 func dropLeadingFlags(tokens []string) []string {

@@ -43,6 +43,9 @@ var toolCapabilities = map[string][]plan.Capability{
 	"php-cs-fixer":  {plan.CapabilityCodeFormat, plan.CapabilityCodeLint},
 	"phpcs":         {plan.CapabilityCodeLint},
 	"pint":          {plan.CapabilityCodeLint, plan.CapabilityCodeFormat},
+	"clippy":        {plan.CapabilityCodeLint},
+	"rustfmt":       {plan.CapabilityCodeFormat},
+	"nextest":       {plan.CapabilityTestRun},
 }
 
 type classifiedProjects struct {
@@ -354,36 +357,118 @@ func configuredWithoutCommandLines(project plan.ProjectPlan) []string {
 		if fact.Name != "tool.configured" {
 			continue
 		}
-		capabilities, ok := toolCapabilities[fact.Value]
-		if !ok {
+		if commandInvokesConfiguredTool(project, fact.Value) {
 			continue
 		}
-		if hasAnyCapability(project, capabilities) {
+		if _, ok := toolCapabilities[fact.Value]; ok {
+			lines = append(lines, fmt.Sprintf("%s is configured. No command that invokes it was found.", fact.Value))
 			continue
 		}
-		lines = append(lines, fmt.Sprintf("%s is configured. No command interpreted as %s was found.", fact.Value, joinCapabilities(capabilities)))
+		lines = append(lines, fmt.Sprintf("%s is configured.", fact.Value))
 	}
 	return lines
 }
 
-func hasAnyCapability(project plan.ProjectPlan, capabilities []plan.Capability) bool {
+func commandInvokesConfiguredTool(project plan.ProjectPlan, tool string) bool {
+	names := configuredToolInvocationNames(tool)
+	phrases := configuredToolMentionPhrases(tool)
 	commands := append(append([]plan.Command{}, project.Preparation...), project.Commands...)
 	for _, command := range commands {
-		for _, interpretation := range command.Interpretations {
-			if slices.Contains(capabilities, interpretation.Capability) {
-				return true
-			}
+		if commandTextInvokesConfiguredTool(command, names, phrases) {
+			return true
 		}
 	}
 	return false
 }
 
-func joinCapabilities(capabilities []plan.Capability) string {
-	parts := make([]string, 0, len(capabilities))
-	for _, capability := range capabilities {
-		parts = append(parts, string(capability))
+func commandTextInvokesConfiguredTool(command plan.Command, names, phrases []string) bool {
+	if textInvokesConfiguredTool(derefRun(command.Run), names) || textInvokesConfiguredTool(command.Name, names) {
+		return true
 	}
-	return strings.Join(parts, " or ")
+	if evidenceMentionsConfiguredTool(command.Evidence, names, phrases) {
+		return true
+	}
+	for _, interpretation := range command.Interpretations {
+		if evidenceMentionsConfiguredTool(interpretation.Evidence, names, phrases) {
+			return true
+		}
+	}
+	for _, variant := range command.Variants {
+		if textInvokesConfiguredTool(variant.Run, names) || evidenceMentionsConfiguredTool(variant.Evidence, names, phrases) {
+			return true
+		}
+	}
+	return false
+}
+
+func evidenceMentionsConfiguredTool(evidence []plan.Evidence, names, phrases []string) bool {
+	for _, item := range evidence {
+		if textInvokesConfiguredTool(item.Description, names) || textInvokesConfiguredTool(item.Pointer, names) {
+			return true
+		}
+		if descriptionMentionsConfiguredTool(item.Description, phrases) {
+			return true
+		}
+	}
+	return false
+}
+
+func configuredToolInvocationNames(tool string) []string {
+	switch tool {
+	case "nextest":
+		return []string{"nextest", "cargo-nextest"}
+	case "rustfmt":
+		return []string{"rustfmt", "fmt"}
+	case "cargo-deny":
+		return []string{"deny", "cargo-deny"}
+	default:
+		return []string{tool}
+	}
+}
+
+func configuredToolMentionPhrases(tool string) []string {
+	switch tool {
+	case "tsc":
+		return []string{"tsc", "typescript compiler"}
+	case "nextest":
+		return []string{"nextest", "cargo-nextest"}
+	case "cargo-deny":
+		return []string{"cargo-deny", "cargo deny"}
+	case "rustfmt":
+		return []string{"rustfmt"}
+	default:
+		return []string{strings.ToLower(tool)}
+	}
+}
+
+func textInvokesConfiguredTool(text string, names []string) bool {
+	for _, field := range strings.Fields(text) {
+		field = strings.Trim(field, `"'`)
+		if i := strings.LastIndexAny(field, `/\`); i >= 0 {
+			field = field[i+1:]
+		}
+		if slices.Contains(names, field) {
+			return true
+		}
+	}
+	return false
+}
+
+func descriptionMentionsConfiguredTool(description string, phrases []string) bool {
+	description = strings.ToLower(description)
+	for _, phrase := range phrases {
+		if phrase != "" && strings.Contains(description, phrase) {
+			return true
+		}
+	}
+	return false
+}
+
+func derefRun(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
 
 func writeEvidence(w io.Writer, project plan.ProjectPlan) {

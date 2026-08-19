@@ -153,6 +153,53 @@ func IsRemoteGoInstall(inv Invocation) bool {
 	return false
 }
 
+// IsRemoteCargoInstall reports whether inv installs a named crates.io or git
+// crate (`cargo install cargo-nextest`). Those provision CI tools. A path
+// install or a bare `cargo install` of the current package is kept.
+func IsRemoteCargoInstall(inv Invocation) bool {
+	if inv.Executable != "cargo" {
+		return false
+	}
+	args := normalizeCargoArgs(inv.Args)
+	if len(args) == 0 || args[0] != "install" {
+		return false
+	}
+	hasPath := false
+	hasRemoteSource := false
+	positional := 0
+	rest := args[1:]
+	for i := 0; i < len(rest); i++ {
+		arg := rest[i]
+		if arg == "--" {
+			positional += len(rest) - i - 1
+			break
+		}
+		name, value, hasValue := strings.Cut(arg, "=")
+		switch name {
+		case "--path":
+			hasPath = true
+			if !hasValue && i+1 < len(rest) {
+				i++
+			}
+			continue
+		case "--git", "--index", "--registry":
+			hasRemoteSource = true
+			if !hasValue && value == "" && i+1 < len(rest) && !strings.HasPrefix(rest[i+1], "-") {
+				i++
+			}
+			continue
+		}
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		positional++
+	}
+	if hasPath {
+		return false
+	}
+	return hasRemoteSource || positional > 0
+}
+
 // IsRemoteGemInstall reports whether inv installs named gems rather than a
 // local gem archive. Named gem installs in CI provision tools; they do not
 // install the repository's Bundler dependency set.
@@ -216,7 +263,7 @@ func IsGoPlumbing(inv Invocation) bool {
 // toolchain (the milestone 4 `go version` / `go env` precedent) rather than
 // a repository command.
 func IsToolPlumbing(inv Invocation) bool {
-	if IsGoPlumbing(inv) {
+	if IsGoPlumbing(inv) || IsRustPlumbing(inv) {
 		return true
 	}
 	switch inv.Executable {
@@ -238,6 +285,79 @@ func IsToolPlumbing(inv Invocation) bool {
 	default:
 		return false
 	}
+}
+
+// IsRustPlumbing reports whether inv is rustup/toolchain wiring or a
+// cargo/rustc version probe rather than a repository command.
+func IsRustPlumbing(inv Invocation) bool {
+	switch inv.Executable {
+	case "rustup-init":
+		return true
+	case "rustup":
+		return !isRustupRunWrapper(inv.Args)
+	case "cargo":
+		return isCargoVersionProbe(normalizeCargoArgs(inv.Args))
+	case "rustc":
+		return isRustcVersionProbe(inv.Args)
+	default:
+		return false
+	}
+}
+
+func isRustupRunWrapper(args []string) bool {
+	rest := dropLeadingFlags(args)
+	return len(rest) >= 3 && rest[0] == "run"
+}
+
+func isCargoVersionProbe(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if strings.HasPrefix(arg, "-") {
+			name, _, _ := strings.Cut(arg, "=")
+			switch name {
+			case "--version", "-V", "--help", "-h":
+				return true
+			default:
+				// cargo -v / --verbose is not a version probe.
+				continue
+			}
+		}
+		switch arg {
+		case "version", "help":
+			return true
+		default:
+			return false
+		}
+	}
+	return false
+}
+
+func isRustcVersionProbe(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if !strings.HasPrefix(arg, "-") {
+			return false
+		}
+		name, _, _ := strings.Cut(arg, "=")
+		if name == "--version" || name == "--help" || name == "-h" {
+			return true
+		}
+		if rustcShortFlagHasVersion(name) {
+			return true
+		}
+	}
+	return false
+}
+
+func rustcShortFlagHasVersion(name string) bool {
+	if !strings.HasPrefix(name, "-") || strings.HasPrefix(name, "--") {
+		return false
+	}
+	return strings.ContainsRune(name, 'V')
 }
 
 func isDockerPlumbing(args []string) bool {
