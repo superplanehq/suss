@@ -83,7 +83,8 @@ const (
 
 func matchExistingRuntime(project plan.ProjectPlan, indexes []int, version string) (int, runtimeMatchKind) {
 	for _, index := range indexes {
-		if sameRelease(project.Requirements[index].Version, version) {
+		requirement := project.Requirements[index]
+		if sameRuntimeRelease(requirement.Name, requirement.Version, version) {
 			return index, runtimeEqual
 		}
 	}
@@ -98,6 +99,35 @@ func matchExistingRuntime(project plan.ProjectPlan, indexes []int, version strin
 		return index, kind
 	}
 	return indexes[0], runtimeMatrixExtra
+}
+
+func sameRuntimeRelease(runtime, declared, observed string) bool {
+	if sameRelease(declared, observed) {
+		return true
+	}
+	if runtime != "node" {
+		return false
+	}
+	return numericSelectorMatches(declared, observed) || numericSelectorMatches(observed, declared)
+}
+
+func numericSelectorMatches(selector, release string) bool {
+	selector = normalizeVersion(selector)
+	release = normalizeVersion(release)
+	if !comparableVersion(selector) || !comparableVersion(release) {
+		return false
+	}
+	selectorParts := strings.Split(selector, ".")
+	releaseParts := strings.Split(release, ".")
+	if len(selectorParts) >= len(releaseParts) {
+		return false
+	}
+	for i, part := range selectorParts {
+		if part != releaseParts[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func partitionRuntimeIndexes(project plan.ProjectPlan, indexes []int) (exact, ranges []int) {

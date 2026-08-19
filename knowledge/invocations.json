@@ -224,12 +224,13 @@
       "description": "The command formats Go source with gofmt."
     },
     {
-      "id": "go-get",
+      "id": "go-get-download",
       "executable": "go",
       "argsPrefix": ["get"],
+      "argsContains": ["-d"],
       "capabilities": ["dependencies.install"],
       "confidence": "high",
-      "description": "The command fetches Go dependencies with go get."
+      "description": "The command downloads Go dependencies with go get -d."
     },
     {
       "id": "mix-deps-get",

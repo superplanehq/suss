@@ -185,6 +185,91 @@ func TestDetectCapturesInlineRecipes(t *testing.T) {
 	}
 }
 
+func TestDetectDoesNotGiveAWrapperThePurposeOfOneIncidentalCommand(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Makefile": "" +
+			"generate-openapi:\n" +
+			"\tgo test ./pkg/tests/apis || true\n" +
+			"\tyarn workspace @acme/openapi process-specs\n",
+	})
+
+	command := commandByName(result)["generate-openapi"]
+	if len(command.Interpretations) != 0 {
+		t.Fatalf("generate-openapi interpretations = %+v, want none because the test invocation is incidental", command.Interpretations)
+	}
+}
+
+func TestDetectKeepsRecognizedRecipeEvidenceBesideUnknownSetupCommands(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Makefile": "" +
+			"bootstrap:\n" +
+			"\tmix deps.get\n" +
+			"\tmix ecto.create\n",
+	})
+
+	command := commandByName(result)["bootstrap"]
+	if !hasCapability(command, plan.CapabilityDependenciesInstall) {
+		t.Fatalf("bootstrap interpretations = %+v, want dependency installation from mix deps.get", command.Interpretations)
+	}
+}
+
+func TestDetectInterpretsAggregateTargetsFromPrerequisiteRecipes(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Makefile": "" +
+			"deps: deps-go deps-js\n" +
+			"deps-go:\n" +
+			"\tgo mod download\n" +
+			"deps-js:\n" +
+			"\tyarn install --immutable\n" +
+			"build: build-go build-js\n" +
+			"build-go:\n" +
+			"\tgo build ./...\n" +
+			"build-js:\n" +
+			"\tyarn run build\n" +
+			"test: test-go test-js\n" +
+			"test-go:\n" +
+			"\tgo test ./...\n" +
+			"test-js:\n" +
+			"\tyarn run test\n",
+	})
+
+	commands := commandByName(result)
+	for name, capability := range map[string]plan.Capability{
+		"deps":  plan.CapabilityDependenciesInstall,
+		"build": plan.CapabilityArtifactBuild,
+		"test":  plan.CapabilityTestRun,
+	} {
+		if !hasCapability(commands[name], capability) {
+			t.Fatalf("%s interpretations = %+v, want %s", name, commands[name].Interpretations, capability)
+		}
+	}
+}
+
+func TestDetectDoesNotInterpretTargetsFromNamesAlone(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Makefile": "" +
+			"install:\n" +
+			"test: unknown-prerequisite\n" +
+			"run:\n" +
+			"\tair\n",
+	})
+
+	for _, name := range []string{"install", "test", "run"} {
+		command := commandByName(result)[name]
+		if len(command.Interpretations) != 0 {
+			t.Fatalf("%s interpretations = %+v, want none without recipe evidence", name, command.Interpretations)
+		}
+	}
+}
+
 func TestDetectIgnoresMakeFunctionStatements(t *testing.T) {
 	t.Parallel()
 

@@ -905,7 +905,8 @@ func TestInterpretMatchesGoToolchainInvocations(t *testing.T) {
 		{inv: Invocation{Executable: "go", Args: []string{"mod", "download"}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
 		{inv: Invocation{Executable: "golangci-lint", Args: []string{"run", "--verbose"}}, want: []plan.Capability{plan.CapabilityCodeLint}},
 		{inv: Invocation{Executable: "gofmt", Args: []string{"-l", "."}}, want: []plan.Capability{plan.CapabilityCodeFormat}},
-		{inv: Invocation{Executable: "go", Args: []string{"get", "-v", "./..."}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
+		{inv: Invocation{Executable: "go", Args: []string{"get", "-v", "./..."}}, want: nil},
+		{inv: Invocation{Executable: "go", Args: []string{"get", "-v", "-t", "-d", "./..."}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
 	}
 	for _, tt := range tests {
 		got := capabilities(Interpret(tt.inv))

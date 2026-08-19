@@ -109,31 +109,34 @@
       ],
       "preparation": [
         {
-          "id": "cmd_73e78b236bbdb1935bfe2220f7427b85",
-          "name": "install_deps",
-          "run": "make install_deps",
+          "id": "cmd_3c33ddd10248e94f1b03d746409efbc8",
+          "name": "download dependencies",
+          "run": "go mod download",
           "directory": ".",
           "scope": "project",
-          "origin": "declared",
-          "confidence": "high",
+          "origin": "inferred",
+          "confidence": "medium",
           "evidence": [
             {
-              "kind": "declaration",
-              "source": "Makefile",
-              "pointer": "/targets/install_deps",
-              "description": "The target recipe invokes go."
+              "kind": "file",
+              "source": "go.mod"
+            },
+            {
+              "kind": "convention",
+              "source": "go-ecosystem",
+              "pointer": "dependencies",
+              "description": "Go modules conventionally download dependencies with go mod download."
             }
           ],
           "interpretations": [
             {
               "capability": "dependencies.install",
-              "confidence": "high",
+              "confidence": "medium",
               "evidence": [
                 {
-                  "kind": "declaration",
-                  "source": "Makefile",
-                  "pointer": "/targets/install_deps",
-                  "description": "The command fetches Go dependencies with go get."
+                  "kind": "convention",
+                  "source": "go-ecosystem",
+                  "pointer": "dependencies"
                 }
               ]
             }
@@ -171,6 +174,25 @@
               ]
             }
           ],
+          "variants": []
+        },
+        {
+          "id": "cmd_73e78b236bbdb1935bfe2220f7427b85",
+          "name": "install_deps",
+          "run": "make install_deps",
+          "directory": ".",
+          "scope": "project",
+          "origin": "declared",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "Makefile",
+              "pointer": "/targets/install_deps",
+              "description": "The target recipe invokes go."
+            }
+          ],
+          "interpretations": [],
           "variants": []
         },
         {
@@ -226,7 +248,20 @@
               "pointer": "/targets/all"
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/test",
+                  "description": "The command runs Go tests."
+                }
+              ]
+            }
+          ],
           "variants": []
         },
         {
@@ -343,7 +378,20 @@
               "pointer": "/targets/default"
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "high",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/test",
+                  "description": "The command runs Go tests."
+                }
+              ]
+            }
+          ],
           "variants": []
         },
         {

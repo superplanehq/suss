@@ -12,12 +12,17 @@ import (
 	"github.com/superplanehq/suss/plan"
 )
 
+const detailedProjectLimit = 20
+
 // Options control labels that are not stored in the document itself.
 type Options struct {
-	Providers         []string
-	RepositoryName    string
-	ShowUninterpreted bool
-	ShowEvidence      bool
+	Providers           []string
+	RepositoryName      string
+	ShowAllCommands     bool
+	ShowAllProjects     bool
+	ShowAllEnvironments bool
+	ShowUninterpreted   bool
+	ShowEvidence        bool
 }
 
 // toolCapabilities maps configured-tool fact values to the capabilities that
@@ -59,39 +64,70 @@ var toolCapabilities = map[string][]plan.Capability{
 }
 
 type classifiedProjects struct {
-	primary         []plan.ProjectPlan
-	examples        []plan.ProjectPlan
-	omittedFixtures int
+	primary  []plan.ProjectPlan
+	examples []plan.ProjectPlan
+	fixtures []plan.ProjectPlan
 }
 
 // Write prints a human-readable rendering of document.
 func Write(w io.Writer, document plan.Document, opts Options) {
-	classified := classifyProjects(document.Projects)
-	writePreface(w, len(classified.primary), classified.omittedFixtures)
-
 	if len(document.Projects) == 0 {
 		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, Cargo.toml, mix.exs, Gemfile, composer.json, pyproject.toml, Makefile, and .env.example.")
 		return
 	}
+	if opts.ShowAllProjects {
+		writePreface(w, len(document.Projects), 0)
+		writeProjects(w, document.Projects, opts)
+		return
+	}
+
+	classified := classifyProjects(document.Projects)
+	writePreface(w, len(classified.primary), len(classified.fixtures))
 	if len(classified.primary) == 0 && len(classified.examples) == 0 {
 		fmt.Fprintln(w, "No non-fixture project roots were detected.")
 		return
 	}
 
-	visible := classified.primary
+	visible, summarizedProjects := detailedProjects(classified.primary)
 	if len(visible) == 0 {
 		visible = classified.examples
 	}
-	for i, project := range visible {
+	writeProjects(w, visible, opts)
+	if len(classified.primary) > 0 {
+		writeExampleIndex(w, classified.examples)
+	}
+	writeProjectSummary(w, summarizedProjects)
+}
+
+func writeProjects(w io.Writer, projects []plan.ProjectPlan, opts Options) {
+	for i, project := range projects {
 		if i > 0 {
 			fmt.Fprintln(w)
 			fmt.Fprintln(w)
 		}
 		writeProject(w, project, opts)
 	}
-	if len(classified.primary) > 0 {
-		writeExampleIndex(w, classified.examples)
+}
+
+func detailedProjects(projects []plan.ProjectPlan) ([]plan.ProjectPlan, int) {
+	if len(projects) <= detailedProjectLimit {
+		return projects, 0
 	}
+	for _, project := range projects {
+		if project.Path == "." && project.HasWorkspaceOrchestrator() {
+			return []plan.ProjectPlan{project}, len(projects) - 1
+		}
+	}
+	return projects, 0
+}
+
+func writeProjectSummary(w io.Writer, count int) {
+	if count == 0 {
+		return
+	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "%d additional projects detected; use --all-projects to inspect.\n", count)
 }
 
 func classifyProjects(projects []plan.ProjectPlan) classifiedProjects {
@@ -103,7 +139,7 @@ func classifyProjects(projects []plan.ProjectPlan) classifiedProjects {
 			continue
 		}
 		if confidence == plan.ConfidenceHigh {
-			classified.omittedFixtures++
+			classified.fixtures = append(classified.fixtures, project)
 			continue
 		}
 		classified.examples = append(classified.examples, project)
@@ -123,11 +159,11 @@ func fixtureRole(project plan.ProjectPlan) (plan.Confidence, bool) {
 func writePreface(w io.Writer, primaryCount, omittedFixtures int) {
 	switch {
 	case primaryCount > 1 && omittedFixtures > 0:
-		fmt.Fprintf(w, "Projects: %d (%d %s omitted; use --json to inspect)\n\n", primaryCount, omittedFixtures, fixtureNoun(omittedFixtures))
+		fmt.Fprintf(w, "Projects: %d (%d %s omitted; use --all-projects to inspect)\n\n", primaryCount, omittedFixtures, fixtureNoun(omittedFixtures))
 	case primaryCount > 1:
 		fmt.Fprintf(w, "Projects: %d\n\n", primaryCount)
 	case omittedFixtures > 0:
-		fmt.Fprintf(w, "%d %s omitted; use --json to inspect\n\n", omittedFixtures, fixtureNoun(omittedFixtures))
+		fmt.Fprintf(w, "%d %s omitted; use --all-projects to inspect\n\n", omittedFixtures, fixtureNoun(omittedFixtures))
 	}
 }
 
@@ -160,12 +196,22 @@ func writeProject(w io.Writer, project plan.ProjectPlan, opts Options) {
 		return
 	}
 
-	writeActionableCommands(w, project)
+	displayedProject, composeEnvironments := summarizeComposeEnvironments(project)
+	if opts.ShowAllCommands {
+		writeAllActionableCommands(w, displayedProject)
+	} else {
+		writeCompactActionableCommands(w, displayedProject)
+	}
+	if opts.ShowAllEnvironments {
+		writeAllComposeEnvironments(w, composeEnvironments)
+	} else {
+		writeComposeEnvironmentPreview(w, composeEnvironments)
+	}
 	writeAttentionItems(w, project.Ambiguities, project.Conflicts)
 	if opts.ShowUninterpreted {
-		writeUninterpretedCommands(w, project.Path, project.Commands)
+		writeUninterpretedCommands(w, displayedProject.Path, displayedProject.Commands)
 	}
-	writeProjectDetails(w, project)
+	writeProjectDetails(w, displayedProject)
 	if opts.ShowEvidence {
 		writeEvidence(w, project)
 	}

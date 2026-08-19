@@ -63,6 +63,9 @@ chalk
 
 ```text
 suss .
+suss . --all-commands
+suss . --all-projects
+suss . --all-environments
 suss . --uninterpreted --evidence
 suss . --json
 suss path/to/repo
@@ -72,6 +75,9 @@ By default, Suss prints a human-readable plan.
 
 ### Flags
 
+- `--all-commands` expands compact command summaries and prints every interpreted command.
+- `--all-projects` expands compact project summaries and includes fixture projects.
+- `--all-environments` expands Compose summaries with every environment, service, and variable name.
 - `--uninterpreted` prints all commands that Suss found but could not reliably explain.
 - `--evidence` prints the source files that support the results.
 - `--json` prints the versioned JSON document for machine consumption.

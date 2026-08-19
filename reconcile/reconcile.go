@@ -134,15 +134,15 @@ func Apply(projects []plan.ProjectPlan, repo provider.Result) []plan.ProjectPlan
 	for _, finding := range repo.Findings {
 		switch item := finding.(type) {
 		case plan.CommandFinding:
-			projects = applyCommand(projects, item.Command)
+			projects = applyCommand(projects, item)
 		case plan.RequirementFinding:
 			if item.Requirement.Kind == plan.RequirementRuntime {
 				runtimes = append(runtimes, runtimeObservation{dir: item.ProjectPath, requirement: item.Requirement})
 				continue
 			}
-			projects = applyRequirement(projects, item.ProjectPath, item.Requirement)
+			projects = applyRequirement(projects, item)
 		case plan.PropertyFinding:
-			projects = applyProperty(projects, item.ProjectPath, item.Property)
+			projects = applyProperty(projects, item)
 		}
 	}
 	projects = applyRuntimes(projects, runtimes)
@@ -154,8 +154,13 @@ func Apply(projects []plan.ProjectPlan, repo provider.Result) []plan.ProjectPlan
 	return projects
 }
 
-func applyCommand(projects []plan.ProjectPlan, observed plan.Command) []plan.ProjectPlan {
-	projects, index := ensureProject(projects, observed.Directory)
+func applyCommand(projects []plan.ProjectPlan, finding plan.CommandFinding) []plan.ProjectPlan {
+	observed := finding.Command
+	dir := finding.ProjectPath
+	if dir == "" {
+		dir = observed.Directory
+	}
+	projects, index := ensureProject(projects, dir)
 	project := &projects[index]
 
 	switch outcome := match(observed, existingCommands(*project)); outcome.kind {
@@ -174,8 +179,9 @@ func applyCommand(projects []plan.ProjectPlan, observed plan.Command) []plan.Pro
 	return projects
 }
 
-func applyRequirement(projects []plan.ProjectPlan, dir string, requirement plan.Requirement) []plan.ProjectPlan {
-	projects, index := ensureProject(projects, dir)
+func applyRequirement(projects []plan.ProjectPlan, finding plan.RequirementFinding) []plan.ProjectPlan {
+	requirement := finding.Requirement
+	projects, index := ensureProject(projects, finding.ProjectPath)
 	project := &projects[index]
 	for i, existing := range project.Requirements {
 		if !sameRequirement(existing, requirement) {
@@ -192,9 +198,9 @@ func applyRequirement(projects []plan.ProjectPlan, dir string, requirement plan.
 	return projects
 }
 
-func applyProperty(projects []plan.ProjectPlan, dir string, property plan.Property) []plan.ProjectPlan {
-	projects, index := ensureProject(projects, dir)
-	applyAssembledProperty(&projects[index], property)
+func applyProperty(projects []plan.ProjectPlan, finding plan.PropertyFinding) []plan.ProjectPlan {
+	projects, index := ensureProject(projects, finding.ProjectPath)
+	applyAssembledProperty(&projects[index], finding.Property)
 	return projects
 }
 

@@ -50,8 +50,9 @@ func (Provider) Detect(ctx provider.Context) (provider.Result, error) {
 		result.Findings = append(result.Findings, limitationFinding(ctx, source, limitation))
 	}
 
+	interpreter := newTargetInterpreter(source, parsed.targets)
 	for _, target := range parsed.targets {
-		command, err := declaredTarget(ctx, source, target)
+		command, err := declaredTarget(ctx, source, target, interpreter.interpret(target.Name))
 		if err != nil {
 			return provider.Result{}, err
 		}
@@ -79,7 +80,7 @@ func readMakefile(ctx provider.Context) (string, string, bool, error) {
 	return "", "", false, nil
 }
 
-func declaredTarget(ctx provider.Context, source string, target makeTarget) (plan.Command, error) {
+func declaredTarget(ctx provider.Context, source string, target makeTarget, interpretations []plan.Interpretation) (plan.Command, error) {
 	pointer := jsonPointer("targets", target.Name)
 	id, err := plan.NewCommandID(plan.CommandIdentity{
 		ProjectPath: ctx.ProjectPath,
@@ -101,7 +102,7 @@ func declaredTarget(ctx provider.Context, source string, target makeTarget) (pla
 		Origin:          plan.CommandDeclared,
 		Confidence:      plan.ConfidenceHigh,
 		Evidence:        targetEvidence(source, pointer, target.Recipe),
-		Interpretations: recipeInterpretations(source, pointer, target.Recipe),
+		Interpretations: interpretations,
 		Variants:        []plan.CommandVariant{},
 	}, nil
 }
@@ -154,11 +155,54 @@ func joinAnd(names []string) string {
 	return strings.Join(names[:len(names)-1], ", ") + ", and " + names[len(names)-1]
 }
 
+type targetInterpreter struct {
+	source   string
+	targets  map[string]makeTarget
+	cache    map[string][]plan.Interpretation
+	visiting map[string]bool
+}
+
+func newTargetInterpreter(source string, targets []makeTarget) *targetInterpreter {
+	byName := make(map[string]makeTarget, len(targets))
+	for _, target := range targets {
+		byName[target.Name] = target
+	}
+	return &targetInterpreter{
+		source:   source,
+		targets:  byName,
+		cache:    make(map[string][]plan.Interpretation),
+		visiting: make(map[string]bool),
+	}
+}
+
+func (i *targetInterpreter) interpret(name string) []plan.Interpretation {
+	if cached, ok := i.cache[name]; ok {
+		return cached
+	}
+	if i.visiting[name] {
+		return []plan.Interpretation{}
+	}
+	target, ok := i.targets[name]
+	if !ok {
+		return []plan.Interpretation{}
+	}
+
+	i.visiting[name] = true
+	interpretations := recipeInterpretations(i.source, jsonPointer("targets", name), target.Recipe)
+	for _, prerequisite := range target.Prerequisites {
+		interpretations = appendUniqueInterpretations(interpretations, i.interpret(prerequisite))
+	}
+	delete(i.visiting, name)
+	i.cache[name] = interpretations
+	return interpretations
+}
+
 func recipeInterpretations(source, pointer, recipe string) []plan.Interpretation {
-	matches := knowledge.InterpretScript(recipe)
+	matches := interpretableRecipeMatches(recipe)
 	if len(matches) == 0 {
 		return []plan.Interpretation{}
 	}
+
 	interpretations := make([]plan.Interpretation, 0, len(matches))
 	for _, match := range matches {
 		interpretations = append(interpretations, plan.Interpretation{
@@ -173,6 +217,46 @@ func recipeInterpretations(source, pointer, recipe string) []plan.Interpretation
 		})
 	}
 	return interpretations
+}
+
+func appendUniqueInterpretations(existing, incoming []plan.Interpretation) []plan.Interpretation {
+	for _, candidate := range incoming {
+		found := false
+		for _, current := range existing {
+			if current.Capability == candidate.Capability {
+				found = true
+				break
+			}
+		}
+		if !found {
+			existing = append(existing, candidate)
+		}
+	}
+	return existing
+}
+
+func interpretableRecipeMatches(recipe string) []knowledge.Match {
+	var matches []knowledge.Match
+	for _, line := range strings.Split(recipe, "\n") {
+		if ignored, _, found := strings.Cut(line, "|| true"); found && len(knowledge.InterpretScript(ignored)) > 0 {
+			continue
+		}
+		matches = append(matches, knowledge.InterpretScript(line)...)
+	}
+	return uniqueRecipeCapabilities(matches)
+}
+
+func uniqueRecipeCapabilities(matches []knowledge.Match) []knowledge.Match {
+	unique := make([]knowledge.Match, 0, len(matches))
+	seen := make(map[plan.Capability]struct{}, len(matches))
+	for _, match := range matches {
+		if _, ok := seen[match.Capability]; ok {
+			continue
+		}
+		seen[match.Capability] = struct{}{}
+		unique = append(unique, match)
+	}
+	return unique
 }
 
 func toolFinding(ctx provider.Context, source, name string) plan.Finding {

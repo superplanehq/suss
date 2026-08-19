@@ -18,8 +18,9 @@ type makefile struct {
 }
 
 type makeTarget struct {
-	Name   string
-	Recipe string
+	Name          string
+	Prerequisites []string
+	Recipe        string
 }
 
 type lineKind int
@@ -109,7 +110,7 @@ func parseMakefile(contents string) makefile {
 }
 
 func (m *makefile) addTargets(header string) []int {
-	namePart, _, _ := strings.Cut(header, ":")
+	namePart, prerequisites := ruleParts(header)
 	namePart = strings.TrimSpace(namePart)
 	namePart = strings.TrimSuffix(namePart, ":")
 	var indexes []int
@@ -117,9 +118,28 @@ func (m *makefile) addTargets(header string) []int {
 		if name == "" {
 			continue
 		}
-		indexes = append(indexes, m.upsertTarget(name))
+		index := m.upsertTarget(name)
+		m.targets[index].Prerequisites = append(m.targets[index].Prerequisites, prerequisites...)
+		indexes = append(indexes, index)
 	}
 	return indexes
+}
+
+func ruleParts(header string) (string, []string) {
+	declaration, _, _ := strings.Cut(header, ";")
+	namePart, prerequisitePart, _ := strings.Cut(declaration, ":")
+	prerequisitePart = strings.TrimPrefix(prerequisitePart, ":")
+	if beforeComment, _, found := strings.Cut(prerequisitePart, "#"); found {
+		prerequisitePart = beforeComment
+	}
+
+	var prerequisites []string
+	for _, prerequisite := range strings.Fields(prerequisitePart) {
+		if prerequisite != "|" {
+			prerequisites = append(prerequisites, prerequisite)
+		}
+	}
+	return namePart, prerequisites
 }
 
 func (m *makefile) upsertTarget(name string) int {
@@ -189,13 +209,17 @@ func (m *makefile) expandTargets() {
 	for _, target := range m.targets {
 		name := strings.TrimSpace(m.expand(target.Name))
 		recipe := m.expand(target.Recipe)
+		var prerequisites []string
+		for _, prerequisite := range target.Prerequisites {
+			prerequisites = append(prerequisites, strings.Fields(m.expand(prerequisite))...)
+		}
 		if usesDocker(recipe) {
 			m.usesDocker = true
 		}
 		if skipTarget(name) {
 			continue
 		}
-		kept = append(kept, makeTarget{Name: name, Recipe: recipe})
+		kept = append(kept, makeTarget{Name: name, Prerequisites: prerequisites, Recipe: recipe})
 	}
 	m.targets = kept
 }

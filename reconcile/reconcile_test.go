@@ -123,6 +123,36 @@ func TestApplyPutsComposeUpInPreparation(t *testing.T) {
 	}
 }
 
+func TestApplyAttachesNestedComposeFindingsToTheCoveringProject(t *testing.T) {
+	t.Parallel()
+
+	up := command(t, "compose", "dev/postgres", "/#up", "start services", "docker compose up -d", plan.CommandInferred, "")
+	up.Evidence = []plan.Evidence{{Kind: plan.EvidenceFile, Source: "dev/postgres/compose.yaml"}}
+	service := plan.Requirement{
+		Kind:       plan.RequirementService,
+		Name:       "postgres",
+		Version:    "16",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "dev/postgres/compose.yaml", Pointer: "/services/postgres/image"}},
+	}
+
+	root := plan.NewProjectPlan(".")
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{Findings: []plan.Finding{
+		plan.CommandFinding{ProjectPath: "dev/postgres", Detector: "compose", Command: up},
+		plan.RequirementFinding{ProjectPath: "dev/postgres", Detector: "compose", Requirement: service},
+	}})
+
+	if len(got) != 1 {
+		t.Fatalf("projects = %+v, want only discovered project roots", got)
+	}
+	if len(got[0].Preparation) != 1 || len(got[0].Requirements) != 1 {
+		t.Fatalf("root = %+v, want nested Compose findings on the covering root", got[0])
+	}
+	if got[0].Preparation[0].Directory != "dev/postgres" {
+		t.Fatalf("preparation = %+v, want the Compose working directory preserved", got[0].Preparation)
+	}
+}
+
 func TestApplyLinksCIComposeUpAsAVariant(t *testing.T) {
 	t.Parallel()
 
@@ -265,6 +295,36 @@ func TestApplyMergesMatchingCIRuntimeEvidence(t *testing.T) {
 	}
 	if len(got[0].Requirements[0].Evidence) != 2 {
 		t.Fatalf("evidence = %+v, want declaration and invocation", got[0].Requirements[0].Evidence)
+	}
+}
+
+func TestApplyMatchesANodeMajorSelectorToADeclaredPatchPin(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{
+		{
+			Kind:       plan.RequirementRuntime,
+			Name:       "node",
+			Version:    "v24.11.0",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: ".nvmrc"}},
+		},
+		{
+			Kind:       plan.RequirementRuntime,
+			Name:       "node",
+			Version:    ">= 22 <25",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json", Pointer: "/engines/node"}},
+		},
+	}
+
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{Findings: []plan.Finding{ciNode("24")}})
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want Node 24 to conflict with v24.11.0", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("pin evidence = %+v, want .nvmrc plus the CI selector", got[0].Requirements[0].Evidence)
 	}
 }
 

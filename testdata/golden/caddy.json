@@ -261,7 +261,7 @@
                   "kind": "invocation",
                   "source": ".github/workflows/ci.yml",
                   "pointer": "/jobs/test/steps/4/run",
-                  "description": "The command fetches Go dependencies with go get."
+                  "description": "The command downloads Go dependencies with go get -d."
                 }
               ]
             }
