@@ -105,10 +105,6 @@
             {
               "kind": "file",
               "source": "Makefile"
-            },
-            {
-              "kind": "file",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml"
             }
           ]
         },
@@ -120,71 +116,6 @@
             {
               "kind": "file",
               "source": "Makefile"
-            }
-          ]
-        },
-        {
-          "kind": "service",
-          "name": "app",
-          "version": "__SUPERPLANE_VERSION__",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/app/image"
-            }
-          ]
-        },
-        {
-          "kind": "service",
-          "name": "caddy",
-          "version": "2",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/caddy/image"
-            }
-          ]
-        },
-        {
-          "kind": "service",
-          "name": "db",
-          "version": "17.5",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/db/image"
-            }
-          ]
-        },
-        {
-          "kind": "service",
-          "name": "rabbitmq",
-          "version": "3.8.17-management-alpine",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/rabbitmq/image"
-            }
-          ]
-        },
-        {
-          "kind": "service",
-          "name": "supergit",
-          "version": "0.1.1",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/supergit/image"
             }
           ]
         },
@@ -242,48 +173,6 @@
         },
         {
           "kind": "environment",
-          "name": "OIDC_KEYS_CONTAINER_PATH",
-          "isRequired": true,
-          "hasDefault": true,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/app/volumes/0"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
-          "name": "OIDC_KEYS_HOST_PATH",
-          "isRequired": true,
-          "hasDefault": true,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/app/volumes/0"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
-          "name": "PGDATA",
-          "isRequired": true,
-          "hasDefault": true,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/db/environment/PGDATA"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
           "name": "STANDARD_IMAGE_REPO",
           "isRequired": false,
           "hasDefault": true,
@@ -293,76 +182,6 @@
               "kind": "invocation",
               "source": ".semaphore/release-app-image.yml",
               "pointer": "/global_job_config/env_vars/1/name"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
-          "name": "SUPERGIT_DEFAULT_BRANCH",
-          "isRequired": true,
-          "hasDefault": true,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/supergit/environment/SUPERGIT_DEFAULT_BRANCH"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
-          "name": "SUPERGIT_MAX_COMMIT_BYTES",
-          "isRequired": true,
-          "hasDefault": true,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/supergit/environment/SUPERGIT_MAX_COMMIT_BYTES"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
-          "name": "SUPERGIT_MAX_FILE_BYTES",
-          "isRequired": true,
-          "hasDefault": true,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/supergit/environment/SUPERGIT_MAX_FILE_BYTES"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
-          "name": "SUPERGIT_PORT",
-          "isRequired": true,
-          "hasDefault": true,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/supergit/environment/SUPERGIT_PORT"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
-          "name": "SUPERGIT_ROOT",
-          "isRequired": true,
-          "hasDefault": true,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
-              "pointer": "/services/supergit/environment/SUPERGIT_ROOT"
             }
           ]
         }
@@ -398,29 +217,6 @@
               ]
             }
           ],
-          "variants": []
-        },
-        {
-          "id": "cmd_f4cb64ba4b3e04981f7c1c2c79d82120",
-          "name": "start services",
-          "run": "docker compose up -d",
-          "directory": "release/superplane-single-host-tarball/templates",
-          "scope": "project",
-          "origin": "inferred",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "file",
-              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml"
-            },
-            {
-              "kind": "convention",
-              "source": "compose",
-              "pointer": "up",
-              "description": "Docker Compose services are started with docker compose up -d."
-            }
-          ],
-          "interpretations": [],
           "variants": []
         }
       ],
@@ -860,45 +656,6 @@
           "variants": []
         },
         {
-          "id": "cmd_33a3282f3cadbdc5ea6cc1eee9d174e5",
-          "name": "test",
-          "run": "go test ./...",
-          "directory": ".",
-          "scope": "project",
-          "origin": "inferred",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "file",
-              "source": "go.mod"
-            },
-            {
-              "kind": "file",
-              "source": "pkg/agents/agent_tools/actions/canvas_test.go"
-            },
-            {
-              "kind": "convention",
-              "source": "go-ecosystem",
-              "pointer": "test",
-              "description": "Go modules with test files conventionally run all package tests with go test ./...."
-            }
-          ],
-          "interpretations": [
-            {
-              "capability": "test.run",
-              "confidence": "high",
-              "evidence": [
-                {
-                  "kind": "convention",
-                  "source": "go-ecosystem",
-                  "pointer": "test"
-                }
-              ]
-            }
-          ],
-          "variants": []
-        },
-        {
           "id": "cmd_34eadf16ba44355a3442fa295b6be681",
           "name": "bash release/superplane-image/build.sh",
           "run": "bash release/superplane-image/build.sh \"$REL_VERSION\" \"arm64\"",
@@ -1316,41 +1073,6 @@
           "variants": []
         },
         {
-          "id": "cmd_771e916f311f45ac53eeb33ca2ee8376",
-          "name": "vet",
-          "run": "go vet ./...",
-          "directory": ".",
-          "scope": "project",
-          "origin": "inferred",
-          "confidence": "medium",
-          "evidence": [
-            {
-              "kind": "file",
-              "source": "go.mod"
-            },
-            {
-              "kind": "convention",
-              "source": "go-ecosystem",
-              "pointer": "vet",
-              "description": "Go modules conventionally run go vet ./... to check packages."
-            }
-          ],
-          "interpretations": [
-            {
-              "capability": "code.lint",
-              "confidence": "medium",
-              "evidence": [
-                {
-                  "kind": "convention",
-                  "source": "go-ecosystem",
-                  "pointer": "vet"
-                }
-              ]
-            }
-          ],
-          "variants": []
-        },
-        {
           "id": "cmd_77480a2beaa605eb1c4d2f5716142279",
           "name": "db.migration.create",
           "run": "make db.migration.create",
@@ -1581,7 +1303,20 @@
               "description": "The target recipe invokes docker."
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/test",
+                  "description": "The declared task name identifies tests."
+                }
+              ]
+            }
+          ],
           "variants": []
         },
         {
@@ -2044,7 +1779,20 @@
               "description": "The target recipe invokes docker."
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "code.lint",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/lint",
+                  "description": "The declared task name identifies linting."
+                }
+              ]
+            }
+          ],
           "variants": [
             {
               "context": "ci",
@@ -2807,6 +2555,243 @@
           "variants": []
         }
       ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "release/superplane-single-host-tarball/templates",
+      "languages": [],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "environment",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "tool",
+          "name": "docker",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "app",
+          "version": "__SUPERPLANE_VERSION__",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/app/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "caddy",
+          "version": "2",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/caddy/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "db",
+          "version": "17.5",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/db/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "rabbitmq",
+          "version": "3.8.17-management-alpine",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/rabbitmq/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "supergit",
+          "version": "0.1.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/image"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "OIDC_KEYS_CONTAINER_PATH",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/app/volumes/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "OIDC_KEYS_HOST_PATH",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/app/volumes/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "PGDATA",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/db/environment/PGDATA"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SUPERGIT_DEFAULT_BRANCH",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/environment/SUPERGIT_DEFAULT_BRANCH"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SUPERGIT_MAX_COMMIT_BYTES",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/environment/SUPERGIT_MAX_COMMIT_BYTES"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SUPERGIT_MAX_FILE_BYTES",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/environment/SUPERGIT_MAX_FILE_BYTES"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SUPERGIT_PORT",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/environment/SUPERGIT_PORT"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "SUPERGIT_ROOT",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml",
+              "pointer": "/services/supergit/environment/SUPERGIT_ROOT"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_f4cb64ba4b3e04981f7c1c2c79d82120",
+          "name": "start services",
+          "run": "docker compose up -d",
+          "directory": "release/superplane-single-host-tarball/templates",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "release/superplane-single-host-tarball/templates/docker-compose.yml"
+            },
+            {
+              "kind": "convention",
+              "source": "compose",
+              "pointer": "up",
+              "description": "Docker Compose services are started with docker compose up -d."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "commands": [],
       "ambiguities": [],
       "conflicts": []
     },

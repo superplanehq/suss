@@ -49,13 +49,24 @@ type rule struct {
 }
 
 type file struct {
-	Invocations []rule `json:"invocations"`
+	Invocations []rule         `json:"invocations"`
+	TaskNames   []taskNameRule `json:"taskNames"`
+}
+
+type taskNameRule struct {
+	ID           string            `json:"id"`
+	Names        []string          `json:"names"`
+	Prefixes     []string          `json:"prefixes"`
+	Capabilities []plan.Capability `json:"capabilities"`
+	Confidence   plan.Confidence   `json:"confidence"`
+	Description  string            `json:"description"`
 }
 
 var (
-	loadOnce sync.Once
-	rules    []rule
-	loadErr  error
+	loadOnce  sync.Once
+	rules     []rule
+	taskRules []taskNameRule
+	loadErr   error
 )
 
 func loaded() ([]rule, error) {
@@ -72,8 +83,53 @@ func loaded() ([]rule, error) {
 			return
 		}
 		rules = parsed.Invocations
+		taskRules = parsed.TaskNames
 	})
 	return rules, loadErr
+}
+
+// InterpretTaskName maps an explicitly declared task name to a lifecycle
+// capability. The boolean distinguishes unknown names from known task classes
+// such as generation and cleanup that intentionally have no v1 capability.
+func InterpretTaskName(name string) ([]Match, bool) {
+	if _, err := loaded(); err != nil {
+		return nil, false
+	}
+	name = strings.ToLower(strings.TrimSpace(name))
+	for _, rule := range taskRules {
+		if !matchesTaskName(name, rule.Names) && !matchesTaskPrefix(name, rule.Prefixes) {
+			continue
+		}
+		matches := make([]Match, 0, len(rule.Capabilities))
+		for _, capability := range rule.Capabilities {
+			matches = append(matches, Match{
+				ID:          rule.ID,
+				Capability:  capability,
+				Confidence:  rule.Confidence,
+				Description: rule.Description,
+			})
+		}
+		return matches, true
+	}
+	return nil, false
+}
+
+func matchesTaskName(name string, candidates []string) bool {
+	for _, candidate := range candidates {
+		if name == candidate {
+			return true
+		}
+	}
+	return false
+}
+
+func matchesTaskPrefix(name string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(name, prefix) && len(name) > len(prefix) && strings.ContainsRune("-:._/", rune(name[len(prefix)])) {
+			return true
+		}
+	}
+	return false
 }
 
 // Interpret returns knowledge-base matches for a single invocation. When

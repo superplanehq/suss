@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -172,6 +173,28 @@ func TestWriteKeepsNestedNonFixtureProjectsAsPeers(t *testing.T) {
 	}
 	if !strings.Contains(got, "Project: frontend\n=================") {
 		t.Fatalf("output %q, want the nested project kept as a peer", got)
+	}
+}
+
+func TestWriteSummarizesNestedProjectsInALargeOrchestratedRepository(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Languages = []plan.DetectedValue{{Name: "go"}}
+	root.Facts = []plan.ProjectFact{{Name: "workspace.orchestrator", Value: "go"}}
+	projects := []plan.ProjectPlan{root}
+	for i := 0; i < 20; i++ {
+		project := plan.NewProjectPlan(fmt.Sprintf("modules/module-%02d", i))
+		project.Languages = []plan.DetectedValue{{Name: "go"}}
+		projects = append(projects, project)
+	}
+
+	got := renderDocument(plan.NewDocument(projects), nil)
+	if strings.Contains(got, "Project: modules/module-00") {
+		t.Fatalf("output %q, did not want detailed nested projects", got)
+	}
+	if !strings.Contains(got, "20 additional projects detected; use --json to inspect.") {
+		t.Fatalf("output %q, want a compact nested-project summary", got)
 	}
 }
 
@@ -677,6 +700,99 @@ func TestWriteOmitsVariantsThatRenderLikeThePrimaryCommand(t *testing.T) {
 	}
 	if !strings.Contains(got, "CI variant  npm test  (in integration)\n") {
 		t.Fatalf("output %q, want an invocation from a different directory", got)
+	}
+}
+
+func TestWriteCollapsesIdenticalActionableRows(t *testing.T) {
+	t.Parallel()
+
+	run := "yarn install --immutable"
+	project := plan.NewProjectPlan(".")
+	for _, id := range []plan.CommandID{
+		"cmd_11111111111111111111111111111111",
+		"cmd_22222222222222222222222222222222",
+	} {
+		project.Preparation = append(project.Preparation, plan.Command{
+			ID:        id,
+			Name:      "install dependencies",
+			Run:       &run,
+			Directory: ".",
+			Origin:    plan.CommandObserved,
+			Interpretations: []plan.Interpretation{{
+				Capability: plan.CapabilityDependenciesInstall,
+			}},
+		})
+	}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), nil)
+	if strings.Count(got, "Install dependencies  yarn install --immutable") != 1 {
+		t.Fatalf("output %q, want one human row for identical observations", got)
+	}
+}
+
+func TestWriteChoosesTheRepositoryWrapperAsThePrimaryCapabilityCommand(t *testing.T) {
+	t.Parallel()
+
+	makeRun := "make test"
+	yarnRun := "yarn run test"
+	ciRun := "go test -race ./..."
+	project := plan.NewProjectPlan(".")
+	project.Commands = []plan.Command{
+		{
+			Name:   "test",
+			Run:    &makeRun,
+			Origin: plan.CommandDeclared,
+			Interpretations: []plan.Interpretation{{
+				Capability: plan.CapabilityTestRun,
+			}},
+		},
+		{
+			Name:   "test",
+			Run:    &yarnRun,
+			Origin: plan.CommandDeclared,
+			Interpretations: []plan.Interpretation{{
+				Capability: plan.CapabilityTestRun,
+			}},
+		},
+		{
+			Name:   "go test",
+			Run:    &ciRun,
+			Origin: plan.CommandObserved,
+			Interpretations: []plan.Interpretation{{
+				Capability: plan.CapabilityTestRun,
+			}},
+		},
+	}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), nil)
+	if !strings.Contains(got, "Test     make test") {
+		t.Fatalf("output %q, want make test", got)
+	}
+	if strings.Contains(got, yarnRun) || strings.Contains(got, ciRun) {
+		t.Fatalf("output %q, did not want lower-priority alternatives in the primary table", got)
+	}
+}
+
+func TestWriteSummarizesComposeEnvironmentProjects(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Languages = []plan.DetectedValue{{Name: "go"}}
+	environment := plan.NewProjectPlan("dev/postgres")
+	environment.Facts = []plan.ProjectFact{{
+		Name:       "project.role",
+		Value:      "environment",
+		Confidence: plan.ConfidenceHigh,
+	}}
+	run := "docker compose up -d"
+	environment.Preparation = []plan.Command{{Run: &run, Directory: "dev/postgres"}}
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root, environment}), nil)
+	if strings.Contains(got, "Project: dev/postgres") {
+		t.Fatalf("output %q, did not want the environment rendered as a peer project", got)
+	}
+	if !strings.Contains(got, "Compose environment:\n  dev/postgres  docker compose up -d") {
+		t.Fatalf("output %q, want a compact Compose environment index", got)
 	}
 }
 

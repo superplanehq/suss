@@ -101,7 +101,7 @@ func declaredTarget(ctx provider.Context, source string, target makeTarget) (pla
 		Origin:          plan.CommandDeclared,
 		Confidence:      plan.ConfidenceHigh,
 		Evidence:        targetEvidence(source, pointer, target.Recipe),
-		Interpretations: recipeInterpretations(source, pointer, target.Recipe),
+		Interpretations: targetInterpretations(source, pointer, target),
 		Variants:        []plan.CommandVariant{},
 	}, nil
 }
@@ -154,11 +154,25 @@ func joinAnd(names []string) string {
 	return strings.Join(names[:len(names)-1], ", ") + ", and " + names[len(names)-1]
 }
 
-func recipeInterpretations(source, pointer, recipe string) []plan.Interpretation {
-	matches := knowledge.InterpretScript(recipe)
+func targetInterpretations(source, pointer string, target makeTarget) []plan.Interpretation {
+	recipeMatches := knowledge.InterpretScript(target.Recipe)
+	nameMatches, nameKnown := knowledge.InterpretTaskName(target.Name)
+
+	var matches []knowledge.Match
+	switch {
+	case len(recipeMatches) == 0:
+		matches = nameMatches
+	case nameKnown:
+		matches = matchingCapabilities(recipeMatches, nameMatches)
+	case hasUninterpretedRecipeCommand(target.Recipe):
+		return []plan.Interpretation{}
+	default:
+		matches = recipeMatches
+	}
 	if len(matches) == 0 {
 		return []plan.Interpretation{}
 	}
+
 	interpretations := make([]plan.Interpretation, 0, len(matches))
 	for _, match := range matches {
 		interpretations = append(interpretations, plan.Interpretation{
@@ -173,6 +187,40 @@ func recipeInterpretations(source, pointer, recipe string) []plan.Interpretation
 		})
 	}
 	return interpretations
+}
+
+func matchingCapabilities(recipeMatches, nameMatches []knowledge.Match) []knowledge.Match {
+	var matches []knowledge.Match
+	for _, recipeMatch := range recipeMatches {
+		for _, nameMatch := range nameMatches {
+			if recipeMatch.Capability == nameMatch.Capability {
+				matches = append(matches, recipeMatch)
+				break
+			}
+		}
+	}
+	return matches
+}
+
+func hasUninterpretedRecipeCommand(recipe string) bool {
+	for _, invocation := range knowledge.ParseScript(recipe) {
+		if isRecipeWiring(invocation.Executable) {
+			continue
+		}
+		if len(knowledge.Interpret(invocation)) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func isRecipeWiring(executable string) bool {
+	switch executable {
+	case "echo", "printf", "true":
+		return true
+	default:
+		return false
+	}
 }
 
 func toolFinding(ctx provider.Context, source, name string) plan.Finding {

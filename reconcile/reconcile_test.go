@@ -123,6 +123,40 @@ func TestApplyPutsComposeUpInPreparation(t *testing.T) {
 	}
 }
 
+func TestApplyKeepsNestedComposeEnvironmentSeparateFromRoot(t *testing.T) {
+	t.Parallel()
+
+	up := command(t, "compose", "dev/postgres", "/#up", "start services", "docker compose up -d", plan.CommandInferred, "")
+	up.Evidence = []plan.Evidence{{Kind: plan.EvidenceFile, Source: "dev/postgres/compose.yaml"}}
+	service := plan.Requirement{
+		Kind:       plan.RequirementService,
+		Name:       "postgres",
+		Version:    "16",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "dev/postgres/compose.yaml", Pointer: "/services/postgres/image"}},
+	}
+
+	root := plan.NewProjectPlan(".")
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{Findings: []plan.Finding{
+		plan.CommandFinding{ProjectPath: "dev/postgres", Detector: "compose", Command: up},
+		plan.RequirementFinding{ProjectPath: "dev/postgres", Detector: "compose", Requirement: service},
+	}})
+
+	if len(got) != 2 {
+		t.Fatalf("projects = %+v, want root plus a Compose environment", got)
+	}
+	if len(got[0].Preparation) != 0 || len(got[0].Requirements) != 0 {
+		t.Fatalf("root = %+v, did not want nested Compose findings attached to it", got[0])
+	}
+	environment := got[1]
+	if environment.Path != "dev/postgres" || len(environment.Preparation) != 1 || len(environment.Requirements) != 1 {
+		t.Fatalf("environment = %+v, want the nested Compose findings", environment)
+	}
+	if !hasProjectFact(environment, "project.role", "environment") {
+		t.Fatalf("environment facts = %+v, want project.role=environment", environment.Facts)
+	}
+}
+
 func TestApplyLinksCIComposeUpAsAVariant(t *testing.T) {
 	t.Parallel()
 
@@ -265,6 +299,36 @@ func TestApplyMergesMatchingCIRuntimeEvidence(t *testing.T) {
 	}
 	if len(got[0].Requirements[0].Evidence) != 2 {
 		t.Fatalf("evidence = %+v, want declaration and invocation", got[0].Requirements[0].Evidence)
+	}
+}
+
+func TestApplyMatchesANodeMajorSelectorToADeclaredPatchPin(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Requirements = []plan.Requirement{
+		{
+			Kind:       plan.RequirementRuntime,
+			Name:       "node",
+			Version:    "v24.11.0",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: ".nvmrc"}},
+		},
+		{
+			Kind:       plan.RequirementRuntime,
+			Name:       "node",
+			Version:    ">= 22 <25",
+			Confidence: plan.ConfidenceHigh,
+			Evidence:   []plan.Evidence{{Kind: plan.EvidenceDeclaration, Source: "package.json", Pointer: "/engines/node"}},
+		},
+	}
+
+	got := Apply([]plan.ProjectPlan{root}, provider.Result{Findings: []plan.Finding{ciNode("24")}})
+	if len(got[0].Conflicts) != 0 {
+		t.Fatalf("conflicts = %+v, did not want Node 24 to conflict with v24.11.0", got[0].Conflicts)
+	}
+	if len(got[0].Requirements[0].Evidence) != 2 {
+		t.Fatalf("pin evidence = %+v, want .nvmrc plus the CI selector", got[0].Requirements[0].Evidence)
 	}
 }
 
@@ -1168,6 +1232,15 @@ func matrixRuntimeValues(facts []plan.ProjectFact, runtime string) []string {
 		}
 	}
 	return values
+}
+
+func hasProjectFact(project plan.ProjectPlan, name, value string) bool {
+	for _, fact := range project.Facts {
+		if fact.Name == name && fact.Value == value {
+			return true
+		}
+	}
+	return false
 }
 
 func command(t *testing.T, providerName, dir, pointer, name, run string, origin plan.CommandOrigin, capability plan.Capability) plan.Command {

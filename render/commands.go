@@ -57,7 +57,73 @@ func actionableCommands(project plan.ProjectPlan) []displayedCommand {
 		}
 		return cmp.Compare(a.command.Name, b.command.Name)
 	})
-	return commands
+	return preferredCommands(commands)
+}
+
+func preferredCommands(commands []displayedCommand) []displayedCommand {
+	preferred := make([]displayedCommand, 0, len(commands))
+	indexes := make(map[string]int)
+	for _, candidate := range commands {
+		index, found := indexes[candidate.purpose]
+		if !found {
+			indexes[candidate.purpose] = len(preferred)
+			preferred = append(preferred, candidate)
+			continue
+		}
+		if compareCommandPreference(candidate, preferred[index]) < 0 {
+			preferred[index] = candidate
+		}
+	}
+	return preferred
+}
+
+func compareCommandPreference(a, b displayedCommand) int {
+	if n := cmp.Compare(commandOriginRank(a.command.Origin), commandOriginRank(b.command.Origin)); n != 0 {
+		return n
+	}
+	if n := cmp.Compare(commandNameRank(a.purpose, a.command.Name), commandNameRank(b.purpose, b.command.Name)); n != 0 {
+		return n
+	}
+	if n := cmp.Compare(len(derefRun(a.command.Run)), len(derefRun(b.command.Run))); n != 0 {
+		return n
+	}
+	if n := cmp.Compare(a.command.Name, b.command.Name); n != 0 {
+		return n
+	}
+	return cmp.Compare(string(a.command.ID), string(b.command.ID))
+}
+
+func commandOriginRank(origin plan.CommandOrigin) int {
+	switch origin {
+	case plan.CommandDeclared:
+		return 0
+	case plan.CommandInferred:
+		return 1
+	case plan.CommandObserved:
+		return 2
+	default:
+		return 3
+	}
+}
+
+func commandNameRank(purpose, name string) int {
+	name = strings.ToLower(strings.TrimSpace(name))
+	preferred := map[string][]string{
+		"Install dependencies": {"deps", "dependencies", "install", "setup", "node_modules"},
+		"Build":                {"build", "compile"},
+		"Test":                 {"test", "tests", "spec"},
+		"Lint":                 {"lint", "vet"},
+		"Format":               {"format", "fmt"},
+		"Type-check":           {"typecheck", "type-check"},
+		"Run":                  {"run", "start", "serve", "dev"},
+	}
+	if slices.Contains(preferred[purpose], name) {
+		return 0
+	}
+	if purpose == "Format" && (strings.Contains(name, ":check") || strings.Contains(name, "-check")) {
+		return 1
+	}
+	return 2
 }
 
 func commandPurpose(command plan.Command) (string, int) {
@@ -133,7 +199,20 @@ func actionableRows(projectPath string, commands []displayedCommand) []commandRo
 		})
 		rows = append(rows, variantRows(projectPath, item.command)...)
 	}
-	return rows
+	return uniqueCommandRows(rows)
+}
+
+func uniqueCommandRows(rows []commandRow) []commandRow {
+	unique := make([]commandRow, 0, len(rows))
+	seen := make(map[commandRow]struct{}, len(rows))
+	for _, row := range rows {
+		if _, ok := seen[row]; ok {
+			continue
+		}
+		seen[row] = struct{}{}
+		unique = append(unique, row)
+	}
+	return unique
 }
 
 func commandRun(projectPath string, run *string, directory string) string {

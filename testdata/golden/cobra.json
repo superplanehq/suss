@@ -127,13 +127,13 @@
           "interpretations": [
             {
               "capability": "dependencies.install",
-              "confidence": "high",
+              "confidence": "medium",
               "evidence": [
                 {
                   "kind": "declaration",
                   "source": "Makefile",
                   "pointer": "/targets/install_deps",
-                  "description": "The command fetches Go dependencies with go get."
+                  "description": "The declared task name identifies dependency setup."
                 }
               ]
             }
@@ -381,7 +381,20 @@
               "description": "The target recipe invokes test and exit."
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "code.format",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/fmt",
+                  "description": "The declared task name identifies formatting."
+                }
+              ]
+            }
+          ],
           "variants": []
         }
       ],

@@ -2120,7 +2120,20 @@
               "description": "The target recipe invokes if, then, elif, [[, else, and fi."
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "test.run",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/test",
+                  "description": "The declared task name identifies tests."
+                }
+              ]
+            }
+          ],
           "variants": []
         },
         {

@@ -185,6 +185,47 @@ func TestDetectCapturesInlineRecipes(t *testing.T) {
 	}
 }
 
+func TestDetectDoesNotGiveAWrapperThePurposeOfOneIncidentalCommand(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Makefile": "" +
+			"generate-openapi:\n" +
+			"\tgo test ./pkg/tests/apis || true\n" +
+			"\tyarn workspace @acme/openapi process-specs\n",
+	})
+
+	command := commandByName(result)["generate-openapi"]
+	if len(command.Interpretations) != 0 {
+		t.Fatalf("generate-openapi interpretations = %+v, want none because the test invocation is incidental", command.Interpretations)
+	}
+}
+
+func TestDetectInterpretsLifecycleAliasTargetsFromTheirDeclaredNames(t *testing.T) {
+	t.Parallel()
+
+	result := detectFiles(t, map[string]string{
+		"Makefile": "" +
+			"deps: deps-go deps-js\n" +
+			"build: build-go build-js\n" +
+			"test: test-go test-js\n" +
+			"run:\n" +
+			"\tair\n",
+	})
+
+	commands := commandByName(result)
+	for name, capability := range map[string]plan.Capability{
+		"deps":  plan.CapabilityDependenciesInstall,
+		"build": plan.CapabilityArtifactBuild,
+		"test":  plan.CapabilityTestRun,
+		"run":   plan.CapabilityApplicationRun,
+	} {
+		if !hasCapability(commands[name], capability) {
+			t.Fatalf("%s interpretations = %+v, want %s", name, commands[name].Interpretations, capability)
+		}
+	}
+}
+
 func TestDetectIgnoresMakeFunctionStatements(t *testing.T) {
 	t.Parallel()
 

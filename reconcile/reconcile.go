@@ -134,15 +134,15 @@ func Apply(projects []plan.ProjectPlan, repo provider.Result) []plan.ProjectPlan
 	for _, finding := range repo.Findings {
 		switch item := finding.(type) {
 		case plan.CommandFinding:
-			projects = applyCommand(projects, item.Command)
+			projects = applyCommand(projects, item)
 		case plan.RequirementFinding:
 			if item.Requirement.Kind == plan.RequirementRuntime {
 				runtimes = append(runtimes, runtimeObservation{dir: item.ProjectPath, requirement: item.Requirement})
 				continue
 			}
-			projects = applyRequirement(projects, item.ProjectPath, item.Requirement)
+			projects = applyRequirement(projects, item)
 		case plan.PropertyFinding:
-			projects = applyProperty(projects, item.ProjectPath, item.Property)
+			projects = applyProperty(projects, item)
 		}
 	}
 	projects = applyRuntimes(projects, runtimes)
@@ -154,8 +154,13 @@ func Apply(projects []plan.ProjectPlan, repo provider.Result) []plan.ProjectPlan
 	return projects
 }
 
-func applyCommand(projects []plan.ProjectPlan, observed plan.Command) []plan.ProjectPlan {
-	projects, index := ensureProject(projects, observed.Directory)
+func applyCommand(projects []plan.ProjectPlan, finding plan.CommandFinding) []plan.ProjectPlan {
+	observed := finding.Command
+	dir := finding.ProjectPath
+	if dir == "" {
+		dir = observed.Directory
+	}
+	projects, index := ensureFindingProject(projects, dir, finding.Detector, observed.Evidence)
 	project := &projects[index]
 
 	switch outcome := match(observed, existingCommands(*project)); outcome.kind {
@@ -174,8 +179,9 @@ func applyCommand(projects []plan.ProjectPlan, observed plan.Command) []plan.Pro
 	return projects
 }
 
-func applyRequirement(projects []plan.ProjectPlan, dir string, requirement plan.Requirement) []plan.ProjectPlan {
-	projects, index := ensureProject(projects, dir)
+func applyRequirement(projects []plan.ProjectPlan, finding plan.RequirementFinding) []plan.ProjectPlan {
+	requirement := finding.Requirement
+	projects, index := ensureFindingProject(projects, finding.ProjectPath, finding.Detector, requirement.Evidence)
 	project := &projects[index]
 	for i, existing := range project.Requirements {
 		if !sameRequirement(existing, requirement) {
@@ -192,9 +198,9 @@ func applyRequirement(projects []plan.ProjectPlan, dir string, requirement plan.
 	return projects
 }
 
-func applyProperty(projects []plan.ProjectPlan, dir string, property plan.Property) []plan.ProjectPlan {
-	projects, index := ensureProject(projects, dir)
-	applyAssembledProperty(&projects[index], property)
+func applyProperty(projects []plan.ProjectPlan, finding plan.PropertyFinding) []plan.ProjectPlan {
+	projects, index := ensureFindingProject(projects, finding.ProjectPath, finding.Detector, finding.Property.Evidence)
+	applyAssembledProperty(&projects[index], finding.Property)
 	return projects
 }
 
@@ -310,6 +316,73 @@ func ensureProject(projects []plan.ProjectPlan, dir string) ([]plan.ProjectPlan,
 	}
 	projects = append(projects, plan.NewProjectPlan("."))
 	return projects, len(projects) - 1
+}
+
+func ensureFindingProject(projects []plan.ProjectPlan, dir, detector string, evidence []plan.Evidence) ([]plan.ProjectPlan, int) {
+	if detector != "compose" {
+		return ensureProject(projects, dir)
+	}
+
+	dir = normalizeDir(dir)
+	if index := exactProjectIndex(projects, dir); index >= 0 {
+		if hasEnvironmentRole(projects[index]) {
+			mergeEnvironmentRoleEvidence(&projects[index], evidence)
+		}
+		return projects, index
+	}
+
+	project := plan.NewProjectPlan(dir)
+	project.Facts = append(project.Facts, environmentRole(evidence))
+	projects = append(projects, project)
+	return projects, len(projects) - 1
+}
+
+func exactProjectIndex(projects []plan.ProjectPlan, dir string) int {
+	for i, project := range projects {
+		if normalizeDir(project.Path) == dir {
+			return i
+		}
+	}
+	return -1
+}
+
+func environmentRole(evidence []plan.Evidence) plan.ProjectFact {
+	return plan.ProjectFact{
+		Name:       "project.role",
+		Value:      "environment",
+		Confidence: plan.ConfidenceHigh,
+		Evidence:   environmentRoleEvidence(evidence),
+	}
+}
+
+func hasEnvironmentRole(project plan.ProjectPlan) bool {
+	for _, fact := range project.Facts {
+		if fact.Name == "project.role" && fact.Value == "environment" {
+			return true
+		}
+	}
+	return false
+}
+
+func mergeEnvironmentRoleEvidence(project *plan.ProjectPlan, evidence []plan.Evidence) {
+	for i, fact := range project.Facts {
+		if fact.Name != "project.role" || fact.Value != "environment" {
+			continue
+		}
+		project.Facts[i].Evidence = mergeEvidence(fact.Evidence, environmentRoleEvidence(evidence))
+		return
+	}
+}
+
+func environmentRoleEvidence(evidence []plan.Evidence) []plan.Evidence {
+	var files []plan.Evidence
+	for _, item := range evidence {
+		if item.Source == "" || item.Kind == plan.EvidenceConvention {
+			continue
+		}
+		files = append(files, plan.Evidence{Kind: plan.EvidenceFile, Source: item.Source})
+	}
+	return mergeEvidence(nil, files)
 }
 
 func coveringIndex(projects []plan.ProjectPlan, dir string) int {

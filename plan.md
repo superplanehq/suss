@@ -178,7 +178,7 @@ Acceptance:
 
 Status: implementation revised after review exposed fixture projects receiving misleading first-class prominence and a repository-local Go module cache leaking into project and Compose discovery; awaiting follow-up review.
 
-## Milestone 7 — Elixir, Ruby, Semaphore, and dogfood
+## Milestone 7 — Elixir, Ruby, Semaphore, and dogfood - DONE
 
 Close the loop on our own repositories.
 
@@ -200,7 +200,7 @@ Acceptance:
 
 Status: in progress. Elixir and Semaphore support are implemented; Ruby/Rails support has been added while the milestone's complex-project output remains under evaluation.
 
-## Milestone 7b — PHP
+## Milestone 7b — PHP - DONE
 
 Add Composer-managed PHP the way Ruby was added: one focused fixture, one framework-free library, one production application.
 
@@ -221,23 +221,23 @@ Canonical corpus:
 
 Status: in progress.
 
-## Milestone 8 — Python
+## Milestone 8 — Python - DONE
 
 Python was listed as post-v0 in idea.md. It is pulled forward because the ecosystem has several first-class project shapes, and the Ruby milestone already established the fixture-plus-two-remotes pattern for covering that without overfitting.
 
 Python project types that matter for detection (not every type gets a corpus repository):
 
-| Shape | Identity | Manager signal | Covered by |
-| --- | --- | --- | --- |
-| PEP 621 library | `pyproject.toml` | `uv.lock` or none | `pallets/click` + unit tests |
-| Poetry | `pyproject.toml` + `poetry.lock` / `[tool.poetry]` | poetry | unit tests |
-| uv | `pyproject.toml` + `uv.lock` | uv | click, pretalx, unit tests |
-| Pipenv | `Pipfile` | pipenv | unit tests |
-| setuptools legacy | `setup.py` | pip | unit tests |
-| Django application | `pyproject.toml` + `manage.py` | pip or uv | `python-django` fixture + `pretalx/pretalx` |
-| Flask / FastAPI application | framework dependency + app file | various | unit tests (server inferred only with application evidence) |
-| `requirements.txt` only | not a project root | — | known limitation (too many false positives in docs/examples) |
-| conda `environment.yml` | — | — | out of scope |
+| Shape                       | Identity                                           | Manager signal    | Covered by                                                   |
+| --------------------------- | -------------------------------------------------- | ----------------- | ------------------------------------------------------------ |
+| PEP 621 library             | `pyproject.toml`                                   | `uv.lock` or none | `pallets/click` + unit tests                                 |
+| Poetry                      | `pyproject.toml` + `poetry.lock` / `[tool.poetry]` | poetry            | unit tests                                                   |
+| uv                          | `pyproject.toml` + `uv.lock`                       | uv                | click, pretalx, unit tests                                   |
+| Pipenv                      | `Pipfile`                                          | pipenv            | unit tests                                                   |
+| setuptools legacy           | `setup.py`                                         | pip               | unit tests                                                   |
+| Django application          | `pyproject.toml` + `manage.py`                     | pip or uv         | `python-django` fixture + `pretalx/pretalx`                  |
+| Flask / FastAPI application | framework dependency + app file                    | various           | unit tests (server inferred only with application evidence)  |
+| `requirements.txt` only     | not a project root                                 | —                 | known limitation (too many false positives in docs/examples) |
+| conda `environment.yml`     | —                                                  | —                 | out of scope                                                 |
 
 Canonical test repositories, matching Ruby (`ruby-rails` fixture, `ruby/rake` library, `basecamp/once-campfire` app):
 

@@ -905,12 +905,39 @@ func TestInterpretMatchesGoToolchainInvocations(t *testing.T) {
 		{inv: Invocation{Executable: "go", Args: []string{"mod", "download"}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
 		{inv: Invocation{Executable: "golangci-lint", Args: []string{"run", "--verbose"}}, want: []plan.Capability{plan.CapabilityCodeLint}},
 		{inv: Invocation{Executable: "gofmt", Args: []string{"-l", "."}}, want: []plan.Capability{plan.CapabilityCodeFormat}},
-		{inv: Invocation{Executable: "go", Args: []string{"get", "-v", "./..."}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
+		{inv: Invocation{Executable: "go", Args: []string{"get", "-v", "./..."}}, want: nil},
+		{inv: Invocation{Executable: "go", Args: []string{"get", "-v", "-t", "-d", "./..."}}, want: []plan.Capability{plan.CapabilityDependenciesInstall}},
 	}
 	for _, tt := range tests {
 		got := capabilities(Interpret(tt.inv))
 		if !slices.Equal(got, tt.want) {
 			t.Fatalf("Interpret(%s %v) = %v, want %v", tt.inv.Executable, tt.inv.Args, got, tt.want)
+		}
+	}
+}
+
+func TestInterpretTaskNameRecognizesLifecycleTargetsAndExplicitNonLifecycleTargets(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		want      []plan.Capability
+		wantKnown bool
+	}{
+		{name: "deps", want: []plan.Capability{plan.CapabilityDependenciesInstall}, wantKnown: true},
+		{name: "build", want: []plan.Capability{plan.CapabilityArtifactBuild}, wantKnown: true},
+		{name: "test", want: []plan.Capability{plan.CapabilityTestRun}, wantKnown: true},
+		{name: "lint", want: []plan.Capability{plan.CapabilityCodeLint}, wantKnown: true},
+		{name: "run", want: []plan.Capability{plan.CapabilityApplicationRun}, wantKnown: true},
+		{name: "test-go-unit", wantKnown: false},
+		{name: "generate-openapi", wantKnown: true},
+		{name: "release", wantKnown: false},
+	}
+
+	for _, tt := range tests {
+		got, known := InterpretTaskName(tt.name)
+		if known != tt.wantKnown || !slices.Equal(capabilities(got), tt.want) {
+			t.Fatalf("InterpretTaskName(%q) = (%v, %t), want (%v, %t)", tt.name, capabilities(got), known, tt.want, tt.wantKnown)
 		}
 	}
 }

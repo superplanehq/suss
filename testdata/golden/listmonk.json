@@ -85,10 +85,6 @@
             },
             {
               "kind": "file",
-              "source": "dev/docker-compose.yml"
-            },
-            {
-              "kind": "file",
               "source": "docker-compose.yml"
             }
           ]
@@ -101,19 +97,6 @@
             {
               "kind": "file",
               "source": "Makefile"
-            }
-          ]
-        },
-        {
-          "kind": "service",
-          "name": "adminer",
-          "version": "4.8.1-standalone",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/adminer/image"
             }
           ]
         },
@@ -132,31 +115,6 @@
         },
         {
           "kind": "service",
-          "name": "backend",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/backend"
-            }
-          ]
-        },
-        {
-          "kind": "service",
-          "name": "db",
-          "version": "13",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/db/image"
-            }
-          ]
-        },
-        {
-          "kind": "service",
           "name": "db",
           "version": "17-alpine",
           "confidence": "high",
@@ -165,31 +123,6 @@
               "kind": "declaration",
               "source": "docker-compose.yml",
               "pointer": "/services/db/image"
-            }
-          ]
-        },
-        {
-          "kind": "service",
-          "name": "front",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/front"
-            }
-          ]
-        },
-        {
-          "kind": "service",
-          "name": "mailhog",
-          "version": "v1.0.1",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/mailhog/image"
             }
           ]
         },
@@ -219,34 +152,6 @@
         },
         {
           "kind": "environment",
-          "name": "GOPATH",
-          "isRequired": true,
-          "hasDefault": true,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/backend/volumes/1"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
-          "name": "HOME",
-          "isRequired": true,
-          "hasDefault": false,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/backend/volumes/1"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
           "name": "LISTMONK_ADMIN_PASSWORD",
           "isRequired": true,
           "hasDefault": true,
@@ -270,20 +175,6 @@
               "kind": "declaration",
               "source": "docker-compose.yml",
               "pointer": "/services/app/environment/LISTMONK_ADMIN_USER"
-            }
-          ]
-        },
-        {
-          "kind": "environment",
-          "name": "LISTMONK_API_URL",
-          "isRequired": true,
-          "hasDefault": true,
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/front/environment/0"
             }
           ]
         },
@@ -436,11 +327,6 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/db/environment/2"
-            },
-            {
-              "kind": "declaration",
               "source": "docker-compose.yml",
               "pointer": "/services/db/environment/POSTGRES_DB"
             }
@@ -455,11 +341,6 @@
           "evidence": [
             {
               "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/db/environment/0"
-            },
-            {
-              "kind": "declaration",
               "source": "docker-compose.yml",
               "pointer": "/services/db/environment/POSTGRES_PASSWORD"
             }
@@ -472,11 +353,6 @@
           "hasDefault": true,
           "confidence": "high",
           "evidence": [
-            {
-              "kind": "declaration",
-              "source": "dev/docker-compose.yml",
-              "pointer": "/services/db/environment/1"
-            },
             {
               "kind": "declaration",
               "source": "docker-compose.yml",
@@ -556,29 +432,6 @@
               ]
             }
           ],
-          "variants": []
-        },
-        {
-          "id": "cmd_d7ddedce157a004437ad13dc2511de6d",
-          "name": "start services",
-          "run": "docker compose up -d",
-          "directory": "dev",
-          "scope": "project",
-          "origin": "inferred",
-          "confidence": "high",
-          "evidence": [
-            {
-              "kind": "file",
-              "source": "dev/docker-compose.yml"
-            },
-            {
-              "kind": "convention",
-              "source": "compose",
-              "pointer": "up",
-              "description": "Docker Compose services are started with docker compose up -d."
-            }
-          ],
-          "interpretations": [],
           "variants": []
         }
       ],
@@ -760,41 +613,6 @@
           "variants": []
         },
         {
-          "id": "cmd_912cfaeadf2d776e403b930297feadb4",
-          "name": "build",
-          "run": "go build ./...",
-          "directory": ".",
-          "scope": "project",
-          "origin": "inferred",
-          "confidence": "medium",
-          "evidence": [
-            {
-              "kind": "file",
-              "source": "go.mod"
-            },
-            {
-              "kind": "convention",
-              "source": "go-ecosystem",
-              "pointer": "build",
-              "description": "Go modules conventionally compile packages with go build ./...."
-            }
-          ],
-          "interpretations": [
-            {
-              "capability": "artifact.build",
-              "confidence": "medium",
-              "evidence": [
-                {
-                  "kind": "convention",
-                  "source": "go-ecosystem",
-                  "pointer": "build"
-                }
-              ]
-            }
-          ],
-          "variants": []
-        },
-        {
           "id": "cmd_918dd092fd84ed71705985ad5ebb59eb",
           "name": "docker push",
           "run": "docker push listmonk/listmonk:nightly-arm64v8",
@@ -956,7 +774,20 @@
               "description": "The target recipe invokes go."
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "application.run",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/run",
+                  "description": "The declared task name identifies a development run command."
+                }
+              ]
+            }
+          ],
           "variants": []
         },
         {
@@ -1011,7 +842,20 @@
               "pointer": "/targets/build"
             }
           ],
-          "interpretations": [],
+          "interpretations": [
+            {
+              "capability": "artifact.build",
+              "confidence": "medium",
+              "evidence": [
+                {
+                  "kind": "declaration",
+                  "source": "Makefile",
+                  "pointer": "/targets/build",
+                  "description": "The declared task name identifies a build."
+                }
+              ]
+            }
+          ],
           "variants": []
         },
         {
@@ -1260,6 +1104,213 @@
           "variants": []
         }
       ],
+      "ambiguities": [],
+      "conflicts": []
+    },
+    {
+      "path": "dev",
+      "languages": [],
+      "frameworks": [],
+      "packageManagers": [],
+      "facts": [
+        {
+          "name": "project.role",
+          "value": "environment",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "dev/docker-compose.yml"
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "tool",
+          "name": "docker",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "dev/docker-compose.yml"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "adminer",
+          "version": "4.8.1-standalone",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/adminer/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "backend",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/backend"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "db",
+          "version": "13",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/db/image"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "front",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/front"
+            }
+          ]
+        },
+        {
+          "kind": "service",
+          "name": "mailhog",
+          "version": "v1.0.1",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/mailhog/image"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "GOPATH",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/backend/volumes/1"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "HOME",
+          "isRequired": true,
+          "hasDefault": false,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/backend/volumes/1"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "LISTMONK_API_URL",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/front/environment/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_DB",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/db/environment/2"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_PASSWORD",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/db/environment/0"
+            }
+          ]
+        },
+        {
+          "kind": "environment",
+          "name": "POSTGRES_USER",
+          "isRequired": true,
+          "hasDefault": true,
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "declaration",
+              "source": "dev/docker-compose.yml",
+              "pointer": "/services/db/environment/1"
+            }
+          ]
+        }
+      ],
+      "preparation": [
+        {
+          "id": "cmd_d7ddedce157a004437ad13dc2511de6d",
+          "name": "start services",
+          "run": "docker compose up -d",
+          "directory": "dev",
+          "scope": "project",
+          "origin": "inferred",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "file",
+              "source": "dev/docker-compose.yml"
+            },
+            {
+              "kind": "convention",
+              "source": "compose",
+              "pointer": "up",
+              "description": "Docker Compose services are started with docker compose up -d."
+            }
+          ],
+          "interpretations": [],
+          "variants": []
+        }
+      ],
+      "commands": [],
       "ambiguities": [],
       "conflicts": []
     },

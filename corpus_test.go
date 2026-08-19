@@ -146,6 +146,12 @@ var corpus = []corpusEntry{
 		commit: "a2b3dc5d8b15aaf82c490b9ae1d5df1922f453ef",
 		golden: "pretalx.json",
 	},
+	{
+		name:   "grafana",
+		gitURL: "https://github.com/grafana/grafana.git",
+		commit: "29dabba2a3549cc6b148628b7cf63a4086200db9",
+		golden: "grafana.json",
+	},
 }
 
 func TestCorpusSnapshots(t *testing.T) {

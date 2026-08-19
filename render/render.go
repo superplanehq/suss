@@ -12,6 +12,8 @@ import (
 	"github.com/superplanehq/suss/plan"
 )
 
+const detailedProjectLimit = 20
+
 // Options control labels that are not stored in the document itself.
 type Options struct {
 	Providers         []string
@@ -61,6 +63,7 @@ var toolCapabilities = map[string][]plan.Capability{
 type classifiedProjects struct {
 	primary         []plan.ProjectPlan
 	examples        []plan.ProjectPlan
+	environments    []plan.ProjectPlan
 	omittedFixtures int
 }
 
@@ -73,12 +76,12 @@ func Write(w io.Writer, document plan.Document, opts Options) {
 		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, Cargo.toml, mix.exs, Gemfile, composer.json, pyproject.toml, Makefile, and .env.example.")
 		return
 	}
-	if len(classified.primary) == 0 && len(classified.examples) == 0 {
+	if len(classified.primary) == 0 && len(classified.examples) == 0 && len(classified.environments) == 0 {
 		fmt.Fprintln(w, "No non-fixture project roots were detected.")
 		return
 	}
 
-	visible := classified.primary
+	visible, summarizedProjects := detailedProjects(classified.primary)
 	if len(visible) == 0 {
 		visible = classified.examples
 	}
@@ -92,11 +95,38 @@ func Write(w io.Writer, document plan.Document, opts Options) {
 	if len(classified.primary) > 0 {
 		writeExampleIndex(w, classified.examples)
 	}
+	writeProjectSummary(w, summarizedProjects)
+	writeEnvironmentIndex(w, classified.environments)
+}
+
+func detailedProjects(projects []plan.ProjectPlan) ([]plan.ProjectPlan, int) {
+	if len(projects) <= detailedProjectLimit {
+		return projects, 0
+	}
+	for _, project := range projects {
+		if project.Path == "." && project.HasWorkspaceOrchestrator() {
+			return []plan.ProjectPlan{project}, len(projects) - 1
+		}
+	}
+	return projects, 0
+}
+
+func writeProjectSummary(w io.Writer, count int) {
+	if count == 0 {
+		return
+	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "%d additional projects detected; use --json to inspect.\n", count)
 }
 
 func classifyProjects(projects []plan.ProjectPlan) classifiedProjects {
 	var classified classifiedProjects
 	for _, project := range projects {
+		if _, isEnvironment := projectRole(project, "environment"); isEnvironment {
+			classified.environments = append(classified.environments, project)
+			continue
+		}
 		confidence, isFixture := fixtureRole(project)
 		if !isFixture {
 			classified.primary = append(classified.primary, project)
@@ -112,12 +142,46 @@ func classifyProjects(projects []plan.ProjectPlan) classifiedProjects {
 }
 
 func fixtureRole(project plan.ProjectPlan) (plan.Confidence, bool) {
+	return projectRole(project, "fixture")
+}
+
+func projectRole(project plan.ProjectPlan, role string) (plan.Confidence, bool) {
 	for _, fact := range project.Facts {
-		if fact.Name == "project.role" && fact.Value == "fixture" {
+		if fact.Name == "project.role" && fact.Value == role {
 			return fact.Confidence, true
 		}
 	}
 	return "", false
+}
+
+func writeEnvironmentIndex(w io.Writer, environments []plan.ProjectPlan) {
+	if len(environments) == 0 {
+		return
+	}
+
+	fmt.Fprintln(w)
+	fmt.Fprintln(w)
+	if len(environments) > 5 {
+		fmt.Fprintf(w, "%d Compose environments detected; use --json to inspect.\n", len(environments))
+		return
+	}
+	if len(environments) == 1 {
+		fmt.Fprintln(w, "Compose environment:")
+	} else {
+		fmt.Fprintln(w, "Compose environments:")
+	}
+	for _, environment := range environments {
+		fmt.Fprintf(w, "  %s%s\n", environment.Path, environmentCommand(environment))
+	}
+}
+
+func environmentCommand(environment plan.ProjectPlan) string {
+	for _, command := range environment.Preparation {
+		if command.Run != nil {
+			return "  " + oneLine(*command.Run)
+		}
+	}
+	return ""
 }
 
 func writePreface(w io.Writer, primaryCount, omittedFixtures int) {
