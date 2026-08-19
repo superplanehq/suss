@@ -472,7 +472,7 @@
             },
             {
               "kind": "file",
-              "source": "src/pretalx/common/settings/test_settings.py"
+              "source": "src/tests/agenda/test_html_export.py"
             },
             {
               "kind": "convention",
