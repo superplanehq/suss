@@ -54,7 +54,7 @@ func TestWriteOmitsHighConfidenceFixtureProjects(t *testing.T) {
 	}}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root, fixture}), []string{"node"})
-	if !strings.Contains(got, "1 fixture project omitted; use --json to inspect") {
+	if !strings.Contains(got, "1 fixture project omitted; use --all-projects to inspect") {
 		t.Fatalf("output %q, want an omitted-fixture notice", got)
 	}
 	if strings.Contains(got, "Project: testdata/sample") {
@@ -65,6 +65,11 @@ func TestWriteOmitsHighConfidenceFixtureProjects(t *testing.T) {
 	}
 	if strings.Contains(got, "Project: .") {
 		t.Fatalf("output %q, want no JSON-path project heading", got)
+	}
+
+	got = renderDocumentWith(plan.NewDocument([]plan.ProjectPlan{root, fixture}), Options{ShowAllProjects: true})
+	if !strings.Contains(got, "Example: testdata/sample") {
+		t.Fatalf("output %q, want --all-projects to render the fixture", got)
 	}
 }
 
@@ -193,8 +198,13 @@ func TestWriteSummarizesNestedProjectsInALargeOrchestratedRepository(t *testing.
 	if strings.Contains(got, "Project: modules/module-00") {
 		t.Fatalf("output %q, did not want detailed nested projects", got)
 	}
-	if !strings.Contains(got, "20 additional projects detected; use --json to inspect.") {
+	if !strings.Contains(got, "20 additional projects detected; use --all-projects to inspect.") {
 		t.Fatalf("output %q, want a compact nested-project summary", got)
+	}
+
+	got = renderDocumentWith(plan.NewDocument(projects), Options{ShowAllProjects: true})
+	if !strings.Contains(got, "Project: modules/module-00") || strings.Contains(got, "additional projects detected") {
+		t.Fatalf("output %q, want --all-projects to render every project", got)
 	}
 }
 
@@ -209,7 +219,7 @@ func TestWriteExplainsWhenOnlyFixtureProjectsWereDetected(t *testing.T) {
 	}}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{fixture}), []string{"node"})
-	if !strings.Contains(got, "1 fixture project omitted; use --json to inspect") {
+	if !strings.Contains(got, "1 fixture project omitted; use --all-projects to inspect") {
 		t.Fatalf("output %q, want the omitted project notice", got)
 	}
 	if !strings.Contains(got, "No non-fixture project roots were detected.") {
@@ -733,17 +743,23 @@ func TestWriteCollapsesIdenticalActionableRows(t *testing.T) {
 func TestWriteChoosesTheRepositoryWrapperAsThePrimaryCapabilityCommand(t *testing.T) {
 	t.Parallel()
 
-	makeRun := "make test"
+	makeRun := "make all-tests"
 	yarnRun := "yarn run test"
 	ciRun := "go test -race ./..."
 	project := plan.NewProjectPlan(".")
 	project.Commands = []plan.Command{
 		{
-			Name:   "test",
+			Name:   "all-tests",
 			Run:    &makeRun,
 			Origin: plan.CommandDeclared,
+			Evidence: []plan.Evidence{{
+				Kind: plan.EvidenceDeclaration, Source: "Makefile", Pointer: "/targets/all-tests",
+			}},
 			Interpretations: []plan.Interpretation{{
 				Capability: plan.CapabilityTestRun,
+				Evidence: []plan.Evidence{{
+					Kind: plan.EvidenceDeclaration, Source: "Makefile", Pointer: "/targets/test-go",
+				}},
 			}},
 		},
 		{
@@ -765,34 +781,117 @@ func TestWriteChoosesTheRepositoryWrapperAsThePrimaryCapabilityCommand(t *testin
 	}
 
 	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{project}), nil)
-	if !strings.Contains(got, "Test     make test") {
-		t.Fatalf("output %q, want make test", got)
+	if !strings.Contains(got, "Test     make all-tests") {
+		t.Fatalf("output %q, want the aggregate Make wrapper", got)
 	}
 	if strings.Contains(got, yarnRun) || strings.Contains(got, ciRun) {
 		t.Fatalf("output %q, did not want lower-priority alternatives in the primary table", got)
 	}
+	if !strings.Contains(got, "2 additional interpreted commands omitted; use --all-commands to inspect.") {
+		t.Fatalf("output %q, want hidden commands disclosed without listing them", got)
+	}
+	if strings.Contains(got, "More commands") {
+		t.Fatalf("output %q, did not want command summaries inside the table", got)
+	}
+
+	got = renderDocumentWith(plan.NewDocument([]plan.ProjectPlan{project}), Options{ShowAllCommands: true})
+	for _, run := range []string{makeRun, yarnRun, ciRun} {
+		if !strings.Contains(got, run) {
+			t.Fatalf("output %q, want %q with --all-commands", got, run)
+		}
+	}
+	if strings.Contains(got, "More commands") {
+		t.Fatalf("output %q, did not want a summary when all commands are shown", got)
+	}
 }
 
-func TestWriteSummarizesComposeEnvironmentProjects(t *testing.T) {
+func TestWriteSummarizesComposeFindingsOwnedByAProject(t *testing.T) {
 	t.Parallel()
 
 	root := plan.NewProjectPlan(".")
 	root.Languages = []plan.DetectedValue{{Name: "go"}}
-	environment := plan.NewProjectPlan("dev/postgres")
-	environment.Facts = []plan.ProjectFact{{
-		Name:       "project.role",
-		Value:      "environment",
-		Confidence: plan.ConfidenceHigh,
-	}}
 	run := "docker compose up -d"
-	environment.Preparation = []plan.Command{{Run: &run, Directory: "dev/postgres"}}
-
-	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root, environment}), nil)
-	if strings.Contains(got, "Project: dev/postgres") {
-		t.Fatalf("output %q, did not want the environment rendered as a peer project", got)
+	root.Preparation = []plan.Command{{
+		Run:       &run,
+		Directory: "dev/postgres",
+		Origin:    plan.CommandInferred,
+		Evidence: []plan.Evidence{
+			{Kind: plan.EvidenceFile, Source: "dev/postgres/compose.yaml"},
+			{Kind: plan.EvidenceConvention, Source: "compose", Pointer: "up"},
+		},
+	}}
+	required := true
+	root.Requirements = []plan.Requirement{
+		{
+			Kind: plan.RequirementService,
+			Name: "postgres",
+			Evidence: []plan.Evidence{{
+				Kind: plan.EvidenceDeclaration, Source: "dev/postgres/compose.yaml", Pointer: "/services/postgres/image",
+			}},
+		},
+		{
+			Kind:       plan.RequirementEnvironment,
+			Name:       "POSTGRES_PASSWORD",
+			IsRequired: &required,
+			Evidence: []plan.Evidence{{
+				Kind: plan.EvidenceDeclaration, Source: "dev/postgres/compose.yaml", Pointer: "/services/postgres/environment/POSTGRES_PASSWORD",
+			}},
+		},
 	}
-	if !strings.Contains(got, "Compose environment:\n  dev/postgres  docker compose up -d") {
-		t.Fatalf("output %q, want a compact Compose environment index", got)
+
+	got := renderDocument(plan.NewDocument([]plan.ProjectPlan{root}), nil)
+	if strings.Contains(got, "Prepare  docker compose up -d") {
+		t.Fatalf("output %q, did not want Compose commands repeated in the main table", got)
+	}
+	if !strings.Contains(got, "Compose environment:\n    dev/postgres\n      Start: docker compose up -d\n      Services: postgres\n      Environment variables: POSTGRES_PASSWORD") {
+		t.Fatalf("output %q, want useful Compose details in human output", got)
+	}
+	if strings.Contains(got, "service postgres") || strings.Contains(got, "environment POSTGRES_PASSWORD") {
+		t.Fatalf("output %q, did not want summarized Compose requirements repeated in project details", got)
+	}
+}
+
+func TestWritePreviewsLargeComposeSetsAndExpandsThemOnRequest(t *testing.T) {
+	t.Parallel()
+
+	root := plan.NewProjectPlan(".")
+	root.Languages = []plan.DetectedValue{{Name: "go"}}
+	for i := 0; i < 5; i++ {
+		directory := fmt.Sprintf("devenv/service-%d", i)
+		source := directory + "/compose.yaml"
+		run := "docker compose up -d"
+		root.Preparation = append(root.Preparation, plan.Command{
+			Run:       &run,
+			Directory: directory,
+			Evidence: []plan.Evidence{
+				{Kind: plan.EvidenceFile, Source: source},
+				{Kind: plan.EvidenceConvention, Source: "compose", Pointer: "up"},
+			},
+		})
+		root.Requirements = append(root.Requirements, plan.Requirement{
+			Kind: plan.RequirementService,
+			Name: fmt.Sprintf("service-%d", i),
+			Evidence: []plan.Evidence{{
+				Kind: plan.EvidenceDeclaration, Source: source, Pointer: "/services/app",
+			}},
+		})
+	}
+
+	document := plan.NewDocument([]plan.ProjectPlan{root})
+	got := renderDocument(document, nil)
+	if !strings.Contains(got, "Compose environments: 5") || !strings.Contains(got, "devenv/service-0") {
+		t.Fatalf("output %q, want a useful environment preview", got)
+	}
+	if strings.Contains(got, "devenv/service-4") || !strings.Contains(got, "2 more environments omitted; use --all-environments to inspect.") {
+		t.Fatalf("output %q, want a bounded preview with a human expansion flag", got)
+	}
+	if strings.Contains(got, "--json") {
+		t.Fatalf("output %q, did not want JSON suggested for human details", got)
+	}
+
+	got = renderDocumentWith(document, Options{ShowAllEnvironments: true})
+	if !strings.Contains(got, "devenv/service-4") || strings.Contains(got, "environments omitted") {
+		t.Fatalf("output %q, want --all-environments to render every environment", got)
 	}
 }
 

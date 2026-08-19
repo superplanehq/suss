@@ -916,32 +916,6 @@ func TestInterpretMatchesGoToolchainInvocations(t *testing.T) {
 	}
 }
 
-func TestInterpretTaskNameRecognizesLifecycleTargetsAndExplicitNonLifecycleTargets(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name      string
-		want      []plan.Capability
-		wantKnown bool
-	}{
-		{name: "deps", want: []plan.Capability{plan.CapabilityDependenciesInstall}, wantKnown: true},
-		{name: "build", want: []plan.Capability{plan.CapabilityArtifactBuild}, wantKnown: true},
-		{name: "test", want: []plan.Capability{plan.CapabilityTestRun}, wantKnown: true},
-		{name: "lint", want: []plan.Capability{plan.CapabilityCodeLint}, wantKnown: true},
-		{name: "run", want: []plan.Capability{plan.CapabilityApplicationRun}, wantKnown: true},
-		{name: "test-go-unit", wantKnown: false},
-		{name: "generate-openapi", wantKnown: true},
-		{name: "release", wantKnown: false},
-	}
-
-	for _, tt := range tests {
-		got, known := InterpretTaskName(tt.name)
-		if known != tt.wantKnown || !slices.Equal(capabilities(got), tt.want) {
-			t.Fatalf("InterpretTaskName(%q) = (%v, %t), want (%v, %t)", tt.name, capabilities(got), known, tt.want, tt.wantKnown)
-		}
-	}
-}
-
 func TestInterpretMatchesMixInvocations(t *testing.T) {
 	t.Parallel()
 

@@ -47,19 +47,25 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	render.Write(stdout, document, render.Options{
-		Providers:         suss.Providers(),
-		RepositoryName:    repositoryName(opts.path),
-		ShowUninterpreted: opts.uninterpreted,
-		ShowEvidence:      opts.evidence,
+		Providers:           suss.Providers(),
+		RepositoryName:      repositoryName(opts.path),
+		ShowAllCommands:     opts.allCommands,
+		ShowAllProjects:     opts.allProjects,
+		ShowAllEnvironments: opts.allEnvironments,
+		ShowUninterpreted:   opts.uninterpreted,
+		ShowEvidence:        opts.evidence,
 	})
 	return 0
 }
 
 type options struct {
-	path          string
-	json          bool
-	uninterpreted bool
-	evidence      bool
+	path            string
+	json            bool
+	allCommands     bool
+	allProjects     bool
+	allEnvironments bool
+	uninterpreted   bool
+	evidence        bool
 }
 
 func parseArgs(args []string) (options, error) {
@@ -70,6 +76,12 @@ func parseArgs(args []string) (options, error) {
 		switch {
 		case arg == "--json":
 			opts.json = true
+		case arg == "--all-commands":
+			opts.allCommands = true
+		case arg == "--all-projects":
+			opts.allProjects = true
+		case arg == "--all-environments":
+			opts.allEnvironments = true
 		case arg == "--uninterpreted":
 			opts.uninterpreted = true
 		case arg == "--evidence":
@@ -99,14 +111,17 @@ func repositoryName(path string) string {
 }
 
 func usage() string {
-	return `Usage: suss [path] [--json] [--uninterpreted] [--evidence]
+	return `Usage: suss [path] [--json] [--all-commands] [--all-projects] [--all-environments] [--uninterpreted] [--evidence]
 
 Inspect a repository and emit how to set it up, build it, test it, and run it.
 
-  path              repository to inspect (default: .)
-  --json            emit the versioned plan document
-  --uninterpreted   include commands without a known purpose
-  --evidence        include source files that support the plan
+  path                 repository to inspect (default: .)
+  --json               emit the versioned plan document
+  --all-commands       include every interpreted command
+  --all-projects       include every detected project
+  --all-environments   include every detected Compose environment
+  --uninterpreted      include commands without a known purpose
+  --evidence           include source files that support the plan
 
 Without --json, a human-readable rendering of the plan is printed.
 `

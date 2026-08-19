@@ -123,7 +123,7 @@ func TestApplyPutsComposeUpInPreparation(t *testing.T) {
 	}
 }
 
-func TestApplyKeepsNestedComposeEnvironmentSeparateFromRoot(t *testing.T) {
+func TestApplyAttachesNestedComposeFindingsToTheCoveringProject(t *testing.T) {
 	t.Parallel()
 
 	up := command(t, "compose", "dev/postgres", "/#up", "start services", "docker compose up -d", plan.CommandInferred, "")
@@ -142,18 +142,14 @@ func TestApplyKeepsNestedComposeEnvironmentSeparateFromRoot(t *testing.T) {
 		plan.RequirementFinding{ProjectPath: "dev/postgres", Detector: "compose", Requirement: service},
 	}})
 
-	if len(got) != 2 {
-		t.Fatalf("projects = %+v, want root plus a Compose environment", got)
+	if len(got) != 1 {
+		t.Fatalf("projects = %+v, want only discovered project roots", got)
 	}
-	if len(got[0].Preparation) != 0 || len(got[0].Requirements) != 0 {
-		t.Fatalf("root = %+v, did not want nested Compose findings attached to it", got[0])
+	if len(got[0].Preparation) != 1 || len(got[0].Requirements) != 1 {
+		t.Fatalf("root = %+v, want nested Compose findings on the covering root", got[0])
 	}
-	environment := got[1]
-	if environment.Path != "dev/postgres" || len(environment.Preparation) != 1 || len(environment.Requirements) != 1 {
-		t.Fatalf("environment = %+v, want the nested Compose findings", environment)
-	}
-	if !hasProjectFact(environment, "project.role", "environment") {
-		t.Fatalf("environment facts = %+v, want project.role=environment", environment.Facts)
+	if got[0].Preparation[0].Directory != "dev/postgres" {
+		t.Fatalf("preparation = %+v, want the Compose working directory preserved", got[0].Preparation)
 	}
 }
 
@@ -1232,15 +1228,6 @@ func matrixRuntimeValues(facts []plan.ProjectFact, runtime string) []string {
 		}
 	}
 	return values
-}
-
-func hasProjectFact(project plan.ProjectPlan, name, value string) bool {
-	for _, fact := range project.Facts {
-		if fact.Name == name && fact.Value == value {
-			return true
-		}
-	}
-	return false
 }
 
 func command(t *testing.T, providerName, dir, pointer, name, run string, origin plan.CommandOrigin, capability plan.Capability) plan.Command {

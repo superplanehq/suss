@@ -16,10 +16,13 @@ const detailedProjectLimit = 20
 
 // Options control labels that are not stored in the document itself.
 type Options struct {
-	Providers         []string
-	RepositoryName    string
-	ShowUninterpreted bool
-	ShowEvidence      bool
+	Providers           []string
+	RepositoryName      string
+	ShowAllCommands     bool
+	ShowAllProjects     bool
+	ShowAllEnvironments bool
+	ShowUninterpreted   bool
+	ShowEvidence        bool
 }
 
 // toolCapabilities maps configured-tool fact values to the capabilities that
@@ -61,22 +64,26 @@ var toolCapabilities = map[string][]plan.Capability{
 }
 
 type classifiedProjects struct {
-	primary         []plan.ProjectPlan
-	examples        []plan.ProjectPlan
-	environments    []plan.ProjectPlan
-	omittedFixtures int
+	primary  []plan.ProjectPlan
+	examples []plan.ProjectPlan
+	fixtures []plan.ProjectPlan
 }
 
 // Write prints a human-readable rendering of document.
 func Write(w io.Writer, document plan.Document, opts Options) {
-	classified := classifyProjects(document.Projects)
-	writePreface(w, len(classified.primary), classified.omittedFixtures)
-
 	if len(document.Projects) == 0 {
 		fmt.Fprintln(w, "No project roots were detected. Suss looks for package.json, go.mod, Cargo.toml, mix.exs, Gemfile, composer.json, pyproject.toml, Makefile, and .env.example.")
 		return
 	}
-	if len(classified.primary) == 0 && len(classified.examples) == 0 && len(classified.environments) == 0 {
+	if opts.ShowAllProjects {
+		writePreface(w, len(document.Projects), 0)
+		writeProjects(w, document.Projects, opts)
+		return
+	}
+
+	classified := classifyProjects(document.Projects)
+	writePreface(w, len(classified.primary), len(classified.fixtures))
+	if len(classified.primary) == 0 && len(classified.examples) == 0 {
 		fmt.Fprintln(w, "No non-fixture project roots were detected.")
 		return
 	}
@@ -85,18 +92,21 @@ func Write(w io.Writer, document plan.Document, opts Options) {
 	if len(visible) == 0 {
 		visible = classified.examples
 	}
-	for i, project := range visible {
+	writeProjects(w, visible, opts)
+	if len(classified.primary) > 0 {
+		writeExampleIndex(w, classified.examples)
+	}
+	writeProjectSummary(w, summarizedProjects)
+}
+
+func writeProjects(w io.Writer, projects []plan.ProjectPlan, opts Options) {
+	for i, project := range projects {
 		if i > 0 {
 			fmt.Fprintln(w)
 			fmt.Fprintln(w)
 		}
 		writeProject(w, project, opts)
 	}
-	if len(classified.primary) > 0 {
-		writeExampleIndex(w, classified.examples)
-	}
-	writeProjectSummary(w, summarizedProjects)
-	writeEnvironmentIndex(w, classified.environments)
 }
 
 func detailedProjects(projects []plan.ProjectPlan) ([]plan.ProjectPlan, int) {
@@ -117,23 +127,19 @@ func writeProjectSummary(w io.Writer, count int) {
 	}
 	fmt.Fprintln(w)
 	fmt.Fprintln(w)
-	fmt.Fprintf(w, "%d additional projects detected; use --json to inspect.\n", count)
+	fmt.Fprintf(w, "%d additional projects detected; use --all-projects to inspect.\n", count)
 }
 
 func classifyProjects(projects []plan.ProjectPlan) classifiedProjects {
 	var classified classifiedProjects
 	for _, project := range projects {
-		if _, isEnvironment := projectRole(project, "environment"); isEnvironment {
-			classified.environments = append(classified.environments, project)
-			continue
-		}
 		confidence, isFixture := fixtureRole(project)
 		if !isFixture {
 			classified.primary = append(classified.primary, project)
 			continue
 		}
 		if confidence == plan.ConfidenceHigh {
-			classified.omittedFixtures++
+			classified.fixtures = append(classified.fixtures, project)
 			continue
 		}
 		classified.examples = append(classified.examples, project)
@@ -142,56 +148,22 @@ func classifyProjects(projects []plan.ProjectPlan) classifiedProjects {
 }
 
 func fixtureRole(project plan.ProjectPlan) (plan.Confidence, bool) {
-	return projectRole(project, "fixture")
-}
-
-func projectRole(project plan.ProjectPlan, role string) (plan.Confidence, bool) {
 	for _, fact := range project.Facts {
-		if fact.Name == "project.role" && fact.Value == role {
+		if fact.Name == "project.role" && fact.Value == "fixture" {
 			return fact.Confidence, true
 		}
 	}
 	return "", false
 }
 
-func writeEnvironmentIndex(w io.Writer, environments []plan.ProjectPlan) {
-	if len(environments) == 0 {
-		return
-	}
-
-	fmt.Fprintln(w)
-	fmt.Fprintln(w)
-	if len(environments) > 5 {
-		fmt.Fprintf(w, "%d Compose environments detected; use --json to inspect.\n", len(environments))
-		return
-	}
-	if len(environments) == 1 {
-		fmt.Fprintln(w, "Compose environment:")
-	} else {
-		fmt.Fprintln(w, "Compose environments:")
-	}
-	for _, environment := range environments {
-		fmt.Fprintf(w, "  %s%s\n", environment.Path, environmentCommand(environment))
-	}
-}
-
-func environmentCommand(environment plan.ProjectPlan) string {
-	for _, command := range environment.Preparation {
-		if command.Run != nil {
-			return "  " + oneLine(*command.Run)
-		}
-	}
-	return ""
-}
-
 func writePreface(w io.Writer, primaryCount, omittedFixtures int) {
 	switch {
 	case primaryCount > 1 && omittedFixtures > 0:
-		fmt.Fprintf(w, "Projects: %d (%d %s omitted; use --json to inspect)\n\n", primaryCount, omittedFixtures, fixtureNoun(omittedFixtures))
+		fmt.Fprintf(w, "Projects: %d (%d %s omitted; use --all-projects to inspect)\n\n", primaryCount, omittedFixtures, fixtureNoun(omittedFixtures))
 	case primaryCount > 1:
 		fmt.Fprintf(w, "Projects: %d\n\n", primaryCount)
 	case omittedFixtures > 0:
-		fmt.Fprintf(w, "%d %s omitted; use --json to inspect\n\n", omittedFixtures, fixtureNoun(omittedFixtures))
+		fmt.Fprintf(w, "%d %s omitted; use --all-projects to inspect\n\n", omittedFixtures, fixtureNoun(omittedFixtures))
 	}
 }
 
@@ -224,12 +196,22 @@ func writeProject(w io.Writer, project plan.ProjectPlan, opts Options) {
 		return
 	}
 
-	writeActionableCommands(w, project)
+	displayedProject, composeEnvironments := summarizeComposeEnvironments(project)
+	if opts.ShowAllCommands {
+		writeAllActionableCommands(w, displayedProject)
+	} else {
+		writeCompactActionableCommands(w, displayedProject)
+	}
+	if opts.ShowAllEnvironments {
+		writeAllComposeEnvironments(w, composeEnvironments)
+	} else {
+		writeComposeEnvironmentPreview(w, composeEnvironments)
+	}
 	writeAttentionItems(w, project.Ambiguities, project.Conflicts)
 	if opts.ShowUninterpreted {
-		writeUninterpretedCommands(w, project.Path, project.Commands)
+		writeUninterpretedCommands(w, displayedProject.Path, displayedProject.Commands)
 	}
-	writeProjectDetails(w, project)
+	writeProjectDetails(w, displayedProject)
 	if opts.ShowEvidence {
 		writeEvidence(w, project)
 	}

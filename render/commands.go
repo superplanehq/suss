@@ -11,9 +11,10 @@ import (
 )
 
 type displayedCommand struct {
-	command plan.Command
-	purpose string
-	rank    int
+	command         plan.Command
+	purpose         string
+	rank            int
+	additionalCount int
 }
 
 type commandRow struct {
@@ -21,17 +22,28 @@ type commandRow struct {
 	run   string
 }
 
-func writeActionableCommands(w io.Writer, project plan.ProjectPlan) {
-	commands := actionableCommands(project)
+func writeCompactActionableCommands(w io.Writer, project plan.ProjectPlan) {
+	commands := preferredCommands(project.Path, allActionableCommands(project))
+	writeActionableCommandTable(w, project.Path, commands)
+	if omitted := omittedCommandCount(commands); omitted > 0 {
+		fmt.Fprintf(w, "\n    %d additional interpreted %s omitted; use --all-commands to inspect.\n", omitted, commandNoun(omitted))
+	}
+}
+
+func writeAllActionableCommands(w io.Writer, project plan.ProjectPlan) {
+	writeActionableCommandTable(w, project.Path, allActionableCommands(project))
+}
+
+func writeActionableCommandTable(w io.Writer, projectPath string, commands []displayedCommand) {
 	if len(commands) == 0 {
 		return
 	}
 
 	fmt.Fprintln(w, "\n  How to work with this project:")
-	writeCommandTable(w, "Purpose", actionableRows(project.Path, commands))
+	writeCommandTable(w, "Purpose", actionableRows(projectPath, commands))
 }
 
-func actionableCommands(project plan.ProjectPlan) []displayedCommand {
+func allActionableCommands(project plan.ProjectPlan) []displayedCommand {
 	commands := make([]displayedCommand, 0, len(project.Preparation)+len(project.Commands))
 	for _, command := range project.Preparation {
 		purpose, rank := commandPurpose(command)
@@ -57,28 +69,40 @@ func actionableCommands(project plan.ProjectPlan) []displayedCommand {
 		}
 		return cmp.Compare(a.command.Name, b.command.Name)
 	})
-	return preferredCommands(commands)
+	return commands
 }
 
-func preferredCommands(commands []displayedCommand) []displayedCommand {
+func preferredCommands(projectPath string, commands []displayedCommand) []displayedCommand {
 	preferred := make([]displayedCommand, 0, len(commands))
 	indexes := make(map[string]int)
+	distinct := make(map[string]map[commandDisplayKey]struct{})
 	for _, candidate := range commands {
+		key := commandDisplayKey(commandRun(projectPath, candidate.command.Run, candidate.command.Directory))
 		index, found := indexes[candidate.purpose]
 		if !found {
 			indexes[candidate.purpose] = len(preferred)
+			distinct[candidate.purpose] = map[commandDisplayKey]struct{}{key: {}}
 			preferred = append(preferred, candidate)
 			continue
 		}
+		distinct[candidate.purpose][key] = struct{}{}
 		if compareCommandPreference(candidate, preferred[index]) < 0 {
 			preferred[index] = candidate
 		}
 	}
+	for purpose, index := range indexes {
+		preferred[index].additionalCount = len(distinct[purpose]) - 1
+	}
 	return preferred
 }
 
+type commandDisplayKey string
+
 func compareCommandPreference(a, b displayedCommand) int {
 	if n := cmp.Compare(commandOriginRank(a.command.Origin), commandOriginRank(b.command.Origin)); n != 0 {
+		return n
+	}
+	if n := cmp.Compare(commandAggregationRank(a.command), commandAggregationRank(b.command)); n != 0 {
 		return n
 	}
 	if n := cmp.Compare(commandNameRank(a.purpose, a.command.Name), commandNameRank(b.purpose, b.command.Name)); n != 0 {
@@ -91,6 +115,31 @@ func compareCommandPreference(a, b displayedCommand) int {
 		return n
 	}
 	return cmp.Compare(string(a.command.ID), string(b.command.ID))
+}
+
+func commandAggregationRank(command plan.Command) int {
+	declarations := make(map[string]map[string]struct{})
+	for _, evidence := range command.Evidence {
+		if evidence.Kind != plan.EvidenceDeclaration || evidence.Source == "" || evidence.Pointer == "" {
+			continue
+		}
+		if declarations[evidence.Source] == nil {
+			declarations[evidence.Source] = make(map[string]struct{})
+		}
+		declarations[evidence.Source][evidence.Pointer] = struct{}{}
+	}
+	for _, interpretation := range command.Interpretations {
+		for _, evidence := range interpretation.Evidence {
+			pointers := declarations[evidence.Source]
+			if evidence.Kind != plan.EvidenceDeclaration || evidence.Pointer == "" || len(pointers) == 0 {
+				continue
+			}
+			if _, ownDeclaration := pointers[evidence.Pointer]; !ownDeclaration {
+				return 0
+			}
+		}
+	}
+	return 1
 }
 
 func commandOriginRank(origin plan.CommandOrigin) int {
@@ -200,6 +249,21 @@ func actionableRows(projectPath string, commands []displayedCommand) []commandRo
 		rows = append(rows, variantRows(projectPath, item.command)...)
 	}
 	return uniqueCommandRows(rows)
+}
+
+func omittedCommandCount(commands []displayedCommand) int {
+	var count int
+	for _, command := range commands {
+		count += command.additionalCount
+	}
+	return count
+}
+
+func commandNoun(count int) string {
+	if count == 1 {
+		return "command"
+	}
+	return "commands"
 }
 
 func uniqueCommandRows(rows []commandRow) []commandRow {
