@@ -181,6 +181,19 @@
       "requirements": [
         {
           "kind": "runtime",
+          "name": "python",
+          "version": "3.x",
+          "confidence": "high",
+          "evidence": [
+            {
+              "kind": "invocation",
+              "source": ".github/workflows/pre-commit.yml",
+              "pointer": "/jobs/pre-commit/steps/1/with/python-version"
+            }
+          ]
+        },
+        {
+          "kind": "runtime",
           "name": "rust",
           "version": ">=1.74",
           "confidence": "high",
