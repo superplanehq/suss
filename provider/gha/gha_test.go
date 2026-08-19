@@ -847,7 +847,6 @@ jobs:
 	}
 }
 
-
 func TestDetectIgnoresPyprojectTomlAsPythonVersionFile(t *testing.T) {
 	t.Parallel()
 
@@ -873,7 +872,6 @@ jobs:
 		}
 	}
 }
-
 
 func TestDetectReadsSetupPythonVersionFileInput(t *testing.T) {
 	t.Parallel()

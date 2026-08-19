@@ -553,7 +553,6 @@ func TestInterpretMatchesPythonInvocations(t *testing.T) {
 	}
 }
 
-
 func TestIsRemotePipInstall(t *testing.T) {
 	t.Parallel()
 
@@ -591,7 +590,6 @@ func TestIsRemotePipInstall(t *testing.T) {
 		t.Fatal("IsRemotePipInstall(expression wheel) = true, want false")
 	}
 }
-
 
 func TestIsRemoteGemInstall(t *testing.T) {
 	t.Parallel()
