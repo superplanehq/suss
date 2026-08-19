@@ -1,20 +1,21 @@
 # Suss
 
-Suss inspects a repository and reports how a developer or agent should set it up, build it, test it, lint it, and run it. Every answer is traced to structured evidence in the repository.
+Suss scans a repository and explains how to build, test, lint, and run it.
 
-Suss is under active development. See [plan.md](plan.md) for current status and [idea.md](idea.md) for the design.
+Suss only reads repository files. It does not install dependencies or run repository commands.
 
-## Supported
+## What Suss detects
 
-- Languages and frameworks: JavaScript, TypeScript, Go, Rust, Elixir, Phoenix, Ruby, Rails, PHP, Laravel, Symfony, Python, Django, Flask, and FastAPI.
-- Package and task tooling: npm, pnpm, Yarn, Bun, Cargo, Mix, Bundler, Rake, Composer, pip, Poetry, uv, Pipenv, PDM, and Make.
-- Repository automation: GitHub Actions, Semaphore, and Docker Compose.
-- Structured signals: manifests, lockfiles, runtime-version files, tool configuration, CI services, and environment-variable names.
-- Output: a default human-readable plan or the versioned JSON document.
+- Languages and frameworks: JavaScript, TypeScript, Go, Rust, Elixir, Phoenix, Ruby, Rails, PHP, Laravel, Symfony, Python, Django, Flask, and FastAPI
+- Package managers and task tools: npm, pnpm, Yarn, Bun, Cargo, Mix, Bundler, Rake, Composer, pip, Poetry, uv, Pipenv, PDM, and Make
+- Automation and services: GitHub Actions, Semaphore, and Docker Compose
+- Project information from manifests, lockfiles, runtime version files, tool configuration, CI services, and environment variable names
+
+Suss can print a readable text plan or a versioned JSON document.
 
 ## Requirements
 
-Go 1.26 or later (see `go.mod`).
+You need Go 1.26 or later. See `go.mod`.
 
 ## Build
 
@@ -22,18 +23,24 @@ Go 1.26 or later (see `go.mod`).
 go build -o suss ./cmd/suss
 ```
 
-That writes a `suss` binary in the repository root. `go install ./cmd/suss` installs it to `$(go env GOPATH)/bin`.
+This creates a `suss` binary in the repository root.
 
-## Hello world
+To install the binary in `$(go env GOPATH)/bin`, run:
 
-Shallow-clone Chalk and inspect it without installing its dependencies or running any repository commands:
+```text
+go install ./cmd/suss
+```
+
+## Quick start
+
+Clone the Chalk repository and scan it:
 
 ```sh
 git clone --depth 1 https://github.com/chalk/chalk.git chalk
 suss chalk
 ```
 
-The default human output looks like this:
+Suss prints output like this:
 
 ```text
 chalk
@@ -52,7 +59,7 @@ chalk
       runtime node >=22
 ```
 
-## Run
+## Usage
 
 ```text
 suss .
@@ -61,16 +68,26 @@ suss . --json
 suss path/to/repo
 ```
 
-Without `--json`, Suss prints a human-readable plan. Uninterpreted commands and evidence are omitted unless requested with `--uninterpreted` and `--evidence`. With `--json`, it emits the versioned plan document. Detection is static: it does not install dependencies or execute repository commands.
+By default, Suss prints a human-readable plan.
 
-## Test
+### Flags
 
-`make check` runs the full local gate (format, lint, race tests, module tidiness, vulnerability scan) and is what CI enforces.
+- Use `--uninterpreted` to print all commands that Suss found but could not reliably explain.
+- Use `--evidence` to print the source files that support the results.
+- Use `--json` to print the versioned JSON document.
+
+## Development
+
+Run the same checks as CI:
 
 ```text
 make check
 ```
 
-Corpus snapshots live under `testdata/golden/`. Remote corpus repositories are shallow-fetched into `testdata/cache/` on first run.
+This command checks formatting, lint errors, race conditions, module files, and known vulnerabilities.
 
-Licensed under the Apache License, Version 2.0.
+Expected test corpus output is stored in `testdata/golden/`. On the first test run, Suss clones remote test corpus repositories into `testdata/cache/`.
+
+## License
+
+Suss is licensed under the Apache 2.0 license.
