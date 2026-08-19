@@ -31,7 +31,7 @@ To install the binary in `$(go env GOPATH)/bin`, run:
 go install ./cmd/suss
 ```
 
-## Quick start
+## Hello world example
 
 Clone the Chalk repository and scan it:
 
@@ -72,9 +72,13 @@ By default, Suss prints a human-readable plan.
 
 ### Flags
 
-- Use `--uninterpreted` to print all commands that Suss found but could not reliably explain.
-- Use `--evidence` to print the source files that support the results.
-- Use `--json` to print the versioned JSON document.
+- `--uninterpreted` prints all commands that Suss found but could not reliably explain.
+- `--evidence` prints the source files that support the results.
+- `--json` prints the versioned JSON document for machine consumption.
+
+### JSON output
+
+The JSON output is versioned and stable. The version is the date of the last schema change. The schema is defined in `schema.json`.
 
 ## Development
 
