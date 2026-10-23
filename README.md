@@ -1,5 +1,7 @@
 # Suss
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 Suss scans a repository and explains how to build, test, lint, and run it.
 
 Suss only reads repository files. It does not install dependencies or run repository commands.
